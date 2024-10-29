@@ -42,15 +42,23 @@ baseimagename=$(grep ^FROM $dockerfile | sed "s/FROM //g")
 imagename="${dockerhub_account}/${reponame}:${tag}"
 
 # Print the extracted and constructed variables for debugging
-# Output as JSON
-echo '{
-  "DOCKERFILE": "'"$dockerfile"'",
-  "IMAGENAME": "'"$imagename"'",
-  "BASEIMAGENAME": "'"$baseimagename"'",
-  "BUILD_DATE": "'"$dt"'",
-  "BUILD_TAG": "'"$tag"'",
-  "REPONAME": "'"$reponame"'"
-}'
+# # Output as JSON
+# echo '{
+#   "DOCKERFILE": "'"$dockerfile"'",
+#   "IMAGENAME": "'"$imagename"'",
+#   "BASEIMAGENAME": "'"$baseimagename"'",
+#   "BUILD_DATE": "'"$dt"'",
+#   "BUILD_TAG": "'"$tag"'",
+#   "REPONAME": "'"$reponame"'"
+# }'
+
+# Output each variable to $GITHUB_ENV to pass it to the next steps
+echo "DOCKERFILE=$dockerfile" >> $GITHUB_ENV
+echo "IMAGENAME=$imagename" >> $GITHUB_ENV
+echo "BASEIMAGENAME=$baseimagename" >> $GITHUB_ENV
+echo "BUILD_DATE=$dt" >> $GITHUB_ENV
+echo "BUILD_TAG=$tag" >> $GITHUB_ENV
+echo "REPONAME=$reponame" >> $GITHUB_ENV
 
 # docker buildx build \
 #     --progress=plain \
