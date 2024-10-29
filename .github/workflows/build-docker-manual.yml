@@ -34,7 +34,25 @@ jobs:
       - name: Prepare build-time variables
         id: vars
         run: |
-          bash scripts/prepare_for_build ${{ github.event.inputs.dockerfile }}
+          bash scripts/prepare_for_build ${{ github.event.inputs.dockerfile }} > output.json
+          echo "json_output=$(cat output.json)" >> $GITHUB_ENV
+      - name: Parse JSON and set variables
+        id: parse_json
+        run: |
+            DOCKERFILE=$(echo "$json_output" | jq -r '.DOCKERFILE')
+            IMAGENAME=$(echo "$json_output" | jq -r '.IMAGENAME')
+            BASEIMAGENAME=$(echo "$json_output" | jq -r '.BASEIMAGENAME')
+            BUILD_DATE=$(echo "$json_output" | jq -r '.BUILD_DATE')
+            BUILD_TAG=$(echo "$json_output" | jq -r '.BUILD_TAG')
+            REPONAME=$(echo "$json_output" | jq -r '.REPONAME')
+  
+            # Set these as outputs for use in later steps
+            echo "::set-output name=DOCKERFILE::$DOCKERFILE"
+            echo "::set-output name=IMAGENAME::$IMAGENAME"
+            echo "::set-output name=BASEIMAGENAME::$BASEIMAGENAME"
+            echo "::set-output name=BUILD_DATE::$BUILD_DATE"
+            echo "::set-output name=BUILD_TAG::$BUILD_TAG"
+            echo "::set-output name=REPONAME::$REPONAME"
       # echo "CONTEXT=$(dirname ${{ github.event.inputs.dockerfile }})" >> "$GITHUB_OUTPUT"
       # echo "DATE=$(date +"%Y-%m-%d")" >> "$GITHUB_OUTPUT"
 
@@ -45,17 +63,20 @@ jobs:
       # # for Docker Hub Description
       # echo " # ${{ github.repository }} ${{ github.event.inputs.image_name }}\n" > tmp_README.md
       # echo "Dockerfile source: https://github.com/${{ github.repository }}/blob/${{ github.sha }}/${{ github.event.inputs.dockerfile }}\n" >> tmp_README.md
-      # - name: Build and push
-      #   uses: docker/build-push-action@v4
-      #   with:
-      #     context: ${{ steps.vars.outputs.CONTEXT }}
-      #     file: ${{ github.event.inputs.dockerfile }}
-      #     push: ${{ github.event.inputs.push }}
-      #     tags: ${{ github.event.inputs.namespace }}/${{ github.event.inputs.image_name }}:${{ github.event.inputs.version }}
-      #     build-args: |
-      #       BUILD_DATE=${{ steps.vars.outputs.DATE }}
-      #       BUILD_TAG=${{ github.event.inputs.version }}
-      #       REPONAME=${{ github.event.inputs.image_name }}
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          file: ${{ github.event.inputs.dockerfile }}
+          push: false
+          tags: ${{ steps.parse_json.outputs.IMAGENAME }}
+          build-args: |
+            BUILD_DATE=${{ steps.parse_json.outputs.BUILD_DATE }}
+            BUILD_TAG=${{ steps.parse_json.outputs.BUILD_TAG }}
+            REPONAME=${{ steps.parse_json.outputs.REPONAME }}
+            IMAGENAME=${{ steps.parse_json.outputs.IMAGENAME }}
+            BASEIMAGENAME=${{ steps.parse_json.outputs.BASEIMAGENAME }}
+      - name: List Docker images
+        run: docker images
       # - name: Update Docker Hub Description
       #   if: ${{ github.event.inputs.push == 'true' }}
       #   uses: peter-evans/dockerhub-description@v4
@@ -64,3 +85,12 @@ jobs:
       #     password: ${{ secrets.DOCKERHUB_TOKEN }}
       #     repository: ${{ steps.metadata.outputs['dockerhub_namespace'] }}/${{ steps.metadata.outputs['image_name'] }}
       #     readme-filepath: tmp_README.md
+# docker buildx build \
+#     --progress=plain \
+#     --build-arg BUILD_DATE=${dt} \
+#     --build-arg BUILD_TAG=${tag} \
+#     --build-arg REPONAME=${reponame} \
+#     --build-arg IMAGENAME=${imagename} \
+#     --build-arg BASENAME=${basename} \
+#     -t ${imagename} \
+#     -f ${dockerfile} .
