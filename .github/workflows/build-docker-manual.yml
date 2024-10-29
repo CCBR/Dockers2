@@ -3,12 +3,12 @@ name: build-docker-manual
 run-name: ${{ inputs.dockerfile }}:${{ inputs.version }}
 
 on:
-  push:
-    branches:
-      - smaller_base_image
-  pull_request:
-    branches:
-      - main
+  # push:
+  #   branches:
+  #     - smaller_base_image
+  # pull_request:
+  #   branches:
+  #     - main
   workflow_dispatch:
     inputs:
       dockerfile:
