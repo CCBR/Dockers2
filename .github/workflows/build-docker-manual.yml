@@ -19,6 +19,11 @@ on:
         type: boolean
         description: Push to DockerHub (leave unchecked to just build the container without pushing)
         required: true
+      dev:
+        type: boolean
+        description: Push to DockerHub (leave unchecked to just build the container without pushing)
+        required: true
+        default: true
 
 jobs:
   build-docker:
@@ -44,6 +49,12 @@ jobs:
             echo $BUILD_DATE
             echo $BUILD_TAG
             echo $REPONAME
+            if [[ ${{ github.event.inputs.dev == 'true' }}]]; then
+              echo "DEV=\"-dev\"" >> $GITHUB_ENV
+            else
+              echo "DEV=\"\"" >> $GITHUB_ENV
+            fi
+            echo "IMAGENAME=${IMAGENAME}${DEV}" >> $GITHUB_ENV
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
