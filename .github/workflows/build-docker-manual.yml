@@ -21,7 +21,7 @@ on:
         required: true
       dev:
         type: boolean
-        description: Push to DockerHub (leave unchecked to just build the container without pushing)
+        description: Is this a development build? (e.g. -dev tag)
         required: true
         default: true
 
@@ -49,7 +49,8 @@ jobs:
             echo $BUILD_DATE
             echo $BUILD_TAG
             echo $REPONAME
-            if [[ ${{ github.event.inputs.dev == 'true' }}]]; then
+            if [[ ${{ github.event.inputs.dev == 'true' }} ]]
+            then
               echo "DEV=\"-dev\"" >> $GITHUB_ENV
             else
               echo "DEV=\"\"" >> $GITHUB_ENV
