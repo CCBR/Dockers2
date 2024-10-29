@@ -35,8 +35,8 @@ jobs:
         id: vars
         run: |
           bash scripts/prepare_for_build ${{ github.event.inputs.dockerfile }} 
-      - name: check variables and build
-        id: check_and_build
+      - name: check variables
+        id: check
         run: |
             echo $DOCKERFILE
             echo $IMAGENAME
@@ -44,31 +44,20 @@ jobs:
             echo $BUILD_DATE
             echo $BUILD_TAG
             echo $REPONAME
-
-      # echo "CONTEXT=$(dirname ${{ github.event.inputs.dockerfile }})" >> "$GITHUB_OUTPUT"
-      # echo "DATE=$(date +"%Y-%m-%d")" >> "$GITHUB_OUTPUT"
-
-      # if [ ! -f ${{ github.event.inputs.dockerfile }} ] ; then
-      #   echo "ERROR: Dockerfile not found: ${{ github.event.inputs.dockerfile }}"
-      #   exit 1
-      # fi
-      # # for Docker Hub Description
-      # echo " # ${{ github.repository }} ${{ github.event.inputs.image_name }}\n" > tmp_README.md
-      # echo "Dockerfile source: https://github.com/${{ github.repository }}/blob/${{ github.sha }}/${{ github.event.inputs.dockerfile }}\n" >> tmp_README.md
-      # - name: Build and push
-      #   uses: docker/build-push-action@v4
-      #   with:
-      #     file: ${{ github.event.inputs.dockerfile }}
-      #     push: false
-      #     tags: ${{ steps.parse_json.outputs.IMAGENAME }}
-      #     build-args: |
-      #       BUILD_DATE=${{ steps.parse_json.outputs.BUILD_DATE }}
-      #       BUILD_TAG=${{ steps.parse_json.outputs.BUILD_TAG }}
-      #       REPONAME=${{ steps.parse_json.outputs.REPONAME }}
-      #       IMAGENAME=${{ steps.parse_json.outputs.IMAGENAME }}
-      #       BASEIMAGENAME=${{ steps.parse_json.outputs.BASEIMAGENAME }}
-      # - name: List Docker images
-      #   run: docker images
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          file: ${{ env.DOCKERFILE }}
+          push: false
+          tags: ${{ env.IMAGENAME }}
+          build-args: |
+            BUILD_DATE=${{ env.BUILD_DATE }}
+            BUILD_TAG=${{ env.BUILD_TAG }}
+            REPONAME=${{ env.REPONAME }}
+            IMAGENAME=${{ env.IMAGENAME }}
+            BASEIMAGENAME=${{ env.BASEIMAGENAME }}
+      - name: List Docker images
+        run: docker images
       # - name: Update Docker Hub Description
       #   if: ${{ github.event.inputs.push == 'true' }}
       #   uses: peter-evans/dockerhub-description@v4
