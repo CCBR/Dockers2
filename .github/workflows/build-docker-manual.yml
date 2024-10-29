@@ -51,6 +51,7 @@ jobs:
           push: false
           tags: ${{ env.IMAGENAME }}
           build-args: |
+            DOCKERFILE=${{ env.DOCKERFILE }}
             BUILD_DATE=${{ env.BUILD_DATE }}
             BUILD_TAG=${{ env.BUILD_TAG }}
             REPONAME=${{ env.REPONAME }}
