@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+#!/bin/usr/env bash
+
+# This script performs the following tasks:
+# - Retrieves the Dockerfile path from the first argument.
+# - Defines the Docker Hub account name.
+# - Gets the current date and time in the format ddmmyyHHMMSS.
+# - Extracts the basename of the Dockerfile.
+# - Extracts the tag from the Dockerfile name.
+# - Extracts the directory name of the Dockerfile.
+# - Extracts the repository name from the directory name.
+# - Gets the base image name from the Dockerfile.
+# - Constructs the full image name for Docker Hub.
+# - Prints the extracted and constructed variables for debugging.
+
+# Get the Dockerfile path from the first argument
+dockerfile=$1
+
+# Docker Hub account name ... this is fixed to "nciccbr" our org account!
+dockerhub_account="nciccbr"
+
+# Get the current date and time in the format ddmmyyHHMMSS
+dt=$(date +"%d%m%y%H%M%S")
+
+# Extract the basename of the Dockerfile (e.g., Dockerfile)
+bn_dockerfile=$(basename $dockerfile)
+
+# Extract the tag from the Dockerfile name (e.g., if Dockerfile.v2, tag=v2)
+tag=${bn_dockerfile##*.}
+
+# Extract the directory name of the Dockerfile
+dn_dockerfile=$(dirname $dockerfile)
+
+# Extract the repository name from the directory name
+reponame=$(basename $dn_dockerfile)
+
+# Get the base image name from the Dockerfile (the image specified in the FROM instruction)
+baseimagename=$(grep ^FROM $dockerfile | sed "s/FROM //g")
+
+# Construct the full image name for Docker Hub
+imagename="${dockerhub_account}/${reponame}:${tag}"
+
+# Print the extracted and constructed variables for debugging
+# Output as JSON
+echo '{
+  "DOCKERFILE": "'"$dockerfile"'",
+  "IMAGENAME": "'"$imagename"'",
+  "BASEIMAGENAME": "'"$baseimagename"'",
+  "BUILD_DATE": "'"$dt"'",
+  "BUILD_TAG": "'"$tag"'",
+  "REPONAME": "'"$reponame"'"
+}'
+
+# docker buildx build \
+#     --progress=plain \
+#     --build-arg BUILD_DATE=${dt} \
+#     --build-arg BUILD_TAG=${tag} \
+#     --build-arg REPONAME=${reponame} \
+#     --build-arg IMAGENAME=${imagename} \
+#     --build-arg BASENAME=${basename} \
+#     -t ${imagename} \
+#     -f ${dockerfile} .
