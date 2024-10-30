@@ -50,8 +50,8 @@ jobs:
       - name: Get modified Dockerfiles in the push event
         id: get-modified-dockerfiles
         run: |
-          for changed_file in ${{ steps.files.outputs.all }}; do
-            if [[ $file_name =~ ^Dockerfile\..* ]]; then
+          for changed_file in ${{ steps.get-changed-files.outputs.All }}; do
+            if [[ $file_name =~ Dockerfile\..* ]]; then
               if [[ -z $MODIFIED_DOCKERFILES ]]; then
                 MODIFIED_DOCKERFILES="$file_name"
               else
