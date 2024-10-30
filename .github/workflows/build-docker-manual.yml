@@ -48,7 +48,7 @@ jobs:
           else
             BRANCH_NAME="${GITHUB_REF}"
           fi
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
       - name: Prepare build-time variables and set variables
         id: vars
         run: |
