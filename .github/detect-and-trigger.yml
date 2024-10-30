@@ -1,0 +1,64 @@
+# This GitHub Actions workflow is designed to trigger a manual Docker build for each modified Dockerfile.
+# 
+# Workflow Name: Trigger Build Docker Manual for Each modified Dockerfile
+#
+# Triggers:
+# - On push events to any branch except 'main' and 'dev', if any Dockerfile.* is modified.
+# - On pull request events to 'main' and 'dev' branches, if any Dockerfile.* is modified.
+#
+# Jobs:
+# - detect-and-trigger:
+#   - Runs on the latest Ubuntu environment.
+#   - Steps:
+#     1. Check out the repository using actions/checkout@v4.
+#     2. Identify modified Dockerfiles using git diff and store them in the environment variable 'dockerfiles'.
+#     3. For each modified Dockerfile, trigger the 'build-docker-manual' workflow with the Dockerfile path and additional parameters.
+#
+# Environment Variables:
+# - GITHUB_TOKEN: Used for authentication to trigger the 'build-docker-manual' workflow.
+name: Trigger Build Docker Manual for Each modified Dockerfile
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - dev
+    paths:
+      - '**/Dockerfile.*'  # Only trigger if a Dockerfile.* is modified in any directory
+
+  pull_request:
+    branches:
+      - main
+      - dev
+    paths:
+      - '**/Dockerfile.*'  # Only trigger if a Dockerfile.* is modified in any directory
+
+jobs:
+  detect-and-trigger:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get modified Dockerfiles
+        id: find_dockerfiles
+        run: |
+          # Find modified Dockerfiles
+          MODIFIED_DOCKERFILES=$(git diff --name-only HEAD^ HEAD | grep -E 'Dockerfile\..*')
+          echo "dockerfiles=$MODIFIED_DOCKERFILES" >> $GITHUB_ENV
+
+      - name: Trigger build-docker-manual for each modified Dockerfile
+        if: env.dockerfiles != ""
+        run: |
+          for DOCKERFILE in $MODIFIED_DOCKERFILES; do
+            echo "Triggering build-docker-manual for $DOCKERFILE"
+
+            # Trigger the build-docker-manual workflow with the Dockerfile as an input
+            gh workflow run build-docker-manual.yml \
+              --ref $GITHUB_REF \
+              --field dockerfile=$DOCKERFILE \
+              --field dockerhub_namespace=nciccbr \
+              --field push=true
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
