@@ -44,8 +44,15 @@ jobs:
       - name: Get modified Dockerfiles
         id: find_dockerfiles
         run: |
-          # Find modified Dockerfiles
-          MODIFIED_DOCKERFILES=$(git diff --name-only HEAD@{1} HEAD | grep -E 'Dockerfile\..*')
+          # Check if HEAD@{1} exists for comparing the last push
+          if git rev-parse --verify HEAD@{1} >/dev/null 2>&1; then
+            MODIFIED_DOCKERFILES=$(git diff --name-only HEAD@{1} HEAD | grep -E 'Dockerfile\..*' || true)
+          else
+            # If no previous push exists, get files in the latest commit
+            MODIFIED_DOCKERFILES=$(git diff-tree --no-commit-id --name-only -r HEAD | grep -E 'Dockerfile\..*' || true)
+          fi
+          
+          echo "Modified Dockerfiles: $MODIFIED_DOCKERFILES"
           echo "dockerfiles=$MODIFIED_DOCKERFILES" >> $GITHUB_ENV
 
       - name: Trigger build-docker-manual for each modified Dockerfile
