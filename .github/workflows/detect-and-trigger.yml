@@ -48,7 +48,7 @@ jobs:
         uses: knu/changed-files@v1
         with:
           paths: |
-            '**/Dockerfile.*'
+            **/Dockerfile.*
 
       - name: Show changed files
         id: print-changed-files
