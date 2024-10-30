@@ -56,5 +56,3 @@ RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
 # Set PATH and working directory
 ENV PATH="/opt2/:$PATH"
 WORKDIR /data2
-
-
