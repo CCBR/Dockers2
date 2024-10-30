@@ -1,6 +1,7 @@
 # This GitHub Actions workflow is designed to trigger a manual Docker build for each modified Dockerfile.
 # 
-# Workflow Name: Trigger Build Docker Manual for Each modified Dockerfile
+# Workflow Name: detect-and-trigger
+# Short Description: Trigger Build Docker Manual for Each modified Dockerfile
 #
 # Triggers:
 # - On push events to any branch except 'main' and 'dev', if any Dockerfile.* is modified.
@@ -16,7 +17,7 @@
 #
 # Environment Variables:
 # - GITHUB_TOKEN: Used for authentication to trigger the 'build-docker-manual' workflow.
-name: Trigger Build Docker Manual for Each modified Dockerfile
+name: detect-and-trigger
 
 on:
   push:
@@ -48,7 +49,7 @@ jobs:
           echo "dockerfiles=$MODIFIED_DOCKERFILES" >> $GITHUB_ENV
 
       - name: Trigger build-docker-manual for each modified Dockerfile
-        if: env.dockerfiles != ""
+        if: env.dockerfiles
         run: |
           for DOCKERFILE in $MODIFIED_DOCKERFILES; do
             echo "Triggering build-docker-manual for $DOCKERFILE"
