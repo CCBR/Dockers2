@@ -1,0 +1,59 @@
+FROM ubuntu:20.04
+
+LABEL maintainer="Vishal Koparde *(kopardev on GitHub)*"
+LABEL github_handle="kopardev"
+
+# Build time variables
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG IMAGENAME="000000"
+ENV IMAGENAME=${IMAGENAME}
+ARG BASEIMAGENAME="000000"
+ENV BASEIMAGENAME=${BASEIMAGENAME}
+
+# Set environment variables to reduce interactive prompts during installation
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Etc/UTC
+
+# Update the package list, install essential packages, and clean up
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+        bash coreutils ca-certificates netbase locales \
+        build-essential cmake cpanminus bcftools bedops bedtools bowtie bowtie2 bwa \
+        bzip2 curl figlet g++ gcc gfortran git imagemagick libatlas-base-dev \
+        libblas-dev libboost-dev libbz2-dev libcurl4-openssl-dev libexpat1-dev \
+        libfreetype6-dev libgd-dev libgd-perl libgs-dev libgsl-dev \
+        libhtml-template-compiled-perl libicu-dev libjudy-dev liblapack-dev \
+        liblzma-dev libmysqlclient-dev libncurses-dev libopenmpi-dev libpng-dev \
+        librtmp-dev libssl-dev libtool libxml-libxml-debugging-perl \
+        libxml-opml-simplegen-perl libxml2-dev libxslt-dev make manpages-dev \
+        openjdk-8-jdk parallel pigz python3-pip python3-dev rsync samtools unzip \
+        vim vcftools wget zlib1g zlib1g-dev && \
+    localedef -i en_US -f UTF-8 en_US.UTF-8 && \
+    cpanm FindBin Term::ReadLine && \
+    ln -s /usr/bin/python3 /usr/bin/python && \
+    python3 -m pip install --no-cache-dir --upgrade pip && \
+    pip3 install --no-cache-dir numpy scipy argparse pandas pysam && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    apt-get autoclean && apt-get autoremove -y && \
+    rm -rf /var/lib/{apt,dpkg,cache,log}/
+
+# Timezone setup and directory creation combined with other commands
+RUN mkdir -p /opt2 /data2 && \
+    ln -snf /usr/share/zoneinfo/America/New_York /etc/localtime && echo "America/New_York" > /etc/timezone
+
+# Copy Dockerfile and other files in a single layer
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+COPY scripts/argparse.bash /opt2/argparse.bash
+RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+
+# Set PATH and working directory
+ENV PATH="/opt2/:$PATH"
+WORKDIR /data2
+
