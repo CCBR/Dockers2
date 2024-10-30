@@ -19,11 +19,6 @@ on:
         type: boolean
         description: Push to DockerHub (leave unchecked to just build the container without pushing)
         required: true
-      dev:
-        type: boolean
-        description: Is this a development build? (e.g. -dev tag)
-        required: true
-        default: true
 
 jobs:
   build-docker:
@@ -36,10 +31,22 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Get branch name
+        id: get_branch
+        run: |
+          # Determine the branch name
+          if [[ "${GITHUB_REF}" == "refs/heads/"* ]]; then
+            BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          elif [[ "${GITHUB_REF}" == "refs/pull/"* ]]; then
+            BRANCH_NAME="${GITHUB_HEAD_REF}"
+          else
+            BRANCH_NAME="${GITHUB_REF}"
+          fi
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
       - name: Prepare build-time variables and set variables
         id: vars
         run: |
-          bash scripts/prepare_for_build ${{ github.event.inputs.dockerfile }} ${{ github.event.inputs.dev }}
+          bash scripts/prepare_for_build ${{ github.event.inputs.dockerfile }} ${{ env.BRANCH_NAME }}
       - name: check variables
         id: check
         run: |

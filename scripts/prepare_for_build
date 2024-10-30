@@ -16,8 +16,11 @@
 
 # Get the Dockerfile path from the first argument
 dockerfile=$1
-# Get the dev flag from the second argument ... true or false
-dev=$2
+# Get the branch name from the second argument ... true or false
+branch=$2
+
+echo "Dockerfile: $dockerfile"
+echo "Branch: $branch"
 
 # Docker Hub account name ... this is fixed to "nciccbr" our org account!
 dockerhub_account="nciccbr"
@@ -41,10 +44,10 @@ reponame=$(basename $dn_dockerfile)
 baseimagename=$(grep ^FROM $dockerfile | sed "s/FROM //g")
 
 # Construct the full image name for Docker Hub
-if [ "$dev" == "true" ]; then
-  imagename="${dockerhub_account}/${reponame}:${tag}-dev"
-else
+if [ "$branch" == "main" ]; then
   imagename="${dockerhub_account}/${reponame}:${tag}"
+else
+  imagename="${dockerhub_account}/${reponame}:${tag}-dev"
 fi
 
 # Print the extracted and constructed variables for debugging
