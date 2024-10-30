@@ -77,12 +77,12 @@ jobs:
       - name: Check variables and create README
         id: check_and_create_readme
         run: |
-            echo $DOCKERFILE
-            echo $IMAGENAME
-            echo $BASEIMAGENAME
-            echo $BUILD_DATE
-            echo $BUILD_TAG
-            echo $REPONAME
+            echo "DOCKERFILE: $DOCKERFILE"
+            echo "IMAGENAME: $IMAGENAME"
+            echo "BASEIMAGENAME: $BASEIMAGENAME"
+            echo "BUILD_DATE: $BUILD_DATE"
+            echo "BUILD_TAG: $BUILD_TAG"
+            echo "REPONAME: $REPONAME"
             echo -ne "## ${{ github.repository }} $IMAGENAME\n\n" > tmp_README.md
             echo "Dockerfile source: https://github.com/${{ github.repository }}/blob/${{ github.sha }}/${{ github.event.inputs.dockerfile }}" >> tmp_README.md
             echo -ne "\n\n" >> tmp_README.md
