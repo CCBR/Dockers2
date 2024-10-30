@@ -19,6 +19,7 @@ on:
         type: boolean
         description: Push to DockerHub (leave unchecked to just build the container without pushing)
         required: true
+        default: false
 
 jobs:
   build-docker:
@@ -60,7 +61,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           file: ${{ env.DOCKERFILE }}
-          push: false
+          push: ${{ github.event.inputs.push }}
           tags: ${{ env.IMAGENAME }}
           build-args: |
             DOCKERFILE=${{ env.DOCKERFILE }}
