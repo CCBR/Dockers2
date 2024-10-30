@@ -45,7 +45,7 @@ jobs:
         id: find_dockerfiles
         run: |
           # Find modified Dockerfiles
-          MODIFIED_DOCKERFILES=$(git diff --name-only HEAD^ HEAD | grep -E 'Dockerfile\..*')
+          MODIFIED_DOCKERFILES=$(git diff --name-only HEAD@{1} HEAD | grep -E 'Dockerfile\..*')
           echo "dockerfiles=$MODIFIED_DOCKERFILES" >> $GITHUB_ENV
 
       - name: Trigger build-docker-manual for each modified Dockerfile
