@@ -61,7 +61,8 @@ jobs:
       - name: Trigger build-docker-manual for each modified Dockerfile
         if: steps.changed-files.outputs.matched_files
         run: |
-          for DOCKERFILE in ${{ steps.changed-files.outputs.matched_files }}; do
+          MODIFIED_DOCKERFILES=$(echo "${{ steps.changed-files.outputs.matched_files }}" | tr '\n' ' ')
+          for DOCKERFILE in $MODIFIED_DOCKERFILES; do
             echo "Triggering build-docker-manual for $DOCKERFILE"
 
             # Trigger the build-docker-manual workflow with the Dockerfile as an input
