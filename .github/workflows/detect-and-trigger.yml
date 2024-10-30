@@ -43,29 +43,25 @@ jobs:
         id: checkout
         uses: actions/checkout@v4
 
-      - name: Get all files that changed in the push event
-        id: get-changed-files
-        uses: jitterbit/get-changed-files@v1
+      - id: changed-files
+        name: Check changed files
+        uses: knu/changed-files@v1
+        with:
+          paths: |
+            '**/Dockerfile.*'
 
-      - name: Get modified Dockerfiles in the push event
-        id: get-modified-dockerfiles
+      - name: Show changed files
+        id: print-changed-files
         run: |
-          for changed_file in ${{ steps.get-changed-files.outputs.All }}; do
-            if [[ $changed_file =~ Dockerfile\..* ]]; then
-              if [[ -z $MODIFIED_DOCKERFILES ]]; then
-                MODIFIED_DOCKERFILES="$changed_file"
-              else
-                MODIFIED_DOCKERFILES="$MODIFIED_DOCKERFILES $changed_file"
-              fi
-            fi
-          done
-          echo "Modified Dockerfiles: $MODIFIED_DOCKERFILES"
-          echo "dockerfiles=$MODIFIED_DOCKERFILES" >> $GITHUB_ENV
+          echo "Changed files:"
+          echo "${{ steps.changed-files.outputs.changed_files }}" | sed 's/^/  /'
+          echo "Matched files:"
+          echo "${{ steps.changed-files.outputs.matched_files }}" | sed 's/^/  /'
 
       - name: Trigger build-docker-manual for each modified Dockerfile
-        if: env.dockerfiles
+        if: steps.changed-files.outputs.matched_files
         run: |
-          for DOCKERFILE in ${{ env.dockerfiles }}; do
+          for DOCKERFILE in ${{ steps.changed-files.outputs.matched_files }}; do
             echo "Triggering build-docker-manual for $DOCKERFILE"
 
             # Trigger the build-docker-manual workflow with the Dockerfile as an input
