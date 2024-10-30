@@ -15,6 +15,11 @@ on:
         type: string
         description: path to the Dockerfile in the repo (e.g. common/ccbr_bwa/Dockerfile)
         required: true
+      dockerhub_namespace:
+        type: string
+        description: dockerhub namespace or org name (e.g. nciccbr)
+        required: true
+        default: nciccbr
       push:
         type: boolean
         description: Push to DockerHub (leave unchecked to just build the container without pushing)
@@ -81,5 +86,5 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
           password: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
-          repository: nciccbr/${{ env.IMAGENAME }}
+          repository: ${{ github.event.inputs.dockerhub_namespace }}/${{ env.REPONAME }}
           readme-filepath: tmp_README.md
