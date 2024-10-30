@@ -64,6 +64,10 @@ jobs:
             echo $REPONAME
             echo " # ${{ github.repository }} $IMAGENAME" > tmp_README.md
             echo "Dockerfile source: https://github.com/${{ github.repository }}/blob/${{ github.sha }}/${{ github.event.inputs.dockerfile }}" >> tmp_README.md
+            echo "Built on: $BUILD_DATE" >> tmp_README.md
+            echo "Build tag: $BUILD_TAG" >> tmp_README.md 
+            echo "Base image: $BASEIMAGENAME" >> tmp_README.md
+            echo "Dockerfile path: $DOCKERFILE" >> tmp_README.md
       - name: Build and push
         id: build-and-push
         uses: docker/build-push-action@v4
