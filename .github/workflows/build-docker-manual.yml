@@ -1,14 +1,28 @@
+# This GitHub Actions workflow is designed to manually build and optionally push a Docker image to DockerHub.
+# 
+# Workflow Name: build-docker-manual
+# 
+# Inputs:
+# - dockerfile: Path to the Dockerfile in the repository (e.g., common/ccbr_bwa/Dockerfile). This input is required.
+# - dockerhub_namespace: DockerHub namespace or organization name (e.g., nciccbr). This input is required and defaults to 'nciccbr'.
+# - push: Boolean flag to determine whether to push the built image to DockerHub. This input is required and defaults to 'false'.
+# 
+# Jobs:
+# - build-docker: This job runs on an Ubuntu latest runner and performs the following steps:
+#   - Checks out the repository.
+#   - Logs in to DockerHub if the 'push' input is set to 'true'.
+#   - Determines the branch name from the GitHub reference.
+#   - Prepares build-time variables by running a custom script.
+#   - Checks variables and creates a temporary README file with build details.
+#   - Builds and optionally pushes the Docker image using the docker/build-push-action.
+#   - Lists Docker images on the runner.
+#   - Updates the DockerHub description with the contents of the temporary README file if the image was successfully pushed.
+
 name: build-docker-manual
 
 run-name: ${{ inputs.dockerfile }}
 
 on:
-  # push:
-  #   branches:
-  #     - smaller_base_image
-  # pull_request:
-  #   branches:
-  #     - main
   workflow_dispatch:
     inputs:
       dockerfile:
@@ -30,13 +44,18 @@ jobs:
   build-docker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        id: checkout
+        uses: actions/checkout@v4
+
       - name: Login to DockerHub
+        id: login_dockerhub
         if: ${{ github.event.inputs.push == 'true' }}
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
           password: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
+
       - name: Get branch name
         id: get_branch
         run: |
@@ -49,11 +68,13 @@ jobs:
             BRANCH_NAME="${GITHUB_REF}"
           fi
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+
       - name: Prepare build-time variables and set variables
-        id: vars
+        id: prepare_vars
         run: |
           bash scripts/prepare_for_build ${{ github.event.inputs.dockerfile }} ${{ env.BRANCH_NAME }}
-      - name: check variables and create readme
+
+      - name: Check variables and create README
         id: check_and_create_readme
         run: |
             echo $DOCKERFILE
@@ -69,8 +90,9 @@ jobs:
             echo -ne "Build tag: $BUILD_TAG \n\n" >> tmp_README.md 
             echo -ne "Base image: $BASEIMAGENAME \n\n" >> tmp_README.md
             echo -ne "Dockerfile path in repo: $DOCKERFILE \n\n" >> tmp_README.md
-      - name: Build and push
-        id: build-and-push
+
+      - name: Build and push Docker image
+        id: build_and_push
         uses: docker/build-push-action@v4
         with:
           file: ${{ env.DOCKERFILE }}
@@ -83,10 +105,14 @@ jobs:
             REPONAME=${{ env.REPONAME }}
             IMAGENAME=${{ env.IMAGENAME }}
             BASEIMAGENAME=${{ env.BASEIMAGENAME }}
+
       - name: List Docker images
+        id: list_docker_images
         run: docker images
+
       - name: Update Docker Hub Description
-        if: ${{ (github.event.inputs.push == 'true') && (steps.build-and-push.outcome == 'success') }}
+        id: update_dockerhub_description
+        if: ${{ (github.event.inputs.push == 'true') && (steps.build_and_push.outcome == 'success') }}
         uses: peter-evans/dockerhub-description@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
