@@ -4,6 +4,8 @@ LABEL maintainer="Vishal Koparde *(kopardev on GitHub)*"
 LABEL github_handle="kopardev"
 
 # Build time variables
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
 ARG BUILD_DATE="000000"
 ENV BUILD_DATE=${BUILD_DATE}
 ARG BUILD_TAG="000000"
@@ -47,8 +49,8 @@ RUN mkdir -p /opt2 /data2 && \
     ln -snf /usr/share/zoneinfo/America/New_York /etc/localtime && echo "America/New_York" > /etc/timezone
 
 # Copy Dockerfile and other files in a single layer
-COPY Dockerfile /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
-ADD https://raw.githubusercontent.com/CCBR/Dockers/refs/heads/master/common/ccbr_ubuntu_base_20.04/argparse.bash /opt2/argparse.bash
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+COPY scripts/argparse.bash /opt2/argparse.bash
 RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
 
 # Set PATH and working directory

@@ -1,6 +1,6 @@
 name: build-docker-manual
 
-run-name: ${{ inputs.dockerfile }}:${{ inputs.version }}
+run-name: ${{ inputs.dockerfile }}
 
 on:
   # push:
@@ -15,10 +15,16 @@ on:
         type: string
         description: path to the Dockerfile in the repo (e.g. common/ccbr_bwa/Dockerfile)
         required: true
+      dockerhub_namespace:
+        type: string
+        description: dockerhub namespace or org name (e.g. nciccbr)
+        required: true
+        default: nciccbr
       push:
         type: boolean
         description: Push to DockerHub (leave unchecked to just build the container without pushing)
         required: true
+        default: false
 
 jobs:
   build-docker:
@@ -29,38 +35,56 @@ jobs:
         if: ${{ github.event.inputs.push == 'true' }}
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Prepare build-time variables
+          username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
+          password: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
+      - name: Get branch name
+        id: get_branch
+        run: |
+          # Determine the branch name
+          if [[ "${GITHUB_REF}" == "refs/heads/"* ]]; then
+            BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          elif [[ "${GITHUB_REF}" == "refs/pull/"* ]]; then
+            BRANCH_NAME="${GITHUB_HEAD_REF}"
+          else
+            BRANCH_NAME="${GITHUB_REF}"
+          fi
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
+      - name: Prepare build-time variables and set variables
         id: vars
         run: |
-          bash scripts/prepare_for_build
-      # echo "CONTEXT=$(dirname ${{ github.event.inputs.dockerfile }})" >> "$GITHUB_OUTPUT"
-      # echo "DATE=$(date +"%Y-%m-%d")" >> "$GITHUB_OUTPUT"
-
-      # if [ ! -f ${{ github.event.inputs.dockerfile }} ] ; then
-      #   echo "ERROR: Dockerfile not found: ${{ github.event.inputs.dockerfile }}"
-      #   exit 1
-      # fi
-      # # for Docker Hub Description
-      # echo " # ${{ github.repository }} ${{ github.event.inputs.image_name }}\n" > tmp_README.md
-      # echo "Dockerfile source: https://github.com/${{ github.repository }}/blob/${{ github.sha }}/${{ github.event.inputs.dockerfile }}\n" >> tmp_README.md
-      # - name: Build and push
-      #   uses: docker/build-push-action@v4
-      #   with:
-      #     context: ${{ steps.vars.outputs.CONTEXT }}
-      #     file: ${{ github.event.inputs.dockerfile }}
-      #     push: ${{ github.event.inputs.push }}
-      #     tags: ${{ github.event.inputs.namespace }}/${{ github.event.inputs.image_name }}:${{ github.event.inputs.version }}
-      #     build-args: |
-      #       BUILD_DATE=${{ steps.vars.outputs.DATE }}
-      #       BUILD_TAG=${{ github.event.inputs.version }}
-      #       REPONAME=${{ github.event.inputs.image_name }}
-      # - name: Update Docker Hub Description
-      #   if: ${{ github.event.inputs.push == 'true' }}
-      #   uses: peter-evans/dockerhub-description@v4
-      #   with:
-      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
-      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
-      #     repository: ${{ steps.metadata.outputs['dockerhub_namespace'] }}/${{ steps.metadata.outputs['image_name'] }}
-      #     readme-filepath: tmp_README.md
+          bash scripts/prepare_for_build ${{ github.event.inputs.dockerfile }} ${{ env.BRANCH_NAME }}
+      - name: check variables and create readme
+        id: check_and_create_readme
+        run: |
+            echo $DOCKERFILE
+            echo $IMAGENAME
+            echo $BASEIMAGENAME
+            echo $BUILD_DATE
+            echo $BUILD_TAG
+            echo $REPONAME
+            echo " # ${{ github.repository }} $IMAGENAME" > tmp_README.md
+            echo "Dockerfile source: https://github.com/${{ github.repository }}/blob/${{ github.sha }}/${{ github.event.inputs.dockerfile }}" >> tmp_README.md
+      - name: Build and push
+        id: build-and-push
+        uses: docker/build-push-action@v4
+        with:
+          file: ${{ env.DOCKERFILE }}
+          push: ${{ github.event.inputs.push }}
+          tags: ${{ env.IMAGENAME }}
+          build-args: |
+            DOCKERFILE=${{ env.DOCKERFILE }}
+            BUILD_DATE=${{ env.BUILD_DATE }}
+            BUILD_TAG=${{ env.BUILD_TAG }}
+            REPONAME=${{ env.REPONAME }}
+            IMAGENAME=${{ env.IMAGENAME }}
+            BASEIMAGENAME=${{ env.BASEIMAGENAME }}
+      - name: List Docker images
+        run: docker images
+      - name: Update Docker Hub Description
+        if: ${{ (github.event.inputs.push == 'true') && (steps.build-and-push.outcome == 'success') }}
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
+          password: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
+          repository: ${{ github.event.inputs.dockerhub_namespace }}/${{ env.REPONAME }}
+          readme-filepath: tmp_README.md

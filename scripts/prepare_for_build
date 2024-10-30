@@ -16,6 +16,11 @@
 
 # Get the Dockerfile path from the first argument
 dockerfile=$1
+# Get the branch name from the second argument ... true or false
+branch=$2
+
+echo "Dockerfile: $dockerfile"
+echo "Branch: $branch"
 
 # Docker Hub account name ... this is fixed to "nciccbr" our org account!
 dockerhub_account="nciccbr"
@@ -39,18 +44,30 @@ reponame=$(basename $dn_dockerfile)
 baseimagename=$(grep ^FROM $dockerfile | sed "s/FROM //g")
 
 # Construct the full image name for Docker Hub
-imagename="${dockerhub_account}/${reponame}:${tag}"
+if [ "$branch" == "main" ]; then
+  imagename="${dockerhub_account}/${reponame}:${tag}"
+else
+  imagename="${dockerhub_account}/${reponame}:${tag}-dev"
+fi
 
 # Print the extracted and constructed variables for debugging
-# Output as JSON
-echo '{
-  "DOCKERFILE": "'"$dockerfile"'",
-  "IMAGENAME": "'"$imagename"'",
-  "BASEIMAGENAME": "'"$baseimagename"'",
-  "BUILD_DATE": "'"$dt"'",
-  "BUILD_TAG": "'"$tag"'",
-  "REPONAME": "'"$reponame"'"
-}'
+# # Output as JSON
+# echo '{
+#   "DOCKERFILE": "'"$dockerfile"'",
+#   "IMAGENAME": "'"$imagename"'",
+#   "BASEIMAGENAME": "'"$baseimagename"'",
+#   "BUILD_DATE": "'"$dt"'",
+#   "BUILD_TAG": "'"$tag"'",
+#   "REPONAME": "'"$reponame"'"
+# }'
+
+# Output each variable to $GITHUB_ENV to pass it to the next steps
+echo "DOCKERFILE=$dockerfile" >> $GITHUB_ENV
+echo "IMAGENAME=$imagename" >> $GITHUB_ENV
+echo "BASEIMAGENAME=$baseimagename" >> $GITHUB_ENV
+echo "BUILD_DATE=$dt" >> $GITHUB_ENV
+echo "BUILD_TAG=$tag" >> $GITHUB_ENV
+echo "REPONAME=$reponame" >> $GITHUB_ENV
 
 # docker buildx build \
 #     --progress=plain \
