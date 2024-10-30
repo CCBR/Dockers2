@@ -51,11 +51,11 @@ jobs:
         id: get-modified-dockerfiles
         run: |
           for changed_file in ${{ steps.get-changed-files.outputs.All }}; do
-            if [[ $file_name =~ Dockerfile\..* ]]; then
+            if [[ $changed_file =~ Dockerfile\..* ]]; then
               if [[ -z $MODIFIED_DOCKERFILES ]]; then
-                MODIFIED_DOCKERFILES="$file_name"
+                MODIFIED_DOCKERFILES="$changed_file"
               else
-                MODIFIED_DOCKERFILES="$MODIFIED_DOCKERFILES $file_name"
+                MODIFIED_DOCKERFILES="$MODIFIED_DOCKERFILES $changed_file"
               fi
             fi
           done
