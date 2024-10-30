@@ -65,7 +65,7 @@ jobs:
       - name: Trigger build-docker-manual for each modified Dockerfile
         if: env.dockerfiles
         run: |
-          for DOCKERFILE in $MODIFIED_DOCKERFILES; do
+          for DOCKERFILE in ${{ env.dockerfiles }}; do
             echo "Triggering build-docker-manual for $DOCKERFILE"
 
             # Trigger the build-docker-manual workflow with the Dockerfile as an input
