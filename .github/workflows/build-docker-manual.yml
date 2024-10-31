@@ -11,7 +11,6 @@
 # - build-docker: This job runs on an Ubuntu latest runner and performs the following steps:
 #   - Checks out the repository.
 #   - Logs in to DockerHub if the 'push' input is set to 'true'.
-#   - Determines the branch name from the GitHub reference.
 #   - Prepares build-time variables by running a custom script.
 #   - Checks variables and creates a temporary README file with build details.
 #   - Builds and optionally pushes the Docker image using the docker/build-push-action.
@@ -34,12 +33,16 @@ on:
         description: dockerhub namespace or org name (e.g. nciccbr)
         required: true
         default: nciccbr
+      suffix:
+        type: string
+        description: Suffix to add to image tag eg. "dev" to add "-dev"
+        required: true
+        default: feat
       push:
         type: boolean
         description: Push to DockerHub (leave unchecked to just build the container without pushing)
         required: true
         default: false
-
 jobs:
   build-docker:
     runs-on: ubuntu-latest
@@ -56,33 +59,20 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
           password: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
 
-      - name: Get branch name
-        id: get_branch
-        run: |
-          # Determine the branch name
-          if [[ "${GITHUB_REF}" == "refs/heads/"* ]]; then
-            BRANCH_NAME="${GITHUB_REF#refs/heads/}"
-          elif [[ "${GITHUB_REF}" == "refs/pull/"* ]]; then
-            BRANCH_NAME="${GITHUB_HEAD_REF}"
-          else
-            BRANCH_NAME="${GITHUB_REF}"
-          fi
-          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
-
       - name: Prepare build-time variables and set variables
         id: prepare_vars
         run: |
-          bash scripts/prepare_for_build ${{ github.event.inputs.dockerfile }} ${{ env.BRANCH_NAME }}
+          bash scripts/prepare_for_build ${{ github.event.inputs.dockerfile }} ${{ github.event.inputs.suffix }}
 
       - name: Check variables and create README
         id: check_and_create_readme
         run: |
-            echo $DOCKERFILE
-            echo $IMAGENAME
-            echo $BASEIMAGENAME
-            echo $BUILD_DATE
-            echo $BUILD_TAG
-            echo $REPONAME
+            echo "DOCKERFILE: $DOCKERFILE"
+            echo "IMAGENAME: $IMAGENAME"
+            echo "BASEIMAGENAME: $BASEIMAGENAME"
+            echo "BUILD_DATE: $BUILD_DATE"
+            echo "BUILD_TAG: $BUILD_TAG"
+            echo "REPONAME: $REPONAME"
             echo -ne "## ${{ github.repository }} $IMAGENAME\n\n" > tmp_README.md
             echo "Dockerfile source: https://github.com/${{ github.repository }}/blob/${{ github.sha }}/${{ github.event.inputs.dockerfile }}" >> tmp_README.md
             echo -ne "\n\n" >> tmp_README.md
