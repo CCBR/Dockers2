@@ -59,19 +59,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
           password: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
 
-      # - name: Get branch name
-      #   id: get_branch
-      #   run: |
-      #     # Determine the branch name
-      #     if [[ "${GITHUB_REF}" == "refs/heads/"* ]]; then
-      #       BRANCH_NAME="${GITHUB_REF#refs/heads/}"
-      #     elif [[ "${GITHUB_REF}" == "refs/pull/"* ]]; then
-      #       BRANCH_NAME="${GITHUB_HEAD_REF}"
-      #     else
-      #       BRANCH_NAME="${GITHUB_REF}"
-      #     fi
-      #     echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
-
       - name: Prepare build-time variables and set variables
         id: prepare_vars
         run: |
