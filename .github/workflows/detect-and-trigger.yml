@@ -38,6 +38,11 @@ jobs:
   detect-and-trigger:
     runs-on: ubuntu-latest
 
+    # Define environment variables
+    env:
+      SUFFIX: ${{ github.base_ref == 'main' && github.event_name == 'pull_request' && 'main' || github.base_ref == 'dev' && github.event_name == 'pull_request' && 'dev' || 'feat' }}
+
+
     steps:
       - name: Checkout repository
         id: checkout
@@ -62,14 +67,17 @@ jobs:
         if: steps.changed-files.outputs.matched_files
         run: |
           MODIFIED_DOCKERFILES=$(echo "${{ steps.changed-files.outputs.matched_files }}" | tr '\n' ' ')
+          # Use GITHUB_HEAD_REF if running on a pull request, otherwise use the current branch
+          REF=${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}
           for DOCKERFILE in $MODIFIED_DOCKERFILES; do
             echo "Triggering build-docker-manual for $DOCKERFILE"
 
             # Trigger the build-docker-manual workflow with the Dockerfile as an input
             gh workflow run build-docker-manual.yml \
-              --ref $GITHUB_REF \
+              --ref $REF \
               --field dockerfile=$DOCKERFILE \
               --field dockerhub_namespace=nciccbr \
+              --field suffix=${{ env.SUFFIX }} \
               --field push=true
           done
         env:
