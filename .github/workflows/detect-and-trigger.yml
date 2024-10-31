@@ -38,34 +38,46 @@ jobs:
   detect-and-trigger:
     runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
+    # Define environment variables
+    env:
+      SUFFIX: ${{ github.base_ref == 'main' && github.event_name == 'pull_request' && 'main' || github.base_ref == 'dev' && github.event_name == 'pull_request' && 'dev' || 'feat' }}
 
-      - name: Get modified Dockerfiles
-        id: find_dockerfiles
+
+    steps:
+      - name: Checkout repository
+        id: checkout
+        uses: actions/checkout@v4
+
+      - id: changed-files
+        name: Check changed files
+        uses: knu/changed-files@v1
+        with:
+          paths: |
+            **/Dockerfile.*
+
+      - name: Show changed files
+        id: print-changed-files
         run: |
-          # Check if HEAD@{1} exists for comparing the last push
-          if git rev-parse --verify HEAD@{1} >/dev/null 2>&1; then
-            MODIFIED_DOCKERFILES=$(git diff --name-only HEAD@{1} HEAD | grep -E 'Dockerfile\..*' || true)
-          else
-            # If no previous push exists, get files in the latest commit
-            MODIFIED_DOCKERFILES=$(git diff-tree --no-commit-id --name-only -r HEAD | grep -E 'Dockerfile\..*' || true)
-          fi
-          
-          echo "Modified Dockerfiles: $MODIFIED_DOCKERFILES"
-          echo "dockerfiles=$MODIFIED_DOCKERFILES" >> $GITHUB_ENV
+          echo "Changed files:"
+          echo "${{ steps.changed-files.outputs.changed_files }}" | sed 's/^/  /'
+          echo "Matched files:"
+          echo "${{ steps.changed-files.outputs.matched_files }}" | sed 's/^/  /'
 
       - name: Trigger build-docker-manual for each modified Dockerfile
-        if: env.dockerfiles
+        if: steps.changed-files.outputs.matched_files
         run: |
+          MODIFIED_DOCKERFILES=$(echo "${{ steps.changed-files.outputs.matched_files }}" | tr '\n' ' ')
+          # Use GITHUB_HEAD_REF if running on a pull request, otherwise use the current branch
+          REF=${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}
           for DOCKERFILE in $MODIFIED_DOCKERFILES; do
             echo "Triggering build-docker-manual for $DOCKERFILE"
 
             # Trigger the build-docker-manual workflow with the Dockerfile as an input
             gh workflow run build-docker-manual.yml \
-              --ref $GITHUB_REF \
+              --ref $REF \
               --field dockerfile=$DOCKERFILE \
               --field dockerhub_namespace=nciccbr \
+              --field suffix=${{ env.SUFFIX }} \
               --field push=true
           done
         env:
