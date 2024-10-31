@@ -2,7 +2,7 @@
 #
 # This script has 2 arguments:
 # 1. Dockerfile path
-# 2. Branch name
+# 2. Suffix to add to image tag eg. "dev" to add "-dev"
 #
 # This script performs the following tasks:
 # - Retrieves the Dockerfile path from the first argument.
@@ -19,11 +19,11 @@
 
 # Get the Dockerfile path from the first argument
 dockerfile=$1
-# Get the branch name from the second argument ... true or false
-branch=$2
+# Get the suffix name from the second argument 
+suffix=$2
 
 echo "Dockerfile: $dockerfile"
-echo "Branch: $branch"
+echo "suffix: $suffix" # remember .. no suffix is added if suffix is "main"
 
 # Docker Hub account name ... this is fixed to "nciccbr" our org account!
 dockerhub_account="nciccbr"
@@ -47,9 +47,9 @@ reponame=$(basename $dn_dockerfile)
 baseimagename=$(grep ^FROM $dockerfile | sed "s/FROM //g")
 
 # Construct the full image name for Docker Hub
-if [ "$branch" == "main" ]; then
+if [[ "$suffix" == "main" || "$suffix" == "" ]]; then
   imagename="${dockerhub_account}/${reponame}:${tag}"
-elif [ "$branch" == "dev" ]; then
+elif [[ "$suffix" == "dev" ]]; then
   imagename="${dockerhub_account}/${reponame}:${tag}-dev"
 else
   imagename="${dockerhub_account}/${reponame}:${tag}-feat"
