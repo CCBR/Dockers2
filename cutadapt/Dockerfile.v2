@@ -1,4 +1,4 @@
-FROM nciccbr/ccbr_ubuntu_22.04:latest
+FROM nciccbr/ccbr_ubuntu_22.04:v2
 
 LABEL maintainer="Vishal Koparde *(kopardev on GitHub)*"
 LABEL github_handle="kopardev"
