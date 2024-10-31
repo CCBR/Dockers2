@@ -47,13 +47,14 @@ reponame=$(basename $dn_dockerfile)
 baseimagename=$(grep ^FROM $dockerfile | sed "s/FROM //g")
 
 # Construct the full image name for Docker Hub
-if [[ "$suffix" == "main" || "$suffix" == "" ]]; then
-  imagename="${dockerhub_account}/${reponame}:${tag}"
-elif [[ "$suffix" == "dev" ]]; then
-  imagename="${dockerhub_account}/${reponame}:${tag}-dev"
+if [[ "$suffix" == "dev" ]]; then
+  tag="${tag}-dev"
+elif  [[ "$suffix" == "main" || "suffix" == "" ]]; then
+  tag="${tag}"
 else
-  imagename="${dockerhub_account}/${reponame}:${tag}-feat"
+  tag="${tag}-feat"
 fi
+imagename="${dockerhub_account}/${reponame}:${tag}"
 
 # Output each variable to $GITHUB_ENV to pass it to the next steps
 echo "DOCKERFILE=$dockerfile" >> $GITHUB_ENV
