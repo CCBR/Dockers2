@@ -41,6 +41,7 @@ RUN apt-get update && apt-get upgrade -y && \
     ln -s /usr/bin/python3 /usr/bin/python && \
     python3 -m pip install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir numpy scipy argparse pandas pysam multiqc && \
+    rm -rf ~/.cache/pip* && \
     curl https://bootstrap.pypa.io/pip/2.7/get-pip.py --output get-pip.py && \
     python2 get-pip.py && \
     rm get-pip.py && \
