@@ -28,8 +28,8 @@ echo "suffix: $suffix" # remember .. no suffix is added if suffix is "main"
 # Docker Hub account name ... this is fixed to "nciccbr" our org account!
 dockerhub_account="nciccbr"
 
-# Get the current date and time in the format ddmmyyHHMMSS
-dt=$(date +"%d%m%y%H%M%S")
+# Get the current date and time in the format yymmdd_HHMMSS
+dt=$(date +"%y%m%d_%H%M%S")
 
 # Extract the basename of the Dockerfile (e.g., Dockerfile)
 bn_dockerfile=$(basename $dockerfile)
