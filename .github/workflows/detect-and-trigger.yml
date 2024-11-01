@@ -21,6 +21,8 @@ name: detect-and-trigger
 
 on:
   push:
+    branches:
+      - '*autobuild*'  # Only trigger if the branch name contains "autobuild"
     branches-ignore:
       - main
       - dev
