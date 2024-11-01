@@ -23,9 +23,6 @@ on:
   push:
     branches:
       - '*autobuild*'  # Only trigger if the branch name contains "autobuild"
-    branches-ignore:
-      - main
-      - dev
     paths:
       - '**/Dockerfile.*'  # Only trigger if a Dockerfile.* is modified in any directory
 
