@@ -23,8 +23,8 @@ ENV TZ=Etc/UTC
 
 # Update the package list, install essential packages, and clean up
 RUN \
-    python3 -m pip install --no-cache-dir --upgrade pip && \
-    pip3 install --no-cache-dir cutadapt==4.9 && \
+    python2 -m pip install --no-cache-dir --upgrade pip && \
+    pip2 install --no-cache-dir cutadapt==1.18 && \
     rm -rf ~/.cache/pip* && \
     rm -rf /var/lib/{apt,dpkg,cache,log}/
 
