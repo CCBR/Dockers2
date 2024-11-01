@@ -22,7 +22,7 @@ name: detect-and-trigger
 on:
   push:
     branches:
-      - '*autobuild*'  # Only trigger if the branch name contains "autobuild"
+      - '**autobuild**'  # Only trigger if the branch name contains "autobuild"
     paths:
       - '**/Dockerfile.*'  # Only trigger if a Dockerfile.* is modified in any directory
 
