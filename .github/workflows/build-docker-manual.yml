@@ -19,7 +19,7 @@
 
 name: build-docker-manual
 
-run-name: ${{ inputs.dockerfile }}
+run-name: ${{ inputs.dockerfile }}-${{ inputs.suffix }}
 
 on:
   workflow_dispatch:
