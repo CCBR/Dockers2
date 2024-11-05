@@ -118,6 +118,8 @@ jobs:
           readme-filepath: ${{ env.MDFILE }}
 
       - name: Commit and Push Markdown File
+        id: commit_and_push_md
+        if: ${{ steps.update_dockerhub_description.outcome == 'success' }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
