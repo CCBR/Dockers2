@@ -114,4 +114,4 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
           password: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
           repository: ${{ github.event.inputs.dockerhub_namespace }}/${{ env.REPONAME }}
-          readme-filepath: tmp_README.md
+          readme-filepath: ${{ github.workspace }}/tmp_README.md
