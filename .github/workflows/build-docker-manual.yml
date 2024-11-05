@@ -73,13 +73,13 @@ jobs:
             echo "BUILD_DATE: $BUILD_DATE"
             echo "BUILD_TAG: $BUILD_TAG"
             echo "REPONAME: $REPONAME"
-            echo -ne "## ${{ github.repository }} $IMAGENAME\n\n" > tmp_README.md
-            echo "Dockerfile source: https://github.com/${{ github.repository }}/blob/${{ github.sha }}/${{ github.event.inputs.dockerfile }}" >> tmp_README.md
-            echo -ne "\n\n" >> tmp_README.md
-            echo -ne "Built on: $BUILD_DATE \n\n" >> tmp_README.md
-            echo -ne "Build tag: $BUILD_TAG \n\n" >> tmp_README.md 
-            echo -ne "Base image: $BASEIMAGENAME \n\n" >> tmp_README.md
-            echo -ne "Dockerfile path in repo: $DOCKERFILE \n\n" >> tmp_README.md
+            echo -ne "## ${{ github.repository }} $IMAGENAME\n\n" > ${{ github.workspace }}/tmp_README.md
+            echo "Dockerfile source: https://github.com/${{ github.repository }}/blob/${{ github.sha }}/${{ github.event.inputs.dockerfile }}" >> ${{ github.workspace }}/tmp_README.md
+            echo -ne "\n\n" >> ${{ github.workspace }}/tmp_README.md
+            echo -ne "Built on: $BUILD_DATE \n\n" >> ${{ github.workspace }}/tmp_README.md
+            echo -ne "Build tag: $BUILD_TAG \n\n" >> ${{ github.workspace }}/tmp_README.md 
+            echo -ne "Base image: $BASEIMAGENAME \n\n" >> ${{ github.workspace }}/tmp_README.md
+            echo -ne "Dockerfile path in repo: $DOCKERFILE \n\n" >> ${{ github.workspace }}/tmp_README.md
 
       - name: Build and push Docker image
         id: build_and_push
@@ -103,7 +103,7 @@ jobs:
       - name: Run print_versions.py inside Docker container
         id: run_script_in_container
         run: |
-          docker run --rm -v "${{ github.workspace }}:/ws" ${{ env.IMAGENAME }} python3 /ws/scripts/print_versions.py --json /ws/scripts/tool_vrsion_commands.json >> /ws/tmp_README.md
+          docker run --rm -v "${{ github.workspace }}:/ws" ${{ env.IMAGENAME }} bash -c "python3 /ws/scripts/print_versions.py --json /ws/scripts/tool_version_commands.json >> /ws/tmp_README.md"
         shell: bash
 
       - name: Update Docker Hub Description
@@ -114,4 +114,4 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
           password: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
           repository: ${{ github.event.inputs.dockerhub_namespace }}/${{ env.REPONAME }}
-          readme-filepath: tmp_README.md
+          readme-filepath: ${{ github.workspace }}/tmp_README.md
