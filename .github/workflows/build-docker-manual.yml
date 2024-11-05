@@ -73,13 +73,13 @@ jobs:
             echo "BUILD_DATE: $BUILD_DATE"
             echo "BUILD_TAG: $BUILD_TAG"
             echo "REPONAME: $REPONAME"
-            echo -ne "## ${{ github.repository }} $IMAGENAME\n\n" > tmp_README.md
-            echo "Dockerfile source: https://github.com/${{ github.repository }}/blob/${{ github.sha }}/${{ github.event.inputs.dockerfile }}" >> tmp_README.md
-            echo -ne "\n\n" >> tmp_README.md
-            echo -ne "Built on: $BUILD_DATE \n\n" >> tmp_README.md
-            echo -ne "Build tag: $BUILD_TAG \n\n" >> tmp_README.md 
-            echo -ne "Base image: $BASEIMAGENAME \n\n" >> tmp_README.md
-            echo -ne "Dockerfile path in repo: $DOCKERFILE \n\n" >> tmp_README.md
+            echo -ne "## ${{ github.repository }} $IMAGENAME\n\n" > ${{ github.workspace }}/tmp_README.md
+            echo "Dockerfile source: https://github.com/${{ github.repository }}/blob/${{ github.sha }}/${{ github.event.inputs.dockerfile }}" >> ${{ github.workspace }}/tmp_README.md
+            echo -ne "\n\n" >> ${{ github.workspace }}/tmp_README.md
+            echo -ne "Built on: $BUILD_DATE \n\n" >> ${{ github.workspace }}/tmp_README.md
+            echo -ne "Build tag: $BUILD_TAG \n\n" >> ${{ github.workspace }}/tmp_README.md 
+            echo -ne "Base image: $BASEIMAGENAME \n\n" >> ${{ github.workspace }}/tmp_README.md
+            echo -ne "Dockerfile path in repo: $DOCKERFILE \n\n" >> ${{ github.workspace }}/tmp_README.md
 
       - name: Build and push Docker image
         id: build_and_push
