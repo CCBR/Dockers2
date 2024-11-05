@@ -104,7 +104,7 @@ jobs:
       - name: Run print_versions.py inside Docker container
         id: run_script_in_container
         run: |
-          docker run --rm -v "${{ github.workspace }}:/ws" ${{ env.IMAGENAME }} bash -c "python3 /ws/scripts/print_versions.py --json /ws/scripts/tool_version_commands.json" >> $MDFILE
+          docker run --rm -v "${{ github.workspace }}:/ws" ${{ env.IMAGENAME }} bash -c "python3 /ws/scripts/print_versions.py --json /ws/scripts/tool_version_commands.json" >> ${{ env.MDFILE }}
         shell: bash
 
       - name: Update Docker Hub Description
@@ -115,14 +115,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
           password: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
           repository: ${{ github.event.inputs.dockerhub_namespace }}/${{ env.REPONAME }}
-          readme-filepath: $MDFILE
+          readme-filepath: ${{ env.MDFILE }}
 
       - name: Commit and Push Markdown File
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add $MDFILE
-          git commit -m "New readme for $DOCKERFILE"
+          git add ${{ env.MDFILE }}
+          git commit -m "New readme for ${{ env.DOCKERFILE }}"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
