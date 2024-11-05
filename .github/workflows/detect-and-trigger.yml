@@ -75,15 +75,20 @@ jobs:
             echo "Triggering build-docker-manual for $DOCKERFILE"
 
             # Trigger the build-docker-manual workflow with the Dockerfile as an input
+            set +e
             RESPONSE=$(gh workflow run build-docker-manual.yml \
               --ref $REF \
               --field dockerfile=$DOCKERFILE \
               --field dockerhub_namespace=nciccbr \
               --field suffix=${{ env.SUFFIX }} \
               --field push=true)
+            EXIT_CODE=$?
+            echo "RESPONSE: $RESPONSE"
+            echo "EXIT_CODE: $EXIT_CODE"
+            set -e
 
             # Check if the workflow was triggered successfully
-            if [[ $? -ne 0 ]]; then
+            if [[ $EXIT_CODE -ne 0 ]]; then
               echo "Failed to trigger build-docker-manual for $DOCKERFILE"
               STATUS=1
               echo "2 $STATUS"
