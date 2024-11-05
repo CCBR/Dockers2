@@ -77,7 +77,7 @@ jobs:
               --field dockerfile=$DOCKERFILE \
               --field dockerhub_namespace=nciccbr \
               --field suffix=${{ env.SUFFIX }} \
-              --field push=true --wait
+              --field push=true & gh run watch
           done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
