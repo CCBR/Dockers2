@@ -31,7 +31,7 @@ dockerhub_account="nciccbr"
 # Get the current date and time in the format yymmdd_HHMMSS
 dt=$(date +"%y%m%d_%H%M%S")
 
-# Extract the basename of the Dockerfile (e.g., Dockerfile)
+# Extract the basename of the Dockerfile (e.g., Dockerfile.v2)
 bn_dockerfile=$(basename $dockerfile)
 
 # Extract the tag from the Dockerfile name (e.g., if Dockerfile.v2, tag=v2)
@@ -55,6 +55,7 @@ else
   tag="${tag}-feat"
 fi
 imagename="${dockerhub_account}/${reponame}:${tag}"
+mdfile="${dn_dockerfile}/${tag}.README.md"
 
 # Output each variable to $GITHUB_ENV to pass it to the next steps
 echo "DOCKERFILE=$dockerfile" >> $GITHUB_ENV
@@ -63,4 +64,5 @@ echo "BASEIMAGENAME=$baseimagename" >> $GITHUB_ENV
 echo "BUILD_DATE=$dt" >> $GITHUB_ENV
 echo "BUILD_TAG=$tag" >> $GITHUB_ENV
 echo "REPONAME=$reponame" >> $GITHUB_ENV
+echo "MDFILE=$mdfile" >> $GITHUB_ENV
 
