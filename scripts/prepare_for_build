@@ -33,7 +33,6 @@ dt=$(date +"%y%m%d_%H%M%S")
 
 # Extract the basename of the Dockerfile (e.g., Dockerfile.v2)
 bn_dockerfile=$(basename $dockerfile)
-dirname_dockerfile=$(dirname $dockerfile)
 
 # Extract the tag from the Dockerfile name (e.g., if Dockerfile.v2, tag=v2)
 tag=${bn_dockerfile##*.}
@@ -56,7 +55,7 @@ else
   tag="${tag}-feat"
 fi
 imagename="${dockerhub_account}/${reponame}:${tag}"
-mdfile="${dirname_dockerfile}/${tag}.README.md"
+mdfile="${dn_dockerfile}/${tag}.README.md"
 
 # Output each variable to $GITHUB_ENV to pass it to the next steps
 echo "DOCKERFILE=$dockerfile" >> $GITHUB_ENV
