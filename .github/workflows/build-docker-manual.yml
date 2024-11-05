@@ -100,6 +100,12 @@ jobs:
         id: list_docker_images
         run: docker images
 
+      - name: Run print_versions.py inside Docker container
+        id: run_script_in_container
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/ws" ${{ env.IMAGENAME }} python3 /ws/scripts/print_versions.py --json /ws/scripts/tool_vrsion_commands.json >> /ws/tmp_README.md
+        shell: bash
+
       - name: Update Docker Hub Description
         id: update_dockerhub_description
         if: ${{ (github.event.inputs.push == 'true') && (steps.build_and_push.outcome == 'success') }}
