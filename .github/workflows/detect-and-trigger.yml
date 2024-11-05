@@ -63,21 +63,58 @@ jobs:
           echo "${{ steps.changed-files.outputs.matched_files }}" | sed 's/^/  /'
 
       - name: Trigger build-docker-manual for each modified Dockerfile
+        id: trigger-build-docker-manual
         if: steps.changed-files.outputs.matched_files
         run: |
           MODIFIED_DOCKERFILES=$(echo "${{ steps.changed-files.outputs.matched_files }}" | tr '\n' ' ')
-          # Use GITHUB_HEAD_REF if running on a pull request, otherwise use the current branch
           REF=${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}
+          STATUS=0
+
           for DOCKERFILE in $MODIFIED_DOCKERFILES; do
             echo "Triggering build-docker-manual for $DOCKERFILE"
 
             # Trigger the build-docker-manual workflow with the Dockerfile as an input
-            gh workflow run build-docker-manual.yml \
+            RESPONSE=$(gh workflow run build-docker-manual.yml \
               --ref $REF \
               --field dockerfile=$DOCKERFILE \
               --field dockerhub_namespace=nciccbr \
               --field suffix=${{ env.SUFFIX }} \
-              --field push=true
+              --field push=true)
+
+            # Check if the workflow was triggered successfully
+            if [[ $? -ne 0 ]]; then
+              echo "Failed to trigger build-docker-manual for $DOCKERFILE"
+              STATUS=1
+              break
+            fi
+
+            # Extract workflow run ID from response to monitor its status
+            RUN_ID=$(echo "$RESPONSE" | grep -oP '(?<=workflow run ID: )\d+')
+
+            # Poll the status of the triggered workflow until it completes
+            while true; do
+              RUN_STATUS=$(gh run view $RUN_ID --json conclusion -q .conclusion)
+              
+              if [[ "$RUN_STATUS" == "success" ]]; then
+                echo "build-docker-manual completed successfully for $DOCKERFILE"
+                break
+              elif [[ "$RUN_STATUS" == "failure" || "$RUN_STATUS" == "cancelled" ]]; then
+                echo "build-docker-manual failed for $DOCKERFILE"
+                STATUS=1
+                break
+              else
+                echo "Waiting for build-docker-manual to complete for $DOCKERFILE..."
+                sleep 10
+              fi
+            done
           done
+
+          # Exit with a failure if any build-docker-manual workflow failed
+          if [[ $STATUS -ne 0 ]]; then
+            echo "One or more build-docker-manual workflows failed."
+            exit 1
+          else
+            echo "All build-docker-manual workflows completed successfully."
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
