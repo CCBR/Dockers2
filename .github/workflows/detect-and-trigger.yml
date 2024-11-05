@@ -93,7 +93,7 @@ jobs:
 
             # Poll the status of the triggered workflow until it completes
             while true; do
-              RUN_STATUS=$(gh run view $RUN_ID --json conclusion -q .conclusion)
+              RUN_STATUS=$(gh run view $RUN_ID --json conclusion -q .conclusion 2>/dev/null || echo "in_progress")
               
               if [[ "$RUN_STATUS" == "success" ]]; then
                 echo "build-docker-manual completed successfully for $DOCKERFILE"
@@ -102,7 +102,7 @@ jobs:
                 echo "build-docker-manual failed for $DOCKERFILE"
                 STATUS=1
                 break
-              else
+              elif [[ "$RUN_STATUS" == "in_progress" ]]; then
                 echo "Waiting for build-docker-manual to complete for $DOCKERFILE..."
                 sleep 10
               fi
