@@ -61,11 +61,17 @@ jobs:
           echo "${{ steps.changed-files.outputs.changed_files }}" | sed 's/^/  /'
           echo "Matched files:"
           echo "${{ steps.changed-files.outputs.matched_files }}" | sed 's/^/  /'
+      
+      - name: Install unbuffer
+        id: install-unbuffer
+        uses: BSFishy/pip-action@v1
+        with:
+          packages: |
+            unbuffer==0.30.0
 
       - name: Trigger build-docker-manual for each modified Dockerfile
         if: steps.changed-files.outputs.matched_files
         run: |
-          pip install unbuffer
           MODIFIED_DOCKERFILES=$(echo "${{ steps.changed-files.outputs.matched_files }}" | tr '\n' ' ')
           # Use GITHUB_HEAD_REF if running on a pull request, otherwise use the current branch
           REF=${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}
