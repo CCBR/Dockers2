@@ -62,12 +62,14 @@ jobs:
           echo "Matched files:"
           echo "${{ steps.changed-files.outputs.matched_files }}" | sed 's/^/  /'
       
-      - name: Install unbuffer
-        id: install-unbuffer
-        uses: BSFishy/pip-action@v1
-        with:
-          packages: |
-            unbuffer
+      # - uses: actions/setup-python@v1
+      
+      # - name: Install unbuffer
+      #   id: install-unbuffer
+      #   uses: BSFishy/pip-action@v1
+      #   with:
+      #     packages: |
+      #       unbuffer
 
       - name: Trigger build-docker-manual for each modified Dockerfile
         if: steps.changed-files.outputs.matched_files
@@ -79,7 +81,7 @@ jobs:
             echo "Triggering build-docker-manual for $DOCKERFILE"
 
             # Trigger the build-docker-manual workflow with the Dockerfile as an input
-            RESPONSE=$(unbuffer gh workflow run build-docker-manual.yml \
+            RESPONSE=$(stdbuf -i0 -o0 -e0 gh workflow run build-docker-manual.yml \
               --ref $REF \
               --field dockerfile=$DOCKERFILE \
               --field dockerhub_namespace=nciccbr \
