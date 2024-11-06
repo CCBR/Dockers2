@@ -72,12 +72,13 @@ jobs:
             echo "Triggering build-docker-manual for $DOCKERFILE"
 
             # Trigger the build-docker-manual workflow with the Dockerfile as an input
-            gh workflow run build-docker-manual.yml \
+            RESPONSE=$(gh workflow run build-docker-manual.yml \
               --ref $REF \
               --field dockerfile=$DOCKERFILE \
               --field dockerhub_namespace=nciccbr \
               --field suffix=${{ env.SUFFIX }} \
-              --field push=true & gh run watch
+              --field push=true)
+            echo "$RESPONSE"
           done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
