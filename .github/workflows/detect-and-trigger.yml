@@ -65,6 +65,7 @@ jobs:
       - name: Trigger build-docker-manual for each modified Dockerfile
         if: steps.changed-files.outputs.matched_files
         run: |
+          pin install unbuffer
           MODIFIED_DOCKERFILES=$(echo "${{ steps.changed-files.outputs.matched_files }}" | tr '\n' ' ')
           # Use GITHUB_HEAD_REF if running on a pull request, otherwise use the current branch
           REF=${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}
