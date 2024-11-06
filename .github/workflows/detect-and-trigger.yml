@@ -72,7 +72,7 @@ jobs:
             echo "Triggering build-docker-manual for $DOCKERFILE"
 
             # Trigger the build-docker-manual workflow with the Dockerfile as an input
-            RESPONSE=$(gh workflow run build-docker-manual.yml \
+            RESPONSE=$(unbuffer gh workflow run build-docker-manual.yml \
               --ref $REF \
               --field dockerfile=$DOCKERFILE \
               --field dockerhub_namespace=nciccbr \
