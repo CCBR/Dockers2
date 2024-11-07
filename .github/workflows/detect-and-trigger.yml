@@ -102,7 +102,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           STATUS=0
-          for RUN_ID in ${WORKFLOW_IDS[@]}; do
+          echo "workflow_ids : ${{ env.workflow_ids }}"
+          for RUN_ID in ${{ env.workflow_ids }}; do
             echo "Waiting for build-docker-manual with RUN_ID: $RUN_ID to complete..."
             while true; do
               RUN_STATUS=$(gh run view $RUN_ID --json conclusion -q .conclusion 2>/dev/null || echo "in_progress")
