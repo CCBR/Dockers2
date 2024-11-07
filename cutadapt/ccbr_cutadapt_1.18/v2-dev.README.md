@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/ccbr_cutadapt_1.18:v2-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/772d3d59a4513eaf1a6822b4e2520d3390c150e1/cutadapt/ccbr_cutadapt_1.18/Dockerfile.v2
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/cf888ede9d47cf7fcac3ffe7e65a38710c29033f/cutadapt/ccbr_cutadapt_1.18/Dockerfile.v2
 
 
-Built on: 2024-11-07_21:23:13 
+Built on: 2024-11-07_21:28:28 
 
 Build tag: v2-dev 
 
