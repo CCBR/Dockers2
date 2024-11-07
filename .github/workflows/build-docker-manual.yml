@@ -45,7 +45,7 @@ on:
       ccbr-actions-version:
         description: "The version of ccbr_actions to use"
         required: true
-        default: "dockers2" # TODO switch to main after this is merged
+        default: "main"
 
 jobs:
   build-docker:
@@ -55,7 +55,7 @@ jobs:
         id: checkout
         uses: actions/checkout@v4
 
-      - uses: CCBR/actions/build-docker@dockers2 # TODO switch to main after merged
+      - uses: CCBR/actions/build-docker@main
         with:
           dockerfile: ${{ github.event.inputs.dockerfile }}
           dockerhub-namespace: ${{ github.event.inputs.dockerhub-namespace }}

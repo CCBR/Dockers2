@@ -35,9 +35,6 @@ on:
 
 env:
   suffix: ${{ github.base_ref == 'main' && github.event_name == 'pull_request' && 'main' || github.base_ref == 'dev' && github.event_name == 'pull_request' && 'dev' || 'feat' }}
-  push: true
-  dockerhub-namespace: nciccbr
-  ccbr-actions-version: dockers2 # TODO change this after PR is merged
 
 jobs:
   get-files:
@@ -71,14 +68,13 @@ jobs:
         id: checkout
         uses: actions/checkout@v4
 
-      - uses: CCBR/actions/build-docker@dockers2 # TODO change after merge
+      - uses: CCBR/actions/build-docker@main
         with:
           dockerfile: ${{ matrix.file }}
-          dockerhub-namespace: ${{ env.dockerhub-namespace }}
+          dockerhub-namespace: nciccbr
           dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
           dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
           suffix: ${{ env.suffix }}
-          push: ${{ env.push }}
-          ccbr-actions-version: ${{ env.ccbr-actions-version }}
+          push: true
           github-token: ${{ github.token }}
           github-actor: ${{ github.actor }}
