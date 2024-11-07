@@ -65,3 +65,4 @@ jobs:
           push: ${{ github.event.inputs.push }}
           ccbr-actions-version: ${{ github.event.inputs.ccbr-actions-version }}
           github-token: ${{ github.token }}
+          github-actor: ${{ github.actor }}

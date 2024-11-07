@@ -1,6 +1,6 @@
 # This GitHub Actions workflow is designed to trigger a manual Docker build for each modified Dockerfile.
 #
-# Workflow Name: detect-and-trigger
+# Workflow Name: build-docker-auto
 # Short Description: Trigger Build Docker Manual for Each modified Dockerfile
 #
 # Triggers:
@@ -8,7 +8,6 @@
 # - On pull request events to 'main' and 'dev' branches, if any Dockerfile.* is modified.
 #
 # Jobs:
-# - detect-and-trigger:
 #   - Runs on the latest Ubuntu environment.
 #   - Steps:
 #     1. Check out the repository using actions/checkout@v4.
@@ -17,21 +16,22 @@
 #
 # Environment Variables:
 # - GITHUB_TOKEN: Used for authentication to trigger the 'build-docker-manual' workflow.
-name: detect-and-trigger
+
+name: build-docker-auto
 
 on:
   push:
     branches:
-      - '**autobuild**'  # Only trigger if the branch name contains "autobuild"
+      - "**autobuild**" # Only trigger if the branch name contains "autobuild"
     paths:
-      - '**/Dockerfile.*'  # Only trigger if a Dockerfile.* is modified in any directory
+      - "**/Dockerfile.*" # Only trigger if a Dockerfile.* is modified in any directory
 
   pull_request:
     branches:
       - main
       - dev
     paths:
-      - '**/Dockerfile.*'  # Only trigger if a Dockerfile.* is modified in any directory
+      - "**/Dockerfile.*" # Only trigger if a Dockerfile.* is modified in any directory
 
 env:
   suffix: ${{ github.base_ref == 'main' && github.event_name == 'pull_request' && 'main' || github.base_ref == 'dev' && github.event_name == 'pull_request' && 'dev' || 'feat' }}
@@ -64,7 +64,7 @@ jobs:
     needs: [get-files]
     strategy:
       matrix:
-        file: '${{ fromJson(needs.get-files.outputs.json) }}'
+        file: "${{ fromJson(needs.get-files.outputs.json) }}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
