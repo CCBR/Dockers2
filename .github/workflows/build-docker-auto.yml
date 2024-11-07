@@ -46,12 +46,13 @@ jobs:
         if: github.event_name == 'pull_request'
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: ${{ github.head_ref }}
 
       - uses: actions/checkout@v4
         if: github.event_name == 'push'
         with:
           fetch-depth: 0
+          ref: ${{ github.ref_name }}
 
       - id: changed-files
         name: Check changed files
