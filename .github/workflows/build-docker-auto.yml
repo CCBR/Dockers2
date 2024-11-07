@@ -1,5 +1,5 @@
 # This GitHub Actions workflow is designed to trigger a manual Docker build for each modified Dockerfile.
-# 
+#
 # Workflow Name: detect-and-trigger
 # Short Description: Trigger Build Docker Manual for Each modified Dockerfile
 #
@@ -59,7 +59,7 @@ jobs:
         run: |
           echo "matched files:"
           echo "${{ steps.changed-files.outputs.matched_files }}" | sed 's/^/  /'
-  
+
   build-docker:
     needs: [get-files]
     strategy:
@@ -71,7 +71,7 @@ jobs:
         id: checkout
         uses: actions/checkout@v4
 
-      - uses: CCBR/actions/build-docker@${{ env.ccbr-actions-version }}
+      - uses: CCBR/actions/build-docker@dockers2 # TODO change after merge
         with:
           dockerfile: ${{ matrix.file }}
           dockerhub-namespace: ${{ env.dockerhub-namespace }}
