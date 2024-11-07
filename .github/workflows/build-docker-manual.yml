@@ -55,7 +55,7 @@ jobs:
         id: checkout
         uses: actions/checkout@v4
 
-      - uses: CCBR/actions/build-docker@${{ github.event.inputs.ccbr-actions-version }}
+      - uses: CCBR/actions/build-docker@dockers2 # TODO switch to main after merged
         with:
           dockerfile: ${{ github.event.inputs.dockerfile }}
           dockerhub-namespace: ${{ github.event.inputs.dockerhub-namespace }}
