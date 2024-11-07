@@ -79,7 +79,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
 
-      - uses: CCBR/actions/build-docker@main
+      - uses: CCBR/actions/build-docker@explicit_push
         with:
           dockerfile: ${{ matrix.file }}
           dockerhub-namespace: nciccbr
