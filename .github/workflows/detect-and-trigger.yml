@@ -63,15 +63,19 @@ jobs:
           echo "${{ steps.changed-files.outputs.matched_files }}" | sed 's/^/  /'
 
       - name: Trigger build-docker-manual for each modified Dockerfile
+        if: steps.changed-files.outputs.matched_files
         id: trigger-builds
         run: |
-          if [ -z "$dockerfiles" ]; then
+          MODIFIED_DOCKERFILES=$(echo "${{ steps.changed-files.outputs.matched_files }}" | tr '\n' ' ')
+          # Use GITHUB_HEAD_REF if running on a pull request, otherwise use the current branch
+          REF=${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}
+          if [ -z "$MODIFIED_DOCKERFILES" ]; then
             echo "No modified Dockerfiles found."
             exit 0
           fi
 
           WORKFLOW_IDS=()
-          for DOCKERFILE in $dockerfiles; do
+          for DOCKERFILE in $MODIFIED_DOCKERFILES; do
             echo "Triggering build-docker-manual for $DOCKERFILE"
             gh workflow run build-docker-manual.yml \
               --ref $GITHUB_REF_NAME \
