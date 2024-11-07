@@ -64,20 +64,68 @@ jobs:
 
       - name: Trigger build-docker-manual for each modified Dockerfile
         if: steps.changed-files.outputs.matched_files
+        id: trigger-builds
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           MODIFIED_DOCKERFILES=$(echo "${{ steps.changed-files.outputs.matched_files }}" | tr '\n' ' ')
           # Use GITHUB_HEAD_REF if running on a pull request, otherwise use the current branch
           REF=${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}
+          if [ -z "$MODIFIED_DOCKERFILES" ]; then
+            echo "No modified Dockerfiles found."
+            exit 0
+          fi
+
+          WORKFLOW_IDS=()
           for DOCKERFILE in $MODIFIED_DOCKERFILES; do
             echo "Triggering build-docker-manual for $DOCKERFILE"
-
-            # Trigger the build-docker-manual workflow with the Dockerfile as an input
             gh workflow run build-docker-manual.yml \
-              --ref $REF \
+              --ref $GITHUB_REF_NAME \
               --field dockerfile=$DOCKERFILE \
               --field dockerhub_namespace=nciccbr \
               --field suffix=${{ env.SUFFIX }} \
               --field push=true
+
+            # Wait for 5 seconds to ensure the workflow run is initiated
+            sleep 5
+
+            # Get the most recent workflow run ID
+            RUN_ID=$(gh run list --workflow=build-docker-manual.yml --branch=$GITHUB_REF_NAME --limit=1 --json databaseId -q '.[0].databaseId')
+            WORKFLOW_IDS+=($RUN_ID)
           done
+          
+          echo "workflow_ids=${WORKFLOW_IDS[*]}" >> $GITHUB_ENV
+
+      - name: Wait for all build-docker-manual workflows to complete
+        id: monitor-runs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          STATUS=0
+          echo "workflow_ids : ${{ env.workflow_ids }}"
+          for RUN_ID in ${{ env.workflow_ids }}; do
+            echo "Waiting for build-docker-manual with RUN_ID: $RUN_ID to complete..."
+            while true; do
+              RUN_STATUS=$(gh run view $RUN_ID --json conclusion -q .conclusion 2>/dev/null || echo "in_progress")
+
+              if [[ "$RUN_STATUS" == "success" ]]; then
+                echo "Workflow $RUN_ID completed successfully."
+                break
+              elif [[ "$RUN_STATUS" == "failure" || "$RUN_STATUS" == "cancelled" ]]; then
+                echo "Workflow $RUN_ID failed."
+                STATUS=1
+                break
+              else
+                echo "Workflow $RUN_ID still in progress..."
+                sleep 10
+              fi
+            done
+
+            if [[ $STATUS -ne 0 ]]; then
+              echo "One or more workflows failed."
+              exit 1
+            fi
+          done
+          
+          echo "All workflows completed successfully."
+          exit 0
