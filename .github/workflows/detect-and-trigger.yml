@@ -81,3 +81,4 @@ jobs:
           push: ${{ env.push }}
           ccbr-actions-version: ${{ env.ccbr-actions-version }}
           github-token: ${{ github.token }}
+          github-actor: ${{ github.actor }}
