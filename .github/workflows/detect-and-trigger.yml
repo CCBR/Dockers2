@@ -80,7 +80,7 @@ jobs:
           for DOCKERFILE in $MODIFIED_DOCKERFILES; do
             echo "Triggering build-docker-manual for $DOCKERFILE"
             gh workflow run build-docker-manual.yml \
-              --ref $GITHUB_REF_NAME \
+              --ref $REF \
               --field dockerfile=$DOCKERFILE \
               --field dockerhub_namespace=nciccbr \
               --field suffix=${{ env.SUFFIX }} \
@@ -90,7 +90,7 @@ jobs:
             sleep 5
 
             # Get the most recent workflow run ID
-            RUN_ID=$(gh run list --workflow=build-docker-manual.yml --branch=$GITHUB_REF_NAME --limit=1 --json databaseId -q '.[0].databaseId')
+            RUN_ID=$(gh run list --workflow=build-docker-manual.yml --branch=$REF --limit=1 --json databaseId -q '.[0].databaseId')
             WORKFLOW_IDS+=($RUN_ID)
           done
           
