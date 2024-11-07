@@ -119,8 +119,8 @@ jobs:
 
       - name: Commit and Push Markdown File
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "${GITHUB_ACTOR}"
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git add ${{ env.MDFILE }}
           git commit -m "New readme for ${{ env.DOCKERFILE }}"
           git push
