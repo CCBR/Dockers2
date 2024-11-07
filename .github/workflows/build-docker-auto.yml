@@ -42,9 +42,17 @@ jobs:
     outputs:
       json: ${{ steps.changed-files.outputs.matched_files_json }}
     steps:
-      - name: Checkout repository
-        id: checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request'
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - uses: actions/checkout@v4
+        if: github.event_name == 'push'
+        with:
+          fetch-depth: 0
+
       - id: changed-files
         name: Check changed files
         uses: knu/changed-files@v1
