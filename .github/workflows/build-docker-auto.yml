@@ -87,5 +87,5 @@ jobs:
           dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
           suffix: ${{ env.suffix }}
           push: true
-          github-token: ${{ github.token }}
+          github-token: ${{ sectets.PAT_ProtectedBranch }}
           github-actor: ${{ github.actor }}
