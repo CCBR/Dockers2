@@ -1,15 +1,15 @@
-## CCBR/Dockers2 nciccbr/ccbr_cutadapt_1.18:v2-dev
+## CCBR/Dockers2 nciccbr/ccbr_cutadapt_4.9:v1-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/cf888ede9d47cf7fcac3ffe7e65a38710c29033f/cutadapt/ccbr_cutadapt_1.18/Dockerfile.v2
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/cf888ede9d47cf7fcac3ffe7e65a38710c29033f/cutadapt/ccbr_cutadapt_4.9/Dockerfile.v1
 
 
-Built on: 2024-11-07_21:28:28 
+Built on: 2024-11-07_21:30:28 
 
-Build tag: v2-dev 
+Build tag: v1-dev 
 
 Base image: nciccbr/ccbr_ubuntu_22.04:v3 
 
-Dockerfile path in repo: cutadapt/ccbr_cutadapt_1.18/Dockerfile.v2 
+Dockerfile path in repo: cutadapt/ccbr_cutadapt_4.9/Dockerfile.v1 
 
 
 | Tool | Version |
@@ -20,7 +20,7 @@ Dockerfile path in repo: cutadapt/ccbr_cutadapt_1.18/Dockerfile.v2
 | bowtie | 1.3.1 |
 | bowtie2 | 2.4.4 |
 | bwa | 0.7.17-r1188 |
-| cutadapt | 1.18 |
+| cutadapt | 4.9 |
 | git | 2.34.1 |
 | java | 1.8.0_422 |
 | multiqc | 1.25.1 |
