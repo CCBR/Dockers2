@@ -43,12 +43,14 @@ jobs:
       json: ${{ steps.changed-files.outputs.matched_files_json }}
     steps:
       - uses: actions/checkout@v4
+        name: "checkout PR ${{ github.head_ref }}"
         if: github.event_name == 'pull_request'
         with:
           fetch-depth: 0
           ref: ${{ github.head_ref }}
 
       - uses: actions/checkout@v4
+        name: "checkout push ${{ github.ref_name }}"
         if: github.event_name == 'push'
         with:
           fetch-depth: 0
