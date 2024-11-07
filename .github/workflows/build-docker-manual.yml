@@ -18,7 +18,7 @@
 #   - Updates the DockerHub description with the contents of the temporary README file if the image was successfully pushed.
 
 name: build-docker-manual
-run-name: build-docker-manual ${{ inputs.dockerfile }}-${{ inputs.suffix }}
+run-name: build-docker ${{ inputs.dockerfile }}-${{ inputs.suffix }}
 
 on:
   workflow_dispatch:
