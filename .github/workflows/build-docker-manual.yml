@@ -125,4 +125,4 @@ jobs:
           git commit -m "New readme for ${{ env.DOCKERFILE }}"
           git push
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.ADD_TO_PROJECT_PAT }}
