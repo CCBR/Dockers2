@@ -86,15 +86,115 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.ref_name }} # branch name of push
 
-      - uses: CCBR/actions/build-docker@fix-push-perm # TODO change to main after fixing this
+      # - uses: CCBR/actions/build-docker@fix-push-perm # TODO change to main after fixing this
+      #   with:
+      #     dockerfile: ${{ matrix.file }}
+      #     dockerhub-namespace: nciccbr
+      #     dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
+      #     dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
+      #     suffix: ${{ env.suffix }}
+      #     push: true
+      #     github-token: ${{ secrets.PAT_PROTECTEDBRANCH }}
+      #     github-actor: ${{ github.actor }}
+      #     ccbr-actions-version: fix-push-perm # TODO change to main after fixing this
+      #     json-file: 'scripts/tool_version_commands.json'
+
+      - name: git config
+        shell: bash
+        run: |
+          git config --local user.email "${{ github.actor }}@users.noreply.github.com"
+          git config --local user.name "${{ github.actor }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_PROTECTEDBRANCH }}
+    
+      - uses: actions/setup-python@v5
         with:
-          dockerfile: ${{ matrix.file }}
-          dockerhub-namespace: nciccbr
-          dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
-          dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
-          suffix: ${{ env.suffix }}
+          python-version: "3.11"
+  
+      - name: Install
+        shell: bash
+        run: pip install --upgrade pip git+https://github.com/CCBR/actions.git@fix-push-perm  # TODO change to main after fixing this
+  
+      - name: Login to DockerHub
+        id: login_dockerhub
+        #if: ${{ inputs.push == 'true' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
+          password: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
+  
+      - name: Prepare build-time variables
+        shell: bash
+        id: prepare_vars
+        run: |
+          prepare_docker_build_variables.sh ${{ matrix.file }} ${{ env.suffix }} nciccbr
+  
+      - name: Check variables and create README
+        shell: bash
+        id: check_and_create_readme
+        run: |
+          echo "DOCKERFILE: $DOCKERFILE"
+          echo "IMAGENAME: $IMAGENAME"
+          echo "BASEIMAGENAME: $BASEIMAGENAME"
+          echo "BUILD_DATE: $BUILD_DATE"
+          echo "BUILD_TAG: $BUILD_TAG"
+          echo "REPONAME: $REPONAME"
+          echo "MDFILE: $MDFILE"
+          echo -ne "## ${{ github.repository }} $IMAGENAME\n\n" > $MDFILE
+          echo "Dockerfile source: https://github.com/${{ github.repository }}/blob/${{ github.sha }}/${{ matrix.file }}" >> $MDFILE
+          echo -ne "\n\n" >> $MDFILE
+          echo -ne "Built on: $BUILD_DATE \n\n" >> $MDFILE
+          echo -ne "Build tag: $BUILD_TAG \n\n" >> $MDFILE
+          echo -ne "Base image: $BASEIMAGENAME \n\n" >> $MDFILE
+          echo -ne "Dockerfile path in repo: $DOCKERFILE \n\n" >> $MDFILE
+  
+      - name: Build and push Docker image
+        id: build_and_push
+        uses: docker/build-push-action@v5
+        with:
+          file: ${{ env.DOCKERFILE }}
           push: true
-          github-token: ${{ secrets.PAT_PROTECTEDBRANCH }}
-          github-actor: ${{ github.actor }}
-          ccbr-actions-version: fix-push-perm # TODO change to main after fixing this
-          json-file: 'scripts/tool_version_commands.json'
+          tags: ${{ env.IMAGENAME }}
+          build-args: |
+            DOCKERFILE=${{ env.DOCKERFILE }}
+            BUILD_DATE=${{ env.BUILD_DATE }}
+            BUILD_TAG=${{ env.BUILD_TAG }}
+            REPONAME=${{ env.REPONAME }}
+            IMAGENAME=${{ env.IMAGENAME }}
+            BASEIMAGENAME=${{ env.BASEIMAGENAME }}
+  
+      - name: List Docker images
+        shell: bash
+        id: list_docker_images
+        run: docker images
+  
+      - name: Run print_versions.py inside Docker container
+        shell: bash
+        id: run_script_in_container
+        run: |
+          print_versions=$(which print_versions.py)
+          docker run --rm -v "${{ github.workspace }}:/ws" ${{ env.IMAGENAME }} \
+            python3 /ws/scripts/print_versions.py --json /ws/scripts/tool_version_commands.json --output /ws/${{ env.MDFILE }}
+        # TODO move print versions script
+  
+      - name: Update Docker Hub Description
+        id: update_dockerhub_description
+        if: ${{ (steps.build_and_push.outcome == 'success') }}
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
+          password: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
+          repository: nciccbr/${{ env.REPONAME }}
+          readme-filepath: ${{ env.MDFILE }}
+  
+      - name: Commit and Push Markdown File
+        shell: bash
+        if: ${{ (steps.build_and_push.outcome == 'success') }}
+        run: |
+          git pull --ff-only
+          git add ${{ env.MDFILE }}
+          git commit -m "docs: 🤖 update readme for ${{ env.DOCKERFILE }}"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_PROTECTEDBRANCH }}
+  
