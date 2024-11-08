@@ -172,7 +172,6 @@ jobs:
         shell: bash
         id: run_script_in_container
         run: |
-          print_versions=$(which print_versions.py)
           docker run --rm -v "${{ github.workspace }}:/ws" ${{ env.IMAGENAME }} \
             python3 /ws/scripts/print_versions.py --json /ws/scripts/tool_version_commands.json --output /ws/${{ env.MDFILE }}
         # TODO move print versions script
@@ -193,7 +192,7 @@ jobs:
         run: |
           git pull --ff-only
           git add ${{ env.MDFILE }}
-          git commit -m "docs: 🤖 update readme for ${{ env.DOCKERFILE }}"
+          git commit -m "docs: 🤖 update readme for ${{ env.DOCKERFILE }}" || echo "nothing to commit"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_PROTECTEDBRANCH }}
