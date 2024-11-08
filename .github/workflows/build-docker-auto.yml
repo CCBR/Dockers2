@@ -89,3 +89,13 @@ jobs:
           push: true
           github-token: ${{ secrets.PAT_ProtectedBranch }}
           github-actor: ${{ github.actor }}
+
+      # - name: Trigger Secondary Workflow
+      #   env:
+      #     USER_PAT: ${{ secrets.PAT_PROTECTEDBRANCH }}
+      #   run: |
+      #     curl -X POST \
+      #       -H "Accept: application/vnd.github+json" \
+      #       -H "Authorization: token $USER_PAT" \
+      #       https://api.github.com/repos/CCBR/actions/actions/workflows/build-docker.yml/dispatches \
+      #       -d '{"ref":"feature/explicit_push", "inputs": {"dockerfile": "'"${{ matrix.file }}"'", "dockerhub-namespace": "'"nciccbr"'", "dockerhub-username": "'"${{ secrets.DOCKERHUB_USERNAME_VK }}"'", "dockerhub-token": "'"${{ secrets.DOCKERHUBRW_TOKEN_VK }}"'", "suffix": "'"${{ env.suffix }}"'", "github-token": "'"${{ secrets.PAT_ProtectedBranch }}"'", "github-actor": "'"${{ github.actor }}"'", "push": "'"true"'"}'
