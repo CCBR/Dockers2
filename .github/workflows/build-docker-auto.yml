@@ -185,15 +185,33 @@ jobs:
           password: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
           repository: nciccbr/${{ env.REPONAME }}
           readme-filepath: ${{ env.MDFILE }}
-  
-      - name: Commit and Push Markdown File
-        shell: bash
-        if: ${{ (steps.build_and_push.outcome == 'success') }}
+        
+      - name: Create Pull Request
+        id: create-pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.PAT_PROTECTEDBRANCH }}
+          add-paths: ${{ env.MDFILE }}
+          commit-message: "docs: 🤖 update readme for ${{ env.DOCKERFILE }}"
+          #committer: ${{ github.actor }}
+          branch: "pr/${{ env.DOCKERFILE }}"
+          title: "docs: 🤖 update readme for ${{ env.DOCKERFILE }}"
+          reviewers: ${{ github.actor }}
+
+      - name: Approve PR
         run: |
-          git pull --ff-only
-          git add ${{ env.MDFILE }}
-          git commit -m "docs: 🤖 update readme for ${{ env.DOCKERFILE }}" || echo "nothing to commit"
-          git push
+          gh pr review --aprove ${{ steps.create-pr.outputs.pull-request-number }}
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_PROTECTEDBRANCH }}
+
+      # - name: Commit and Push Markdown File
+      #   shell: bash
+      #   if: ${{ (steps.build_and_push.outcome == 'success') }}
+      #   run: |
+      #     git pull --ff-only
+      #     git add ${{ env.MDFILE }}
+      #     git commit -m "docs: 🤖 update readme for ${{ env.DOCKERFILE }}" || echo "nothing to commit"
+      #     git push
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.PAT_PROTECTEDBRANCH }}
   
