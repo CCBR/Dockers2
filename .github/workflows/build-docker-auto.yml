@@ -1,0 +1,100 @@
+# This GitHub Actions workflow is designed to trigger a manual Docker build for each modified Dockerfile.
+#
+# Workflow Name: build-docker-auto
+# Short Description: Trigger Build Docker Manual for Each modified Dockerfile
+#
+# Triggers:
+# - On push events to any branch except 'main' and 'dev', if any Dockerfile.* is modified.
+# - On pull request events to 'main' and 'dev' branches, if any Dockerfile.* is modified.
+#
+# Jobs:
+#   - Runs on the latest Ubuntu environment.
+#   - Steps:
+#     1. Check out the repository using actions/checkout@v4.
+#     2. Identify modified Dockerfiles using git diff and store them in the environment variable 'dockerfiles'.
+#     3. For each modified Dockerfile, trigger the 'build-docker-manual' workflow with the Dockerfile path and additional parameters.
+#
+# Environment Variables:
+# - GITHUB_TOKEN: Used for authentication to trigger the 'build-docker-manual' workflow.
+
+name: build-docker-auto
+
+on:
+  push:
+    branches:
+      - "**autobuild**" # Only trigger if the branch name contains "autobuild"
+    paths:
+      - "**/Dockerfile.*" # Only trigger if a Dockerfile.* is modified in any directory
+
+  pull_request:
+    branches:
+      - main
+      - dev
+    paths:
+      - "**/Dockerfile.*" # Only trigger if a Dockerfile.* is modified in any directory
+
+env:
+  suffix: ${{ github.base_ref == 'main' && github.event_name == 'pull_request' && 'main' || github.base_ref == 'dev' && github.event_name == 'pull_request' && 'dev' || 'feat' }}
+  GITHUB_TOKEN: ${{ secrets.PAT_PROTECTEDBRANCH }}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  get-files:
+    runs-on: ubuntu-latest
+    outputs:
+      json: ${{ steps.changed-files.outputs.matched_files_json }}
+    steps:
+      - name: Checkout repository
+        id: checkout
+        uses: actions/checkout@v4
+
+      - id: changed-files
+        name: Check changed files
+        uses: knu/changed-files@v1
+        with:
+          paths: |
+            **/Dockerfile.*
+
+      - name: Show changed files
+        id: matrix
+        run: |
+          echo "matched files:"
+          echo "${{ steps.changed-files.outputs.matched_files }}" | sed 's/^/  /'
+
+  build-docker:
+    needs: [get-files]
+    strategy:
+      matrix:
+        file: "${{ fromJson(needs.get-files.outputs.json) }}"
+      max-parallel: 1
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        name: "checkout PR ${{ github.head_ref }}"
+        if: github.event_name == 'pull_request'
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }} # branch name of PR
+
+      - uses: actions/checkout@v4
+        name: "checkout push ${{ github.ref_name }}"
+        if: github.event_name == 'push'
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }} # branch name of push
+
+      - uses: CCBR/actions/build-docker@fix-push-perm # TODO change to main after fixing this
+        with:
+          dockerfile: ${{ matrix.file }}
+          dockerhub-namespace: nciccbr
+          dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
+          dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
+          suffix: ${{ env.suffix }}
+          push: true
+          github-token: ${{ secrets.PAT_PROTECTEDBRANCH }}
+          #github-actor: ${{ github.actor }}
+          ccbr-actions-version: fix-push-perm # TODO change to main after fixing this
+          json-file: 'scripts/tool_version_commands.json'
