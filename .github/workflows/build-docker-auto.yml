@@ -86,7 +86,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.ref_name }} # branch name of push
 
-      - uses: CCBR/actions/build-docker@feature/explicit_push
+      - uses: CCBR/actions/build-docker@fix-push-perm # TODO change to main after fixing this
         with:
           dockerfile: ${{ matrix.file }}
           dockerhub-namespace: nciccbr
