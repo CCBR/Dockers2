@@ -45,12 +45,16 @@ jobs:
       - name: Checkout repository
         id: checkout
         uses: actions/checkout@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_PROTECTEDBRANCH }}
+
       - id: changed-files
         name: Check changed files
         uses: knu/changed-files@v1
         with:
           paths: |
             **/Dockerfile.*
+
       - name: Show changed files
         id: matrix
         run: |
@@ -71,6 +75,8 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.head_ref }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_PROTECTEDBRANCH }}
 
       - uses: actions/checkout@v4
         name: "checkout push ${{ github.ref_name }}"
@@ -78,6 +84,8 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_PROTECTEDBRANCH }}
 
       - uses: CCBR/actions/build-docker@feature/explicit_push
         with:
@@ -89,6 +97,8 @@ jobs:
           push: true
           github-token: ${{ secrets.PAT_ProtectedBranch }}
           github-actor: ${{ github.actor }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_PROTECTEDBRANCH }}
 
       # - name: Trigger Secondary Workflow
       #   env:
