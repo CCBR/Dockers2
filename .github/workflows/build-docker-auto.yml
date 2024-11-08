@@ -203,7 +203,7 @@ jobs:
         run: |
           gh pr review --approve ${{ steps.create-pr.outputs.pull-request-number }}
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_PROTECTEDBRANCH }}
+          GITHUB_TOKEN: ${{ github.token }} #${{ secrets.PAT_PROTECTEDBRANCH }}
 
       # - name: Commit and Push Markdown File
       #   shell: bash
