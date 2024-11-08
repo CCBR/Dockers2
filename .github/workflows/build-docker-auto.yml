@@ -96,3 +96,5 @@ jobs:
           push: true
           github-token: ${{ secrets.PAT_PROTECTEDBRANCH }}
           github-actor: ${{ github.actor }}
+          ccbr-actions-version: fix-push-perm # TODO change to main after fixing this
+          json-file: 'scripts/tool_version_commands.json'
