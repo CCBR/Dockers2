@@ -193,6 +193,7 @@ jobs:
           token: ${{ github.token }} #${{ secrets.PAT_PROTECTEDBRANCH }}
           add-paths: ${{ env.MDFILE }}
           commit-message: "docs: 🤖 update readme for ${{ env.DOCKERFILE }}"
+          author: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
           branch: "pr/${{ env.DOCKERFILE }}"
           title: "docs: 🤖 update readme for ${{ env.DOCKERFILE }}"
           reviewers: ${{ github.actor }}
