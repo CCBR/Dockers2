@@ -195,14 +195,14 @@ jobs:
           commit-message: "docs: 🤖 update readme for ${{ env.DOCKERFILE }}"
           author: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
           branch: "pr/${{ env.DOCKERFILE }}"
-          title: "docs: 🤖 update readme for ${{ env.DOCKERFILE }}"
-          reviewers: ${{ github.actor }}
+          title: "docs: 🤖 update readme for ${{ env.IMAGENAME }}"
+          #reviewers: ${{ github.actor }}
 
-      - name: Approve PR
+      - name: merge PR
         run: |
-          gh pr review --approve ${PR} && gh pr merge ${PR}
+          gh pr merge --admin ${PR}
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.PAT_PROTECTEDBRANCH }}
           PR: ${{ steps.create-pr.outputs.pull-request-number }}
 
       # - name: Commit and Push Markdown File
