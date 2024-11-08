@@ -35,6 +35,11 @@ on:
 
 env:
   suffix: ${{ github.base_ref == 'main' && github.event_name == 'pull_request' && 'main' || github.base_ref == 'dev' && github.event_name == 'pull_request' && 'dev' || 'feat' }}
+  GITHUB_TOKEN: ${{ secrets.PAT_PROTECTEDBRANCH }}
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   get-files:
@@ -45,8 +50,6 @@ jobs:
       - name: Checkout repository
         id: checkout
         uses: actions/checkout@v4
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_PROTECTEDBRANCH }}
 
       - id: changed-files
         name: Check changed files
@@ -74,20 +77,16 @@ jobs:
         if: github.event_name == 'pull_request'
         with:
           fetch-depth: 0
-          ref: ${{ github.head_ref }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_PROTECTEDBRANCH }}
+          ref: ${{ github.head_ref }} # branch name of PR
 
       - uses: actions/checkout@v4
         name: "checkout push ${{ github.ref_name }}"
         if: github.event_name == 'push'
         with:
           fetch-depth: 0
-          ref: ${{ github.ref_name }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_PROTECTEDBRANCH }}
+          ref: ${{ github.ref_name }} # branch name of push
 
-      - uses: CCBR/actions/build-docker@feature/explicit_push
+      - uses: CCBR/actions/build-docker@fix-push-perm # TODO change to main after fixing this
         with:
           dockerfile: ${{ matrix.file }}
           dockerhub-namespace: nciccbr
@@ -95,17 +94,5 @@ jobs:
           dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
           suffix: ${{ env.suffix }}
           push: true
-          github-token: ${{ secrets.PAT_ProtectedBranch }}
+          github-token: ${{ secrets.PAT_PROTECTEDBRANCH }}
           github-actor: ${{ github.actor }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_PROTECTEDBRANCH }}
-
-      # - name: Trigger Secondary Workflow
-      #   env:
-      #     USER_PAT: ${{ secrets.PAT_PROTECTEDBRANCH }}
-      #   run: |
-      #     curl -X POST \
-      #       -H "Accept: application/vnd.github+json" \
-      #       -H "Authorization: token $USER_PAT" \
-      #       https://api.github.com/repos/CCBR/actions/actions/workflows/build-docker.yml/dispatches \
-      #       -d '{"ref":"feature/explicit_push", "inputs": {"dockerfile": "'"${{ matrix.file }}"'", "dockerhub-namespace": "'"nciccbr"'", "dockerhub-username": "'"${{ secrets.DOCKERHUB_USERNAME_VK }}"'", "dockerhub-token": "'"${{ secrets.DOCKERHUBRW_TOKEN_VK }}"'", "suffix": "'"${{ env.suffix }}"'", "github-token": "'"${{ secrets.PAT_ProtectedBranch }}"'", "github-actor": "'"${{ github.actor }}"'", "push": "'"true"'"}'
