@@ -45,7 +45,7 @@ on:
       ccbr-actions-version:
         description: "The version of ccbr_actions to use"
         required: true
-        default: "main"
+        default: "v0.2"
 
 jobs:
   build-docker:
@@ -57,7 +57,7 @@ jobs:
         id: checkout
         uses: actions/checkout@v4
 
-      - uses: CCBR/actions/build-docker@fix-push-perm # TODO: change after release of ccbr/actions v0.2
+      - uses: CCBR/actions/build-docker@v0.2
         with:
           dockerfile: ${{ github.event.inputs.dockerfile }}
           dockerhub-namespace: ${{ github.event.inputs.dockerhub-namespace }}

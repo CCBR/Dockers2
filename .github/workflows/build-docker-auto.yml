@@ -88,7 +88,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.ref_name }} # branch name of push
 
-      - uses: CCBR/actions/build-docker@fix-push-perm # TODO change to main after fixing this
+      - uses: CCBR/actions/build-docker@v0.2
         with:
           dockerfile: ${{ matrix.file }}
           dockerhub-namespace: nciccbr
@@ -98,5 +98,5 @@ jobs:
           push: true
           github-token: ${{ secrets.PAT_PROTECTEDBRANCH }}
           #github-actor: ${{ github.actor }}
-          ccbr-actions-version: fix-push-perm # TODO change to main after fixing this
+          ccbr-actions-version: v0.2
           json-file: 'scripts/tool_version_commands.json'
