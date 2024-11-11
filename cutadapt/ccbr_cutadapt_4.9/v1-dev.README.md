@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/ccbr_cutadapt_4.9:v1-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/cf888ede9d47cf7fcac3ffe7e65a38710c29033f/cutadapt/ccbr_cutadapt_4.9/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/28665b19b5effb97d6413a59677b8fe7b486e691/cutadapt/ccbr_cutadapt_4.9/Dockerfile.v1
 
 
-Built on: 2024-11-07_21:30:28 
+Built on: 2024-11-11_20:41:25 
 
 Build tag: v1-dev 
 
@@ -30,4 +30,3 @@ Dockerfile path in repo: cutadapt/ccbr_cutadapt_4.9/Dockerfile.v1
 | python3 | 3.10.12 |
 | samtools | 1.13 |
 | vcftools | 0.1.16 |
-
