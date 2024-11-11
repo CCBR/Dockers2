@@ -35,7 +35,6 @@ on:
 
 env:
   suffix: ${{ github.base_ref == 'main' && github.event_name == 'pull_request' && 'main' || github.base_ref == 'dev' && github.event_name == 'pull_request' && 'dev' || 'feat' }}
-  GITHUB_TOKEN: ${{ secrets.PAT_PROTECTEDBRANCH }}
 
 jobs:
   get-files:
@@ -95,7 +94,6 @@ jobs:
           dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
           suffix: ${{ env.suffix }}
           push: true
-          github-token: ${{ secrets.PAT_PROTECTEDBRANCH }}
-          #github-actor: ${{ github.actor }}
+          github-token: ${{ github.token }}
           ccbr-actions-version: v0.2
           json-file: 'scripts/tool_version_commands.json'
