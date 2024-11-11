@@ -37,10 +37,6 @@ env:
   suffix: ${{ github.base_ref == 'main' && github.event_name == 'pull_request' && 'main' || github.base_ref == 'dev' && github.event_name == 'pull_request' && 'dev' || 'feat' }}
   GITHUB_TOKEN: ${{ secrets.PAT_PROTECTEDBRANCH }}
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   get-files:
     runs-on: ubuntu-latest
@@ -73,6 +69,9 @@ jobs:
       fail-fast: false
     continue-on-error: true
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         name: "checkout PR ${{ github.head_ref }}"
