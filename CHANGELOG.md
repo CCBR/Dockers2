@@ -1,5 +1,13 @@
-## dockers2 development version
+## dockers2 0.1.0
 
 This is the first release of the new and improved dockers repo! 🎉
 
-This release includes new github actions workflows to automatically build and push containers to dockerhub.
+### features
+
+- New github actions workflows to automatically build and push containers to dockerhub.
+- New base containers:
+    - [ccbr_ubuntu_20.02:v8](base_images/ccbr_ubuntu_20.02)
+    - [ccbr_ubuntu_22.04:v3](base_images/ccbr_ubuntu_22.04)
+- New cutadapt containers:
+    - [ccbr_cutadapt_1.18:v2](cutadapt/ccbr_cutadapt_1.18)
+    - [ccbr_cutadaptt_4.9:v1](cutadapt/ccbr_cutadapt_4.9)
