@@ -32,11 +32,11 @@ RUN apt-get update -y --no-install-recommends && \
         libblas-dev libboost-dev libbz2-dev libcurl4-openssl-dev libexpat1-dev \
         libfreetype6-dev libgd-dev libgd-perl libgs-dev libgsl-dev \
         libhtml-template-compiled-perl libicu-dev libjudy-dev liblapack-dev \
-        liblzma-dev libmysqlclient-dev libncurses-dev libopenmpi-dev libpng-dev \
+        liblzma-dev default-libmysqlclient-dev libncurses-dev libopenmpi-dev libpng-dev \
         librtmp-dev libssl-dev libtool libxml-libxml-debugging-perl \
         libxml-opml-simplegen-perl libxml2-dev libxslt-dev make manpages-dev \
-        openjdk-8-jdk parallel pigz python3-pip python3-dev rsync samtools unzip \
-        python2 \
+        openjdk-11-jdk parallel pigz python3-pip python3-dev rsync samtools unzip \
+        python2-minimal \
         vim vcftools wget zlib1g zlib1g-dev && \
     localedef -i en_US -f UTF-8 en_US.UTF-8 && \
     cpanm FindBin Term::ReadLine && \
