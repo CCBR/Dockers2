@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 debian:bookworm-slim
+FROM --platform=linux/amd64 debian:12-slim
 
 LABEL maintainer="Vishal Koparde *(kopardev on GitHub)*"
 LABEL github_handle="kopardev"
@@ -24,14 +24,17 @@ ENV LC_ALL=C
 
 # Backup your current sources list
 # Add the required repositories for Debian Bookworm
-RUN echo "deb http://deb.debian.org/debian/ bookworm main contrib non-free" | tee -a /etc/apt/sources.list && \
-    echo "deb http://deb.debian.org/debian/ bookworm-updates main contrib non-free" | tee -a /etc/apt/sources.list && \
-    echo "deb http://security.debian.org/debian-security bookworm-security main contrib non-free" | tee -a /etc/apt/sources.list
+#RUN echo "deb http://deb.debian.org/debian/ bookworm main contrib non-free" | tee -a /etc/apt/sources.list && \
+#    echo "deb http://deb.debian.org/debian/ bookworm-updates main contrib non-free" | tee -a /etc/apt/sources.list && \
+#    echo "deb http://security.debian.org/debian-security bookworm-security main contrib non-free" | tee -a /etc/apt/sources.list
 
 # Update the package list, install essential packages, and clean up
+    #add-apt-repository universe && \
+    #apt-get install -y --no-install-recommends \
+    #curl -k https://bootstrap.pypa.io/pip/2.7/get-pip.py --output get-pip.py && \
+    #python2 get-pip.py && \
+    #rm get-pip.py && \
 RUN apt-get update -y --no-install-recommends && \
-    apt-get install -y --no-install-recommends software-properties-common && \
-    add-apt-repository universe && \
     apt-get install -y --no-install-recommends \
         bash coreutils ca-certificates netbase locales \
         build-essential cmake cpanminus bcftools bedops bedtools bowtie bowtie2 bwa \
@@ -42,18 +45,17 @@ RUN apt-get update -y --no-install-recommends && \
         liblzma-dev default-libmysqlclient-dev libncurses-dev libopenmpi-dev libpng-dev \
         librtmp-dev libssl-dev libtool libxml-libxml-debugging-perl \
         libxml-opml-simplegen-perl libxml2-dev libxslt-dev make manpages-dev \
-        openjdk-11-jdk parallel pigz python3-pip python3-dev rsync samtools unzip \
-        python2-minimal \
+        parallel pigz python3-pip python3-dev rsync samtools unzip \
         vim vcftools wget zlib1g zlib1g-dev && \
     localedef -i en_US -f UTF-8 en_US.UTF-8 && \
-    cpanm FindBin Term::ReadLine && \
+    cpanm FindBin Term::ReadLine
+RUN apt install -y python3.11-venv python3-pip && \
     ln -s /usr/bin/python3 /usr/bin/python && \
-    python3 -m pip install --no-cache-dir --upgrade pip && \
-    pip3 install --no-cache-dir numpy scipy argparse pandas pysam multiqc && \
+    python3 -m venv /opt/venv && \
+    . /opt/venv/bin/activate && \
+    pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir numpy scipy argparse pandas pysam multiqc && \
     rm -rf ~/.cache/pip* && \
-    curl https://bootstrap.pypa.io/pip/2.7/get-pip.py --output get-pip.py && \
-    python2 get-pip.py && \
-    rm get-pip.py && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     apt-get autoclean && apt-get autoremove -y && \
     rm -rf /var/lib/{apt,dpkg,cache,log}/
