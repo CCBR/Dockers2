@@ -24,8 +24,7 @@ ENV LC_ALL=C
 
 # Backup your current sources list
 # Add the required repositories for Debian Bookworm
-RUN cp /etc/apt/sources.list /etc/apt/sources.list.backup && \
-    echo "deb http://deb.debian.org/debian/ bookworm main contrib non-free" | sudo tee -a /etc/apt/sources.list && \
+RUN echo "deb http://deb.debian.org/debian/ bookworm main contrib non-free" | sudo tee -a /etc/apt/sources.list && \
     echo "deb http://deb.debian.org/debian/ bookworm-updates main contrib non-free" | sudo tee -a /etc/apt/sources.list && \
     echo "deb http://security.debian.org/debian-security bookworm-security main contrib non-free" | sudo tee -a /etc/apt/sources.list
 
