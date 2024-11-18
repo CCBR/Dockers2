@@ -47,7 +47,7 @@ RUN mkdir -p /opt2/picard && \
     wget 'https://github.com/broadinstitute/picard/releases/download/2.27.5/picardcloud.jar' && \
     mv picardcloud.jar picard.jar && \
     chmod -R a+rx /opt2/picard && \
-    cat "2.27.5" > /opt2/picard/version.txt
+    echo "2.27.5" > /opt2/picard/version.txt
 
 # download_references.sh wrapper
 RUN echo '#!/bin/bash\n\
