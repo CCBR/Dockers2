@@ -1,3 +1,11 @@
+## Dockers2 0.1.1
+
+Update to base image. 🥳
+
+- New base containers:
+    - [ccbr_ubuntu_22.04:v4](base_images/ccbr_ubuntu_22.04)
+
+
 ## Dockers2 0.1.0
 
 This is the first release of the new and improved dockers repo! 🎉
