@@ -1,4 +1,5 @@
 {
+    "bbmap.sh": "bbmap.sh --version 2>&1|head -n2 |tail -n1 |awk '{print $NF}'",
     "bcftools": "bcftools 2>&1 | grep -m1 -i version |awk -F\":\" '{print $2}'",
     "bedops": "bedops --version 2>&1 | grep -i version |awk -F\":\" '{print $2}' ",
     "bedtools": "bedtools --version 2>&1 | awk '{print $NF}'",
