@@ -1,0 +1,82 @@
+FROM nciccbr/ccbr_ubuntu_22.04:v4
+
+# Arriba/v2.0.0 Dockerfile (v0.0.1)
+
+# Arriba/v2.0.0 requires `STAR >= 2.7.6a` to be installed on the target system.
+# In addition, the build includes install the following programs:
+#   `r-base` arriba relies on R for generating figures  <required>
+#   `wget` pull in releases from Github                 <build_dependency>
+#   `python` script to find optimal read lengths        <optional>
+#   `samtools` sam to bam conversion                    <optional>
+#   `picard` mark dups and collect stats                <optional>
+#   `samblaster` marking dups in bam file               <optional>
+#        - dependencies `git` and `g++`
+
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install --yes --no-install-recommends r-base && \
+    Rscript -e 'install.packages("circlize", repos="http://cran.r-project.org")' && \
+    Rscript -e 'install.packages("BiocManager"); BiocManager::install(c("GenomicRanges", "GenomicAlignments"))'
+
+WORKDIR /opt2
+# Install arriba
+# arriba references zlib location which has changed ... hence needs fixing
+RUN wget 'https://github.com/suhrig/arriba/releases/download/v2.0.0/arriba_v2.0.0.tar.gz' && \
+    tar -xzf arriba_v2.0.0.tar.gz && \
+    rm arriba_v2.0.0.tar.gz && \
+    cd /opt2/arriba_v2.0.0 && \
+    cp Makefile Makefile.bak && \
+    sed -i "s/zlib-1.2.11.tar.gz/current\/zlib.tar.gz/g" Makefile && \
+    make
+
+# Install and build STAR/2.7.6a
+RUN wget 'https://github.com/alexdobin/STAR/archive/2.7.6a.tar.gz' && \
+    tar -xzf 2.7.6a.tar.gz && \
+    rm 2.7.6a.tar.gz && \
+    cd /opt2/STAR-2.7.6a/source && \
+    make STAR
+
+# Install and build samblaster/v.0.1.26
+RUN wget 'https://github.com/GregoryFaust/samblaster/releases/download/v.0.1.26/samblaster-v.0.1.26.tar.gz' && \
+    tar -xzf samblaster-v.0.1.26.tar.gz && \
+    rm samblaster-v.0.1.26.tar.gz && \
+    cd /opt2/samblaster-v.0.1.26 && \
+    make
+
+# Add picard jar
+RUN mkdir -p /opt2/picard && \
+    wget 'https://github.com/broadinstitute/picard/releases/latest/download/picard.jar' && \
+    chmod -R a+rx /opt2/picard
+
+# download_references.sh wrapper
+RUN echo '#!/bin/bash\n\
+cd /references\n\
+/opt2/arriba_v2.0.0/download_references.sh $1 && \\\n\
+ASSEMBLY=$(sed -e "s/viral+.*//" -e "s/+.*//" <<<"$1") && \\\n\
+cp /opt2/arriba_v2.0.0/database/*$ASSEMBLY* /references' > /usr/local/bin/download_references.sh && \
+chmod a+x /usr/local/bin/download_references.sh
+
+# run_arriba.sh wrapper
+RUN echo '#!/bin/bash\n\
+cd /opt2/arriba_v2.0.0/test/ && \\\n\
+/opt2/arriba_v2.0.0/run_arriba.sh /references/STAR_index_* /references/*.gtf /references/*.fa /references/blacklist_*.tsv.gz /references/known_fusions_*.tsv.gz /references/protein_domains_*.gff3 ${THREADS-8} read1.fastq.gz $(ls read2.fastq.gz 2> /dev/null)' > /usr/local/bin/arriba.sh && \
+chmod a+x /usr/local/bin/arriba.sh
+
+# draw_fusions.R wrapper
+RUN echo '#!/bin/bash\n\
+Rscript /opt2/arriba_v2.0.0/draw_fusions.R --annotation=$(ls /references/*.gtf) --fusions=/opt2/arriba_v2.0.0/test/fusions.tsv --output=fusions.pdf --proteinDomains=$(ls /references/protein_domains_*.gff3) --alignments=Aligned.sortedByCoord.out.bam --cytobands=$(ls /references/cytobands_*.tsv)' > /usr/local/bin/draw_fusions.sh && \
+chmod a+x /usr/local/bin/draw_fusions.sh
+
+# Add Tools to PATH
+ENV PICARDJARPATH=/opt2/picard
+ENV PATH="/opt2/STAR-2.7.6a/source":$PATH
+ENV PATH="/opt2/arriba_v2.0.0":$PATH
+ENV PATH="/opt2/samblaster-v.0.1.26":$PATH
+ENV PATH="/opt2/bin":$PATH
+
+# Clean-up Image
+RUN apt-get clean && apt-get purge && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Copy Dockerfile and other files in a single layer
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
