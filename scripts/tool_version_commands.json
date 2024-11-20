@@ -1,14 +1,14 @@
 {
+    "bbtools": {
+      "command_in_path": "bbmap.sh",
+      "version_txt": "",
+      "version_command": "bbmap.sh --version 2>&1 | head -n2 | tail -n1 | awk '{print $NF}'"
+    },
     "bcftools": {
       "command_in_path": "bcftools",
       "version_txt": "",
       "version_command": "bcftools 2>&1 | grep -m1 -i version | awk -F\":\" '{print $2}'"
     },
-    "picard": {
-        "command_in_path": "",
-        "version_txt": "/opt2/picard/version.txt",
-        "version_command": ""
-      },
     "bedops": {
       "command_in_path": "bedops",
       "version_txt": "",
@@ -39,7 +39,7 @@
       "version_txt": "",
       "version_command": "cutadapt --version 2>&1 | head -n1 | awk '{print $NF}'"
     },
-    "GIT": {
+    "git": {
       "command_in_path": "git",
       "version_txt": "",
       "version_command": "git --version 2>&1 | awk '{print $NF}'"
@@ -59,6 +59,11 @@
       "version_txt": "",
       "version_command": "parallel --version | head -n1 | awk '{print $NF}'"
     },
+    "picard": {
+        "command_in_path": "",
+        "version_txt": "/opt2/picard/version.txt",
+        "version_command": ""
+      },
     "pigz": {
       "command_in_path": "pigz",
       "version_txt": "",
