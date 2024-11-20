@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/ccbr_arriba_2.0.0:v1-feat
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/1dbfb726655ecb43e35834a84cf82a921150d9c7/arriba/ccbr_arriba_2.0.0/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/77e2ef18c4f4d8b9ddfe5e3d93ece4320f16b020/arriba/ccbr_arriba_2.0.0/Dockerfile.v1
 
 
-Built on: 2024-11-18_21:40:22 
+Built on: 2024-11-20_18:48:44 
 
 Build tag: v1-feat 
 
@@ -14,7 +14,7 @@ Dockerfile path in repo: arriba/ccbr_arriba_2.0.0/Dockerfile.v1
 
 | Tool | Version |
 |---------|---------|
-| arriba | 2.0.0 |
+| bbtools | NOTINDOCKER |
 | bcftools | 1.13 using htslib 1.13+ds |
 | bedops | 2.4.40 typical |
 | bedtools | v2.30.0 |
@@ -26,11 +26,10 @@ Dockerfile path in repo: arriba/ccbr_arriba_2.0.0/Dockerfile.v1
 | java | 1.8.0_432 |
 | multiqc | 1.25.1 |
 | parallel | 20210822 |
+| picard | 2.27.5 |
 | pigz | 2.6 |
 | python2 | 2.7.18 |
 | python3 | 3.10.12 |
-| R | 4.1.2 |
-| samblaster | 0.1.26 |
 | samtools | 1.13 |
-| STAR | 2.7.6a |
 | vcftools | 0.1.16 |
+
