@@ -90,4 +90,3 @@
       "version_command": "vcftools --version 2>&1 | head -n1 | awk '{print $NF}'"
     }
   }
->>>>>>> dev
