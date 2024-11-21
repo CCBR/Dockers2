@@ -23,7 +23,9 @@ RUN mkdir -p /opt2/ucsc && \
     apt-get install -y --no-install-recommends axel && \
     rm -rf /var/lib/{apt,dpkg,cache,log}/
 
-COPY ucsc_tools_subset.txt /opt2/ucsc/
+ENV URL="https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/"
+RUN curl -s $URL | grep -oP '(?<=href=")[^"]*' | awk '/^[^/]+$/ {print $0}' | grep "bed\|fa\|wig\|maf" > /opt2/ucsc/ucsc_tools_subset.txt
+#COPY ucsc_tools_subset.txt /opt2/ucsc/
 WORKDIR /opt2/ucsc
 RUN while read tool;do axel -n 16 https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/${tool};done < ucsc_tools_subset.txt && \
     echo "v385" > /opt2/ucsc/version.txt
