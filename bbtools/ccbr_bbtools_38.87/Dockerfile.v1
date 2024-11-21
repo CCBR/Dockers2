@@ -12,4 +12,3 @@ ENV PATH="/opt2/bbmap":$PATH
 # Copy Dockerfile and other files in a single layer
 COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
 RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
-
