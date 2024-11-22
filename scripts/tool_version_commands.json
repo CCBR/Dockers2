@@ -39,6 +39,11 @@
       "version_txt": "",
       "version_command": "cutadapt --version 2>&1 | head -n1 | awk '{print $NF}'"
     },
+    "fastQValidator": {
+      "command_in_path": "fastQValidator",
+      "version_txt": "/opt2/fastQValidator/version.txt",
+      "version_command": ""
+    },
     "git": {
       "command_in_path": "git",
       "version_txt": "",
