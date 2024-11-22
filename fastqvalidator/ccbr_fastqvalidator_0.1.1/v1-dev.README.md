@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/ccbr_fastqvalidator_0.1.1:v1-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/849ca30f615d3ac5cd747f269eea53fd3e2cdb77/fastqvalidator/ccbr_fastqvalidator_0.1.1/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/f7ae4c2b7b6cc690c3c4e9fe61199629037772e2/fastqvalidator/ccbr_fastqvalidator_0.1.1/Dockerfile.v1
 
 
-Built on: 2024-11-22_14:12:15 
+Built on: 2024-11-22_17:44:54 
 
 Build tag: v1-dev 
 
