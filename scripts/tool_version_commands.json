@@ -79,6 +79,11 @@
       "version_txt": "",
       "version_command": "python3 --version 2>&1 | awk '{print $NF}'"
     },
+    "rsem": {
+      "command_in_path": "rsem-calculate-expression",
+      "version_txt": "",
+      "version_command": "rsem-calculate-expression --version 2>&1 | awk '{print $NF}'"
+    },
     "samtools": {
       "command_in_path": "samtools",
       "version_txt": "",
