@@ -1,15 +1,15 @@
-## CCBR/Dockers2 nciccbr/ccbr_arriba_2.0.0:v1-feat
+## CCBR/Dockers2 nciccbr/ccbr_qualimap_2.2.1:v1-feat
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/8a3ba59bdee6e6c26ef0007948f849ef9940bdf4/arriba/ccbr_arriba_2.0.0/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/bb033ec26af63ad5198c3d7afe5f2623f3612afd/qualimap/ccbr_qualimap_2.2.1/Dockerfile.v1
 
 
-Built on: 2024-11-22_18:25:18 
+Built on: 2024-11-26_21:40:23 
 
 Build tag: v1-feat 
 
 Base image: nciccbr/ccbr_ubuntu_22.04:v4 
 
-Dockerfile path in repo: arriba/ccbr_arriba_2.0.0/Dockerfile.v1 
+Dockerfile path in repo: qualimap/ccbr_qualimap_2.2.1/Dockerfile.v1 
 
 
 | Tool | Version |
@@ -26,10 +26,11 @@ Dockerfile path in repo: arriba/ccbr_arriba_2.0.0/Dockerfile.v1
 | java | 1.8.0_432 |
 | multiqc | 1.25.1 |
 | parallel | 20210822 |
-| picard | 2.27.5 |
+| picard | NOTINDOCKER |
 | pigz | 2.6 |
 | python2 | 2.7.18 |
 | python3 | 3.10.12 |
+| qualimap | v.2.2.1 |
 | samtools | 1.13 |
 | vcftools | 0.1.16 |
 

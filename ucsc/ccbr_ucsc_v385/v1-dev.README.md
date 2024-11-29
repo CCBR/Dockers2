@@ -1,15 +1,15 @@
-## CCBR/Dockers2 nciccbr/ccbr_arriba_2.0.0:v1-dev
+## CCBR/Dockers2 nciccbr/ccbr_ucsc_v385:v1-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/530658612da9115fd02bfd3b3b25ba8b64da1769/arriba/ccbr_arriba_2.0.0/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/530658612da9115fd02bfd3b3b25ba8b64da1769/ucsc/ccbr_ucsc_v385/Dockerfile.v1
 
 
-Built on: 2024-11-29_17:54:03 
+Built on: 2024-11-29_18:45:57 
 
 Build tag: v1-dev 
 
 Base image: nciccbr/ccbr_ubuntu_22.04:v4 
 
-Dockerfile path in repo: arriba/ccbr_arriba_2.0.0/Dockerfile.v1 
+Dockerfile path in repo: ucsc/ccbr_ucsc_v385/Dockerfile.v1 
 
 
 | Tool | Version |
@@ -31,7 +31,7 @@ Dockerfile path in repo: arriba/ccbr_arriba_2.0.0/Dockerfile.v1
 | kronatools | NOTINDOCKER |
 | multiqc | 1.25.1 |
 | parallel | 20210822 |
-| picard | 2.27.5 |
+| picard | NOTINDOCKER |
 | pigz | 2.6 |
 | preseq | NOTINDOCKER |
 | python2 | 2.7.18 |
@@ -40,6 +40,6 @@ Dockerfile path in repo: arriba/ccbr_arriba_2.0.0/Dockerfile.v1
 | rsem | NOTINDOCKER |
 | rseqc | NOTINDOCKER |
 | samtools | 1.13 |
-| ucsc_tools | NOTINDOCKER |
+| ucsc_tools | v385 |
 | vcftools | 0.1.16 |
 

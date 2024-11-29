@@ -1,15 +1,15 @@
-## CCBR/Dockers2 nciccbr/ccbr_arriba_2.0.0:v1-dev
+## CCBR/Dockers2 nciccbr/ccbr_fastqscreen_v0.14.1:v1-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/530658612da9115fd02bfd3b3b25ba8b64da1769/arriba/ccbr_arriba_2.0.0/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/530658612da9115fd02bfd3b3b25ba8b64da1769/fastqscreen/ccbr_fastqscreen_v0.14.1/Dockerfile.v1
 
 
-Built on: 2024-11-29_17:54:03 
+Built on: 2024-11-29_18:12:19 
 
 Build tag: v1-dev 
 
 Base image: nciccbr/ccbr_ubuntu_22.04:v4 
 
-Dockerfile path in repo: arriba/ccbr_arriba_2.0.0/Dockerfile.v1 
+Dockerfile path in repo: fastqscreen/ccbr_fastqscreen_v0.14.1/Dockerfile.v1 
 
 
 | Tool | Version |
@@ -24,14 +24,14 @@ Dockerfile path in repo: arriba/ccbr_arriba_2.0.0/Dockerfile.v1
 | cutadapt | NOTINDOCKER |
 | fastqc | NOTINDOCKER |
 | fastQValidator | NOTINDOCKER |
-| fastqscreen | NOTINDOCKER |
+| fastqscreen | v0.14.1 |
 | git | 2.34.1 |
 | java | 1.8.0_432 |
 | kraken2 | NOTINDOCKER |
 | kronatools | NOTINDOCKER |
 | multiqc | 1.25.1 |
 | parallel | 20210822 |
-| picard | 2.27.5 |
+| picard | NOTINDOCKER |
 | pigz | 2.6 |
 | preseq | NOTINDOCKER |
 | python2 | 2.7.18 |

@@ -1,0 +1,42 @@
+FROM nciccbr/ccbr_ubuntu_22.04:v4
+
+# Build time variables
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG IMAGENAME="000000"
+ENV IMAGENAME=${IMAGENAME}
+ARG BASEIMAGENAME="000000"
+ENV BASEIMAGENAME=${BASEIMAGENAME}
+
+# Install Kraken 2.1.1
+WORKDIR /opt2
+RUN wget https://github.com/DerrickWood/kraken2/archive/v2.1.1.tar.gz && \
+    tar -xzf v2.1.1.tar.gz && \
+    rm v2.1.1.tar.gz && \
+    cd kraken2-2.1.1 && \
+    ./install_kraken2.sh . && \
+	chmod -R a+rX /opt2/kraken2-2.1.1
+
+# Get latest krona release (v2.7.1): https://github.com/marbl/Krona/releases
+# Build Krona Taxonomy Databases
+# ktImportTaxonomy relies on NCBI taxonomy: https://github.com/marbl/Krona/wiki/Installing 
+RUN wget https://github.com/marbl/Krona/archive/v2.7.1.tar.gz && \
+	tar -xzf v2.7.1.tar.gz && \
+	rm v2.7.1.tar.gz && \ 
+	cd Krona-2.7.1/KronaTools && \
+	./install.pl  && \
+	mkdir -p /opt2/Krona-2.7.1/KronaTools/taxonomy && \
+	./updateTaxonomy.sh
+
+ENV PATH="/opt2/kraken2-2.1.1":$PATH
+
+
+# Copy Dockerfile and other files in a single layer
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
