@@ -39,6 +39,11 @@
       "version_txt": "",
       "version_command": "cutadapt --version 2>&1 | head -n1 | awk '{print $NF}'"
     },
+    "fastqc": {
+      "command_in_path": "fastqc",
+      "version_txt": "",
+      "version_command": "fastqc --version 2>&1 | head -n1 | awk '{print $NF}'"
+    },
     "git": {
       "command_in_path": "git",
       "version_txt": "",
