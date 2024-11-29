@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/ccbr_fastqvalidator_0.1.1:v1-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/f7ae4c2b7b6cc690c3c4e9fe61199629037772e2/fastqvalidator/ccbr_fastqvalidator_0.1.1/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/a69ad2a1eda7aef139ff2ccd3dd52ab73b2a0b80/fastqvalidator/ccbr_fastqvalidator_0.1.1/Dockerfile.v1
 
 
-Built on: 2024-11-22_17:44:54 
+Built on: 2024-11-29_17:31:22 
 
 Build tag: v1-dev 
 
@@ -22,15 +22,24 @@ Dockerfile path in repo: fastqvalidator/ccbr_fastqvalidator_0.1.1/Dockerfile.v1
 | bowtie2 | 2.4.4 |
 | bwa | 0.7.17-r1188 |
 | cutadapt | NOTINDOCKER |
+| fastqc | NOTINDOCKER |
 | fastQValidator | v0.1.1 |
+| fastqscreen | NOTINDOCKER |
 | git | 2.34.1 |
 | java | 1.8.0_432 |
+| kraken2 | NOTINDOCKER |
+| kronatools | NOTINDOCKER |
 | multiqc | 1.25.1 |
 | parallel | 20210822 |
 | picard | NOTINDOCKER |
 | pigz | 2.6 |
+| preseq | NOTINDOCKER |
 | python2 | 2.7.18 |
 | python3 | 3.10.12 |
+| qualimap | NOTINDOCKER |
+| rsem | NOTINDOCKER |
+| rseqc | NOTINDOCKER |
 | samtools | 1.13 |
+| ucsc_tools | NOTINDOCKER |
 | vcftools | 0.1.16 |
 
