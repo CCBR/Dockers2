@@ -15,3 +15,6 @@ while read prnumber prname;do git fetch origin pull/${prnumber}/head:${prname};d
 
 # submit a new pr
 gh pr create --draft --assignee @me --fill --body 'feat: new combined pr for all RENEE dockers' --base dev 
+
+# add comments to all combined prs and close them
+while read prnumber prname;do gh pr comment $prnumber --body "This PR is closed in favor of #<new pr number>"; gh pr close $prnumber;done < pr_list.tsv
