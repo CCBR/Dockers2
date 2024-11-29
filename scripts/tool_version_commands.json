@@ -110,6 +110,11 @@
       "version_txt": "",
       "version_command": "python3 --version 2>&1 | awk '{print $NF}'"
     },
+    "qualimap": {
+      "command_in_path": "qualimap",
+      "version_txt": "",
+      "version_command": "qualimap --help 2>&1 | grep -i ^qualimap | head -n1 | awk '{print $NF}'"
+    },
     "samtools": {
       "command_in_path": "samtools",
       "version_txt": "",
