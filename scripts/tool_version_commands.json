@@ -95,6 +95,11 @@
       "version_txt": "",
       "version_command": "pigz --version 2>&1 | awk '{print $NF}'"
     },
+    "preseq": {
+      "command_in_path": "preseq",
+      "version_txt": "",
+      "version_command": "preseq --help 2>&1 | grep -i version | head -n1 | awk '{print $NF}'"
+    },
     "python2": {
       "command_in_path": "python2",
       "version_txt": "",
