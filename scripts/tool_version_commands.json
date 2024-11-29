@@ -130,6 +130,11 @@
       "version_txt": "",
       "version_command": "samtools --version 2>&1 | head -n1 | awk '{print $NF}'"
     },
+    "ucsc_tools": {
+      "command_in_path": "",
+      "version_txt": "/opt2/ucsc/version.txt",
+      "version_command": ""
+    },
     "vcftools": {
       "command_in_path": "vcftools",
       "version_txt": "",
