@@ -49,6 +49,11 @@
       "version_txt": "/opt2/fastQValidator/version.txt",
       "version_command": ""
     },
+    "fastqscreen": {
+      "command_in_path": "fastq_screen",
+      "version_txt": "",
+      "version_command": "fastq_screen --version 2>&1 | head -n1 |awk '{print $NF}'"
+    },
     "git": {
       "command_in_path": "git",
       "version_txt": "",
