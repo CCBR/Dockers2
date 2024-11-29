@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/ccbr_fastqc_0.11.9:v1-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/a69ad2a1eda7aef139ff2ccd3dd52ab73b2a0b80/fastqc/ccbr_fastqc_0.11.9/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/530658612da9115fd02bfd3b3b25ba8b64da1769/fastqc/ccbr_fastqc_0.11.9/Dockerfile.v1
 
 
-Built on: 2024-11-29_17:27:07 
+Built on: 2024-11-29_18:10:18 
 
 Build tag: v1-dev 
 
