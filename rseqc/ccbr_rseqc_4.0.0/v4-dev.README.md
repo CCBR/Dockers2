@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/ccbr_rseqc_4.0.0:v4-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/a69ad2a1eda7aef139ff2ccd3dd52ab73b2a0b80/rseqc/ccbr_rseqc_4.0.0/Dockerfile.v4
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/530658612da9115fd02bfd3b3b25ba8b64da1769/rseqc/ccbr_rseqc_4.0.0/Dockerfile.v4
 
 
-Built on: 2024-11-29_18:01:05 
+Built on: 2024-11-29_18:44:09 
 
 Build tag: v4-dev 
 
