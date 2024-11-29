@@ -64,6 +64,17 @@
       "version_txt": "",
       "version_command": "java -version 2>&1 | head -n1 | awk '{print $NF}'"
     },
+    "kraken2": {
+      "command_in_path": "kraken2",
+      "version_txt": "",
+      "version_command": "kraken2 -version 2>&1 | head -n1 | awk '{print $NF}'"
+    },
+    "kronatools": {
+      "command_in_path": "ktImportTaxonomy",
+      "version_txt": "",
+      "version_command": "ktImportTaxonomy 2>&1 | head -n2 | tail -n1 | grep -oP \"KronaTools \\K[0-9]+\\.[0-9]+\\.[0-9]+\""
+
+    },
     "multiqc": {
       "command_in_path": "multiqc",
       "version_txt": "",
