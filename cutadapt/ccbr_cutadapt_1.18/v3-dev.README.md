@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/ccbr_cutadapt_1.18:v3-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/afaef03f1f3e58c6f12b7e31e9966618aa43f42c/cutadapt/ccbr_cutadapt_1.18/Dockerfile.v3
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/808657f81e1ab65fe0911bf7ddeea125944e8508/cutadapt/ccbr_cutadapt_1.18/Dockerfile.v3
 
 
-Built on: 2024-11-21_16:01:38 
+Built on: 2024-11-29_17:28:22 
 
 Build tag: v3-dev 
 
@@ -22,14 +22,24 @@ Dockerfile path in repo: cutadapt/ccbr_cutadapt_1.18/Dockerfile.v3
 | bowtie2 | 2.4.4 |
 | bwa | 0.7.17-r1188 |
 | cutadapt | 1.18 |
+| fastqc | NOTINDOCKER |
+| fastQValidator | NOTINDOCKER |
+| fastqscreen | NOTINDOCKER |
 | git | 2.34.1 |
 | java | 1.8.0_432 |
+| kraken2 | NOTINDOCKER |
+| kronatools | NOTINDOCKER |
 | multiqc | 1.25.1 |
 | parallel | 20210822 |
 | picard | NOTINDOCKER |
 | pigz | 2.6 |
+| preseq | NOTINDOCKER |
 | python2 | 2.7.18 |
 | python3 | 3.10.12 |
+| qualimap | NOTINDOCKER |
+| rsem | NOTINDOCKER |
+| rseqc | NOTINDOCKER |
 | samtools | 1.13 |
+| ucsc_tools | NOTINDOCKER |
 | vcftools | 0.1.16 |
 
