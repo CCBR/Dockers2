@@ -120,6 +120,11 @@
       "version_txt": "",
       "version_command": "rsem-calculate-expression --version 2>&1 | awk '{print $NF}'"
     },
+    "rseqc": {
+      "command_in_path": "tin.py",
+      "version_txt": "",
+      "version_command": "tin.py --version 2>&1 | awk '{print $NF}'"
+    },
     "samtools": {
       "command_in_path": "samtools",
       "version_txt": "",
