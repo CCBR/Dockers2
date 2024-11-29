@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/ccbr_rseqc_4.0.0:v4-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/1324c0e19a782e29dea0390be0e36f7c4f0b1a76/rseqc/ccbr_rseqc_4.0.0/Dockerfile.v4
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/a69ad2a1eda7aef139ff2ccd3dd52ab73b2a0b80/rseqc/ccbr_rseqc_4.0.0/Dockerfile.v4
 
 
-Built on: 2024-11-29_16:30:31 
+Built on: 2024-11-29_18:01:05 
 
 Build tag: v4-dev 
 
@@ -22,15 +22,24 @@ Dockerfile path in repo: rseqc/ccbr_rseqc_4.0.0/Dockerfile.v4
 | bowtie2 | 2.4.4 |
 | bwa | 0.7.17-r1188 |
 | cutadapt | NOTINDOCKER |
+| fastqc | NOTINDOCKER |
+| fastQValidator | NOTINDOCKER |
+| fastqscreen | NOTINDOCKER |
 | git | 2.34.1 |
 | java | 1.8.0_432 |
+| kraken2 | NOTINDOCKER |
+| kronatools | NOTINDOCKER |
 | multiqc | 1.25.1 |
 | parallel | 20210822 |
 | picard | NOTINDOCKER |
 | pigz | 2.6 |
+| preseq | NOTINDOCKER |
 | python2 | 2.7.18 |
 | python3 | 3.10.12 |
+| qualimap | NOTINDOCKER |
+| rsem | NOTINDOCKER |
 | rseqc | 4.0.0 |
 | samtools | 1.13 |
+| ucsc_tools | NOTINDOCKER |
 | vcftools | 0.1.16 |
 
