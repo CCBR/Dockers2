@@ -32,6 +32,11 @@ on:
       - dev
     paths:
       - "**/Dockerfile.*" # Only trigger if a Dockerfile.* is modified in any directory
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review # Ensures the workflow triggers only when a draft is marked "Ready for Review"
 
 env:
   suffix: ${{ github.base_ref == 'main' && github.event_name == 'pull_request' && 'main' || github.base_ref == 'dev' && github.event_name == 'pull_request' && 'dev' || 'feat' }}
