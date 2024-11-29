@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/ccbr_bbtools_38.87:v1-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/a69ad2a1eda7aef139ff2ccd3dd52ab73b2a0b80/bbtools/ccbr_bbtools_38.87/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/808657f81e1ab65fe0911bf7ddeea125944e8508/bbtools/ccbr_bbtools_38.87/Dockerfile.v1
 
 
-Built on: 2024-11-29_17:23:14 
+Built on: 2024-11-29_17:26:30 
 
 Build tag: v1-dev 
 
