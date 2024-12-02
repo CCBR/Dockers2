@@ -1,0 +1,34 @@
+FROM nciccbr/ccbr_ubuntu_22.04:v4
+
+# Build time variables
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG IMAGENAME="000000"
+ENV IMAGENAME=${IMAGENAME}
+ARG BASEIMAGENAME="000000"
+ENV BASEIMAGENAME=${BASEIMAGENAME}
+
+# install R dependencies
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install --yes --no-install-recommends r-base && \
+    Rscript -e 'install.packages("optparse", repos="http://cran.r-project.org")' && \
+    Rscript -e 'install.packages("XML", repos="http://cran.r-project.org")' && \
+    Rscript -e 'install.packages("BiocManager"); BiocManager::install(c("Repitools", "GenomicFeatures", "NOISeq", "Rsamtools", "rtracklayer" ))'
+
+WORKDIR /opt2
+# Install Qualimap
+RUN wget https://bitbucket.org/kokonech/qualimap/downloads/qualimap_v2.2.1.zip && \
+    unzip qualimap_v2.2.1.zip && \
+    rm -f qualimap_v2.2.1.zip
+# Add QualiMap to PATH
+ENV PATH="/opt2/qualimap_v2.2.1":$PATH
+
+# Copy Dockerfile and other files in a single layer
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}

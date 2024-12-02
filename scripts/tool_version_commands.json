@@ -1,18 +1,143 @@
 {
-    "bcftools": "bcftools 2>&1 | grep -m1 -i version |awk -F\":\" '{print $2}'",
-    "bedops": "bedops --version 2>&1 | grep -i version |awk -F\":\" '{print $2}' ",
-    "bedtools": "bedtools --version 2>&1 | awk '{print $NF}'",
-    "bowtie": "bowtie --version 2>&1 | grep -i version | grep bowtie | awk '{print $NF}'",
-    "bowtie2": "bowtie2 --version 2>&1 | grep -i version | grep bowtie | awk '{print $NF}'",
-    "bwa": "bwa 2>&1 | grep Version | awk '{print $NF}'",
-    "cutadapt": "cutadapt --version 2>&1 | head -n1 | awk '{print $NF}'",
-    "git": "git --version 2>&1 | awk '{print $NF}'",
-    "java": "java -version 2>&1 | head -n1 | awk '{print $NF}'",
-    "multiqc": "multiqc --version 2>&1 | awk '{print $NF}'",
-    "parallel": "parallel --version | head -n1 | awk '{print $NF}'",
-    "pigz": "pigz --version 2>&1 | awk '{print $NF}'",
-    "python2": "python2 --version 2>&1 | awk '{print $NF}'",
-    "python3": "python3 --version 2>&1 | awk '{print $NF}'",
-    "samtools": "samtools --version 2>&1 | head -n1 | awk '{print $NF}'",
-    "vcftools": "vcftools --version 2>&1 |  head -n1 | awk '{print $NF}'"
-}
+    "bbtools": {
+      "command_in_path": "bbmap.sh",
+      "version_txt": "",
+      "version_command": "bbmap.sh --version 2>&1 | head -n2 | tail -n1 | awk '{print $NF}'"
+    },
+    "bcftools": {
+      "command_in_path": "bcftools",
+      "version_txt": "",
+      "version_command": "bcftools 2>&1 | grep -m1 -i version | awk -F\":\" '{print $2}'"
+    },
+    "bedops": {
+      "command_in_path": "bedops",
+      "version_txt": "",
+      "version_command": "bedops --version 2>&1 | grep -i version | awk -F\":\" '{print $2}'"
+    },
+    "bedtools": {
+      "command_in_path": "bedtools",
+      "version_txt": "",
+      "version_command": "bedtools --version 2>&1 | awk '{print $NF}'"
+    },
+    "bowtie": {
+      "command_in_path": "bowtie",
+      "version_txt": "",
+      "version_command": "bowtie --version 2>&1 | grep -i version | grep bowtie | awk '{print $NF}'"
+    },
+    "bowtie2": {
+      "command_in_path": "bowtie2",
+      "version_txt": "",
+      "version_command": "bowtie2 --version 2>&1 | grep -i version | grep bowtie | awk '{print $NF}'"
+    },
+    "bwa": {
+      "command_in_path": "bwa",
+      "version_txt": "",
+      "version_command": "bwa 2>&1 | grep Version | awk '{print $NF}'"
+    },
+    "cutadapt": {
+      "command_in_path": "cutadapt",
+      "version_txt": "",
+      "version_command": "cutadapt --version 2>&1 | head -n1 | awk '{print $NF}'"
+    },
+    "fastqc": {
+      "command_in_path": "fastqc",
+      "version_txt": "",
+      "version_command": "fastqc --version 2>&1 | head -n1 | awk '{print $NF}'"
+    },
+    "fastQValidator": {
+      "command_in_path": "fastQValidator",
+      "version_txt": "/opt2/fastQValidator/version.txt",
+      "version_command": ""
+    },
+    "fastqscreen": {
+      "command_in_path": "fastq_screen",
+      "version_txt": "",
+      "version_command": "fastq_screen --version 2>&1 | head -n1 |awk '{print $NF}'"
+    },
+    "git": {
+      "command_in_path": "git",
+      "version_txt": "",
+      "version_command": "git --version 2>&1 | awk '{print $NF}'"
+    },
+    "java": {
+      "command_in_path": "java",
+      "version_txt": "",
+      "version_command": "java -version 2>&1 | head -n1 | awk '{print $NF}'"
+    },
+    "kraken2": {
+      "command_in_path": "kraken2",
+      "version_txt": "",
+      "version_command": "kraken2 -version 2>&1 | head -n1 | awk '{print $NF}'"
+    },
+    "kronatools": {
+      "command_in_path": "ktImportTaxonomy",
+      "version_txt": "",
+      "version_command": "ktImportTaxonomy 2>&1 | head -n2 | tail -n1 | grep -oP \"KronaTools \\K[0-9]+\\.[0-9]+\\.[0-9]+\""
+
+    },
+    "multiqc": {
+      "command_in_path": "multiqc",
+      "version_txt": "",
+      "version_command": "multiqc --version 2>&1 | awk '{print $NF}'"
+    },
+    "parallel": {
+      "command_in_path": "parallel",
+      "version_txt": "",
+      "version_command": "parallel --version | head -n1 | awk '{print $NF}'"
+    },
+    "picard": {
+        "command_in_path": "",
+        "version_txt": "/opt2/picard/version.txt",
+        "version_command": ""
+      },
+    "pigz": {
+      "command_in_path": "pigz",
+      "version_txt": "",
+      "version_command": "pigz --version 2>&1 | awk '{print $NF}'"
+    },
+    "preseq": {
+      "command_in_path": "preseq",
+      "version_txt": "",
+      "version_command": "preseq --help 2>&1 | grep -i version | head -n1 | awk '{print $NF}'"
+    },
+    "python2": {
+      "command_in_path": "python2",
+      "version_txt": "",
+      "version_command": "python2 --version 2>&1 | awk '{print $NF}'"
+    },
+    "python3": {
+      "command_in_path": "python3",
+      "version_txt": "",
+      "version_command": "python3 --version 2>&1 | awk '{print $NF}'"
+    },
+    "qualimap": {
+      "command_in_path": "qualimap",
+      "version_txt": "",
+      "version_command": "qualimap --help 2>&1 | grep -i ^qualimap | head -n1 | awk '{print $NF}'"
+    },
+    "rsem": {
+      "command_in_path": "rsem-calculate-expression",
+      "version_txt": "",
+      "version_command": "rsem-calculate-expression --version 2>&1 | awk '{print $NF}'"
+    },
+    "rseqc": {
+      "command_in_path": "tin.py",
+      "version_txt": "",
+      "version_command": "tin.py --version 2>&1 | awk '{print $NF}'"
+    },
+    "samtools": {
+      "command_in_path": "samtools",
+      "version_txt": "",
+      "version_command": "samtools --version 2>&1 | head -n1 | awk '{print $NF}'"
+    },
+    "ucsc_tools": {
+      "command_in_path": "",
+      "version_txt": "/opt2/ucsc/version.txt",
+      "version_command": ""
+    },
+    "vcftools": {
+      "command_in_path": "vcftools",
+      "version_txt": "",
+      "version_command": "vcftools --version 2>&1 | head -n1 | awk '{print $NF}'"
+    }
+  }
