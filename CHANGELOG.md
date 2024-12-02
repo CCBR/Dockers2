@@ -1,4 +1,4 @@
-## Dockers2 development version
+## Dockers2 0.1.2
 
 - Create new containers for RENEE:
     - [arriba](arriba/ccbr_arriba_2.0.0)
