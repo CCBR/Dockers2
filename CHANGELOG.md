@@ -1,5 +1,21 @@
 ## Dockers2 development version
 
+- Create new containers for RENEE:
+    - [arriba](arriba/ccbr_arriba_2.0.0)
+    - [bbtools](bbtools/ccbr_bbtools_38.87)
+    - [cutadapt](cutadapt/ccbr_cutadapt_1.18)
+    - [fastqc](fastqc/ccbr_fastqc_0.11.9)
+    - [fastqscreen](fastqscreen/ccbr_fastqscreen_0.14.1)
+    - [fastqvalidator](fastqvalidator/ccbr_fastqvalidator_0.1.1)
+    - [kraken](kraken/ccbr_kraken_2.1.1/)
+    - [preseq](preseq/ccbr_preseq_v2.0/)
+    - [qualimap](qualimap/ccbr_qualimap_2.2.1/)
+    - [rsem](rsem/ccbr_rsem_1.3.1/)
+    - [rseqc](rseqc/ccbr_rseqc_4.0.0/)
+    - [ucsc](ucsc/ccbr_ucsc_v385/)
+- Update `scripts/tool_version_commands.json` to specify different version commands for each tool.
+- Add helper script for combining PRs: `scripts/combine_prs.sh`
+
 ## Dockers2 0.1.1
 
 Update to base image. 🥳
