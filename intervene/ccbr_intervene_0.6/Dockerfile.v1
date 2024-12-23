@@ -77,9 +77,6 @@ COPY environment.txt /data2/
 RUN mamba install -c conda-forge -c bioconda --file /data2/environment.txt
 ENV R_LIBS_USER=/opt2/conda/lib/R/library/
 
-# check quarto installation
-RUN quarto check
-
 # Copy Dockerfile and other files in a single layer
 COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
 RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
