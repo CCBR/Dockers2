@@ -1,11 +1,11 @@
-## CCBR/Dockers2 nciccbr/minimal:v1-dev
+## CCBR/Dockers2 nciccbr/minimal:v1-feat
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/a9fc31fd66b4cbc4e6ed97ea6e54c499ea0b12d7/tests/minimal/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/8e810abfd12fdc2c1dfe33064cd7f15f7c3135d4/tests/minimal/Dockerfile.v1
 
 
-Built on: 2024-12-23_17:48:13 
+Built on: 2025-01-13_18:25:46 
 
-Build tag: v1-dev 
+Build tag: v1-feat 
 
 Base image: python:3.11 
 
