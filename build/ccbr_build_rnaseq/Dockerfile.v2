@@ -41,7 +41,7 @@ RUN mamba install -c bioconda \
 	'urllib3==1.26.4'
 
 # Copy Dockerfile and other files in a single layer
-COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+COPY $(basename ${DOCKERFILE}) /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
 RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
 
 WORKDIR /data2
