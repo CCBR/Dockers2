@@ -18,12 +18,11 @@ ARG BASEIMAGENAME="000000"
 ENV BASEIMAGENAME=${BASEIMAGENAME}
 
 # Download and add bedToGenePred
-ADD http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/bedToGenePred /opt2/bedToGenePred
-RUN chmod a+x /opt2/bedToGenePred
+WORKDIR /opt2
+RUN wget -q -O bedToGenePred http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/bedToGenePred && chmod a+x bedToGenePred
 
 # Download and add genePredToGtf
-ADD http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/genePredToGtf /opt2/genePredToGtf
-RUN chmod a+x /opt2/genePredToGtf
+RUN wget -q -O genePredToGtf http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/genePredToGtf && chmod a+x /opt2/genePredToGtf
 
 # Copy Dockerfile and other files in a single layer
 COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
