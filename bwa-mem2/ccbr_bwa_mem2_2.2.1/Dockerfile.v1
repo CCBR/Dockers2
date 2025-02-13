@@ -20,9 +20,9 @@ ENV BASEIMAGENAME=${BASEIMAGENAME}
 WORKDIR /opt2
 RUN wget 'https://github.com/bwa-mem2/bwa-mem2/releases/download/v2.2.1/bwa-mem2-2.2.1_x64-linux.tar.bz2' && \
     tar -xjvf bwa-mem2-2.2.1_x64-linux.tar.bz2 && rm -f bwa-mem2-2.2.1_x64-linux.tar.bz2
-WORKDIR /opt2/bwa-mem2.x86_64-linux
+WORKDIR /opt2/bwa-mem2-2.2.1_x64-linux
 RUN chmod a+x bwa-mem2 
-ENV PATH="/opt2/bwa-mem2.x86_64-linux/:$PATH"
+ENV PATH="/opt2/bwa-mem2-2.2.1_x64-linux/:$PATH"
 
 # Copy Dockerfile and other files in a single layer
 COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
