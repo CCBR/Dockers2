@@ -34,6 +34,11 @@
       "version_txt": "",
       "version_command": "bwa 2>&1 | grep Version | awk '{print $NF}'"
     },
+    "bwa-mem2": {
+      "command_in_path": "bwa-mem2",
+      "version_txt": "",
+      "version_command": "bwa-mem2 version 2>&1 | tail -n1 | awk '{print $NF}'"
+    },
     "cutadapt": {
       "command_in_path": "cutadapt",
       "version_txt": "",
