@@ -17,9 +17,9 @@ ENV IMAGENAME=${IMAGENAME}
 ARG BASEIMAGENAME="000000"
 ENV BASEIMAGENAME=${BASEIMAGENAME}
 
-# install deeptools 3.5.6 using pip
+# install deeptools 3.5.2 using pip
 RUN pip install --upgrade pip && \
-    pip install deeptools==3.5.6
+    pip install deeptools==3.5.2
 
 # Copy Dockerfile and other files in a single layer
 COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
