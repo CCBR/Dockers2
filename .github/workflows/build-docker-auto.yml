@@ -100,5 +100,5 @@ jobs:
           suffix: ${{ env.suffix }}
           push: true
           github-token: ${{ github.token }}
-          ccbr-actions-version: v0.2
+          ccbr-actions-version: fix-docker-path
           json-file: 'scripts/tool_version_commands.json'
