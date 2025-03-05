@@ -20,7 +20,7 @@ ENV PATH="/opt2/conda/bin:$PATH"
 # install packages from conda
 COPY environment.txt /data2/
 ENV CONDA_ENV=intervene
-RUN mamba create -n ${CONDA_ENV}} -c conda-forge -c bioconda --file /data2/environment.txt
+RUN mamba create -n ${CONDA_ENV} -c conda-forge -c bioconda --file /data2/environment.txt
 ENV R_LIBS_USER="/opt2/conda/envs/${CONDA_ENV}/lib/R/library/"
 ENV PATH="/opt2/conda/envs/${CONDA_ENV}/bin:$PATH"
 ENV PYTHONPATH="/opt2/conda/envs/${CONDA_ENV}/lib/${CONDA_ENV}/site-packages/"
