@@ -24,6 +24,15 @@ RUN mamba create -n ${CONDA_ENV} -c conda-forge -c bioconda --file /data2/enviro
 ENV R_LIBS_USER="/opt2/conda/envs/${CONDA_ENV}/lib/R/library/"
 ENV PATH="/opt2/conda/envs/${CONDA_ENV}/bin:$PATH"
 ENV PYTHONPATH="/opt2/conda/envs/${CONDA_ENV}/lib/${CONDA_ENV}/site-packages/"
+
+# install quarto
+# can't use conda to install quarto inside docker because docker use /bin/sh
+# https://github.com/conda-forge/quarto-feedstock/issues/30
+ENV QUARTO_VERSION=1.6.42
+ADD https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.tar.gz  /opt2
+WORKDIR /opt2
+RUN tar -xzvf quarto-${QUARTO_VERSION}-linux-amd64.tar.gz
+ENV PATH="/opt2/quarto-${QUARTO_VERSION}/bin/:${PATH}"
 # check quarto installation
 RUN quarto check
 
