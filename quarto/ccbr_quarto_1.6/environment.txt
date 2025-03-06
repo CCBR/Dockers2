@@ -1,6 +1,7 @@
 python=3.13.2
 jupyter
 quarto=1.6.41
+deno
 r-base=4.4.3
 r-broom
 r-complexupset
