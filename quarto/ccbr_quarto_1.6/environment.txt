@@ -1,6 +1,7 @@
-python=3.11
+python=3.12
 jupyter
-r-base=4.4.1
+quarto=1.6
+r-base=4.4
 r-broom
 r-complexupset
 r-cowplot
