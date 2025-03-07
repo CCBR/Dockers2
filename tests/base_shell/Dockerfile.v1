@@ -22,8 +22,10 @@ RUN apt-get update && apt-get upgrade -y && \
 
 RUN mkdir -p /opt2 /data2
 
+RUN echo $SHELL
 SHELL ["/bin/bash", "-c"]
 RUN chsh -s /bin/bash
+RUN echo $SHELL
 
 # Install conda and give write permissions to conda folder
 RUN echo 'export PATH=/opt2/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
