@@ -1,0 +1,46 @@
+FROM nciccbr/ccbr_ubuntu_22.04:v4
+
+# Build time variables
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG IMAGENAME="000000"
+ENV IMAGENAME=${IMAGENAME}
+ARG BASEIMAGENAME="000000"
+ENV BASEIMAGENAME=${BASEIMAGENAME}
+
+# Install dependencies
+RUN apt-get update && apt-get install --yes --no-install-recommends \
+    curl wget unzip
+
+# Set work directory
+WORKDIR /opt2
+
+# Set the version of Gen3 client
+ENV GEN3_VERSION="2025.03"
+
+# Download and extract Gen3 client
+RUN wget -O dataclient_linux.zip "https://github.com/uc-cdis/cdis-data-client/releases/download/${GEN3_VERSION}/dataclient_linux.zip" && \
+    unzip dataclient_linux.zip && \
+    rm dataclient_linux.zip && \
+    chmod +x gen3-client && \
+    mv gen3-client /opt2/gen3-client
+
+# Add /opt2 to PATH
+ENV PATH="/opt2:${PATH}"
+
+# Verify installation
+RUN gen3-client --version
+
+# Clean up unnecessary files
+RUN apt-get clean && apt-get purge && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Copy Dockerfile for reference
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
