@@ -28,19 +28,13 @@ ENV GEN3_VERSION="2025.03"
 RUN wget -O dataclient_linux.zip "https://github.com/uc-cdis/cdis-data-client/releases/download/${GEN3_VERSION}/dataclient_linux.zip" && \
     unzip dataclient_linux.zip && \
     rm dataclient_linux.zip && \
-    chmod +x gen3-client && \
-    mv gen3-client /opt2/gen3-client
+    chmod a+x gen3-client && \
 
-# Add /opt2 to PATH
-ENV PATH="/opt2:${PATH}"
-
-# Verify installation
-RUN gen3-client --version
 
 # Clean up unnecessary files
 RUN apt-get clean && apt-get purge && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Copy Dockerfile for reference
+# Copy Dockerfile and other files in a single layer
 COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
 RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
