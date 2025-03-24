@@ -139,5 +139,10 @@
       "command_in_path": "vcftools",
       "version_txt": "",
       "version_command": "vcftools --version 2>&1 | head -n1 | awk '{print $NF}'"
+    },
+    "gen3-client": {
+      "command_in_path": "gen3-client",
+      "version_txt": "",
+      "version_command": "gen3-client --version|cut -f3 -d ' '"
     }
   }
