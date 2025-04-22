@@ -1,0 +1,42 @@
+FROM nciccbr/ccbr_ubuntu_22.04:v4
+
+# Build time variables
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG IMAGENAME="000000"
+ENV IMAGENAME=${IMAGENAME}
+ARG BASEIMAGENAME="000000"
+ENV BASEIMAGENAME=${BASEIMAGENAME}
+
+# Set working directory
+WORKDIR /opt2
+
+
+# Install dependencies needed to build bedtools
+RUN apt-get update && apt-get install --yes --no-install-recommends \
+    build-essential zlib1g-dev wget ca-certificates \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install bedtools v2.27.1 from source
+RUN wget https://github.com/arq5x/bedtools2/releases/download/v2.27.1/bedtools-2.27.1.tar.gz && \
+    tar -xzf bedtools-2.27.1.tar.gz && \
+    cd bedtools2 && \
+    make && \
+    cp bin/bedtools /usr/local/bin/ && \
+    chmod a+x /usr/local/bin/bedtools && \
+    bedtools --version
+
+
+
+RUN pip3 install --no-cache-dir pybedtools
+
+
+# Copy Dockerfile and other files in a single layer
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
