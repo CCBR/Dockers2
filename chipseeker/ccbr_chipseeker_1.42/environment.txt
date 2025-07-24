@@ -1,4 +1,4 @@
-r-base=4
+r-base
 r-argparse
 r-BiocManager
 r-dplyr
@@ -6,7 +6,7 @@ r-ggimage
 r-ggplot2
 r-ggupset
 r-glue
-bioconductor-ChIPseeker=1.42
+bioconductor-ChIPseeker
 bioconductor-org.Bt.eg.db
 bioconductor-org.Hs.eg.db
 bioconductor-org.Mm.eg.db
