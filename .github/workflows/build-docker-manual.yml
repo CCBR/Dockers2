@@ -22,6 +22,7 @@ run-name: build-docker ${{ inputs.dockerfile }}-${{ inputs.suffix }}
 
 permissions:
   contents: write
+  pull-requests: write
 
 on:
   workflow_dispatch:
