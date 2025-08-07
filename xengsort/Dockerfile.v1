@@ -19,7 +19,7 @@ ENV BASEIMAGENAME=${BASEIMAGENAME}
 WORKDIR /opt2
 
 # Set the version 
-ENV XENGSORT_VERSION="2.0.8"
+ENV XENGSORT_VERSION="2.0.5"
 
 # Install all dependencies 
 RUN apt-get update && apt-get install --yes --no-install-recommends \
