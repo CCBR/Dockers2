@@ -1,0 +1,35 @@
+FROM nciccbr/ccbr_ubuntu_22.04:v4
+
+# Build time variables
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG IMAGENAME="000000"
+ENV IMAGENAME=${IMAGENAME}
+ARG BASEIMAGENAME="000000"
+ENV BASEIMAGENAME=${BASEIMAGENAME}
+
+
+# Set work directory
+WORKDIR /opt2
+
+# Set the version 
+ENV XENGSORT_VERSION="2.0.8"
+
+# Install all dependencies 
+RUN apt-get update && apt-get install --yes --no-install-recommends \
+    curl wget unzip \
+    python3 python3-pip python3-setuptools \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* \
+    && pip3 install --no-cache-dir xengsort==${XENGSORT_VERSION} \
+    && xengsort --help
+
+
+# Copy Dockerfile 
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
