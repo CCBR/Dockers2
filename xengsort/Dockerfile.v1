@@ -28,7 +28,10 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install --no-cache-dir xengsort==${XENGSORT_VERSION} 
+RUN pip3 install --no-cache-dir \
+    numpy==1.23.5 \
+    numba==0.57.0 \
+    xengsort==${XENGSORT_VERSION}
 
 RUN xengsort --help
 
