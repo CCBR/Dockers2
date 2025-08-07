@@ -24,10 +24,13 @@ ENV XENGSORT_VERSION="2.0.8"
 # Install all dependencies 
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     curl wget unzip \
-    python3 python3-pip python3-setuptools \
-    && apt-get clean && rm -rf /var/lib/apt/lists/* \
-    && pip3 install --no-cache-dir xengsort==${XENGSORT_VERSION} \
-    && xengsort --help
+    python3 python3-pip python3-setuptools
+
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install --no-cache-dir xengsort==2.0.8
+
+RUN xengsort --help
 
 
 # Copy Dockerfile 
