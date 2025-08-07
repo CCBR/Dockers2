@@ -28,7 +28,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install --no-cache-dir xengsort==2.0.8
+RUN pip3 install --no-cache-dir xengsort==2.0.5
 
 RUN xengsort --help
 
