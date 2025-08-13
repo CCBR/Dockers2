@@ -19,7 +19,7 @@ ENV BASEIMAGENAME=${BASEIMAGENAME}
 WORKDIR /opt2
 
 # Set the version 
-ENV XENGSORT_VERSION="1.5.0.1"
+ENV XENGSORT_VERSION="1.1.0"
 
 # Install all dependencies 
 RUN apt-get update && apt-get install --yes --no-install-recommends \
