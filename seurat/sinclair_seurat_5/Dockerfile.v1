@@ -15,12 +15,11 @@ ENV DOCKERFILE=${DOCKERFILE}
 COPY environment.yml /data2/
 ENV CONDA_ENV=seurat5
 RUN mamba env create -n ${CONDA_ENV} -f /data2/environment.yml && \
-    echo "conda activate ${CONDA_ENV}" > ~/.bashrc
+    echo "conda activate ${CONDA_ENV}" > ~/.bashrc && \
+    chmod -R a+rx /opt2
 ENV PATH="/opt2/conda/envs/${CONDA_ENV}/bin:$PATH"
 
 # Copy Dockerfile to container
 COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
 
-# clean up
-RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
 WORKDIR /data2
