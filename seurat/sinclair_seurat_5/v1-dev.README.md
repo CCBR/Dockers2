@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/sinclair_seurat_5:v1-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/7bdcc8ac00481e4f41227eef4d2f59e1cbb02a7c/seurat/sinclair_seurat_5/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/c54acb2dbfdb70d81233ee24d8599329d19df0ed/seurat/sinclair_seurat_5/Dockerfile.v1
 
 
-Built on: 2025-09-19_20:11:36 
+Built on: 2025-09-29_19:49:16 
 
 Build tag: v1-dev 
 
