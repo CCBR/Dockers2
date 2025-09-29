@@ -19,6 +19,9 @@
 
 name: build-docker-auto
 
+permissions:
+  contents: write
+
 on:
   push:
     branches:

@@ -20,12 +20,15 @@
 name: build-docker-manual
 run-name: build-docker ${{ inputs.dockerfile }}-${{ inputs.suffix }}
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
     inputs:
       dockerfile:
         type: string
-        description: path to the Dockerfile in the repo (e.g. common/ccbr_bwa/Dockerfile)
+        description: path to the Dockerfile in the repo (e.g. base_images/ccbr_ubuntu_22.04/Dockerfile.v4)
         required: true
       dockerhub-namespace:
         type: string
@@ -34,7 +37,7 @@ on:
         default: nciccbr
       suffix:
         type: string
-        description: Suffix to add to image tag eg. "dev" to add "-dev"
+        description: Suffix to add to image tag (e.g. "dev" to add "-dev")
         required: true
         default: feat
       push:
@@ -43,7 +46,7 @@ on:
         required: true
         default: false
       ccbr-actions-version:
-        description: "The version of ccbr_actions to use"
+        description: "The version or branch of ccbr_actions to use (see https://github.com/ccbr/actions)"
         required: true
         default: "v0.2"
 
