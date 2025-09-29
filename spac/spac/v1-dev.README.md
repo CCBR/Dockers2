@@ -1,15 +1,15 @@
-## CCBR/Dockers2 nciccbr/minimal:v1-feat
+## CCBR/Dockers2 nciccbr/spac:v1-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/7461aa7f0d3f82fc6052b8da8bdf8a34e2ea1f49/tests/minimal/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/3eac36b58a0204c540e1cb6880bc04c6ea210590/spac/spac/Dockerfile.v1
 
 
-Built on: 2025-09-29_20:13:10 
+Built on: 2025-09-29_19:42:09 
 
-Build tag: v1-feat 
+Build tag: v1-dev 
 
-Base image: python:3.11 
+Base image: continuumio/miniconda3:24.3.0-0 
 
-Dockerfile path in repo: tests/minimal/Dockerfile.v1 
+Dockerfile path in repo: spac/spac/Dockerfile.v1 
 
 
 | Tool | Version |
@@ -25,7 +25,7 @@ Dockerfile path in repo: tests/minimal/Dockerfile.v1
 | fastqc | NOTINDOCKER |
 | fastQValidator | NOTINDOCKER |
 | fastqscreen | NOTINDOCKER |
-| git | 2.47.3 |
+| git | 2.30.2 |
 | java | NOTINDOCKER |
 | kraken2 | NOTINDOCKER |
 | kronatools | NOTINDOCKER |
@@ -35,7 +35,7 @@ Dockerfile path in repo: tests/minimal/Dockerfile.v1
 | pigz | NOTINDOCKER |
 | preseq | NOTINDOCKER |
 | python2 | NOTINDOCKER |
-| python3 | 3.11.13 |
+| python3 | 3.9.13 |
 | qualimap | NOTINDOCKER |
 | rsem | NOTINDOCKER |
 | rseqc | NOTINDOCKER |
