@@ -1,0 +1,27 @@
+name: shiver
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.13
+  - shiver=1.7.3
+  - biopython=1.85
+  - numpy=2.3.0
+  - pandas=2.3.0
+  - samtools=1.22
+  - blast=2.16.0
+  - mafft=7.526
+  - trimmomatic=0.39
+  - smalt=0.7.6
+  - requests=2.32.4
+  - beautifulsoup4=4.13.4
+  - entrez-direct=22.4
+  - wget=1.21.4
+  - curl=8.14.1
+  - openjdk=23.0.2
+  - pip=25.1.1
+  - pip:
+    - pyfastaq==3.17.0
+    - aiofiles==24.1.0
+    - setuptools==80.9.0

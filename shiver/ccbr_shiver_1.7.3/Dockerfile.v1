@@ -1,0 +1,61 @@
+FROM nciccbr/ccbr_ubuntu_base_20.04:v7
+
+# Build time variables
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+
+# Install shiver and dependencies via mamba
+COPY environment.yml /data2/
+ENV CONDA_ENV=shiver
+RUN mamba env create -n ${CONDA_ENV} -f /data2/environment.yml && \
+    /opt2/conda/bin/conda init bash && \
+    echo "conda activate ${CONDA_ENV}" >> ~/.bashrc && \
+    chmod -R a+rx /opt2
+
+# Set PATH to include the conda environment
+ENV PATH="/opt2/conda/envs/${CONDA_ENV}/bin:/opt2/conda/bin:$PATH"
+
+# Download shiver GitHub repo for test data
+RUN cd /data2 && \
+    git clone https://github.com/ChrisHIV/shiver.git && \
+    cp -r shiver/data/example_input test_data && \
+    rm -rf shiver
+
+# Download HXB2 reference genome
+RUN cd /data2 && \
+    wget -O hxb2_ref.fasta "https://www.ncbi.nlm.nih.gov/sviewer/viewer.fcgi?id=K03455&db=nuccore&report=fasta"
+
+# Create and run shiver test
+RUN cd /data2 && \
+    echo "Running shiver test..." && \
+    # Initialize shiver
+    shiver_init.sh my_init_dir /opt2/conda/envs/shiver/bin/config.sh \
+        hxb2_ref.fasta \
+        test_data/adapters_Illumina.fasta \
+        test_data/primers_GallEtAl2012.fasta && \
+    # Align contigs
+    shiver_align_contigs.sh my_init_dir /opt2/conda/envs/shiver/bin/config.sh \
+        test_data/MysteryHIV_contigs.fasta my_output_id && \
+    # Map reads and call consensus
+    shiver_map_reads.sh my_init_dir /opt2/conda/envs/shiver/bin/config.sh \
+        test_data/MysteryHIV_contigs.fasta my_output_id \
+        my_output_id.blast my_output_id_cut_wRefs.fasta \
+        test_data/MysteryHIV_1.fastq \
+        test_data/MysteryHIV_2.fastq && \
+    echo "Shiver test completed successfully!" && \
+    ls -la my_output_id*
+
+# Create a simple test script for users
+COPY test_shiver.sh /data2/
+RUN chmod +x /data2/test_shiver.sh
+
+# Copy Dockerfile to container
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+
+WORKDIR /data2
