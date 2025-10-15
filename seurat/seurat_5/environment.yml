@@ -26,7 +26,7 @@ dependencies:
   - r-future.apply
   - r-ggpubr
   - r-gridextra
-  - r-harmony=0.1
+  - r-harmony>=0.1
   - r-hdf5r
   - r-liger=1
   - r-png
@@ -35,7 +35,7 @@ dependencies:
   - r-reticulate
   - r-r.utils
   - r-scales
-  - r-seurat=5.1
+  - r-seurat=5.3
   - r-signac=1
   - r-tidyverse
   - r-tinytex
