@@ -19,6 +19,7 @@ RUN conda update -n base -c conda-forge conda && \
     echo "conda activate ${CONDA_ENV}" > ~/.bashrc && \
     chmod -R a+rx /opt2
 ENV PATH="/opt2/conda/envs/${CONDA_ENV}/bin:$PATH"
+ENV R_LIBS_USER="/opt2/conda/envs/${CONDA_ENV}/lib/R/library/"
 COPY install.R /data2/
 RUN Rscript /data2/install.R
 
