@@ -1,15 +1,15 @@
-## CCBR/Dockers2 nciccbr/sinclair_seurat_5:v1-dev
+## CCBR/Dockers2 nciccbr/seurat_5:v1-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/c54acb2dbfdb70d81233ee24d8599329d19df0ed/seurat/sinclair_seurat_5/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/2cac85800ba3ba86fcc93ffc9ae360d03d1199d5/seurat/seurat_5/Dockerfile.v1
 
 
-Built on: 2025-09-29_19:49:16 
+Built on: 2025-10-15_17:39:39 
 
 Build tag: v1-dev 
 
 Base image: nciccbr/ccbr_ubuntu_base_20.04:v7 
 
-Dockerfile path in repo: seurat/sinclair_seurat_5/Dockerfile.v1 
+Dockerfile path in repo: seurat/seurat_5/Dockerfile.v1 
 
 
 | Tool | Version |
@@ -35,7 +35,7 @@ Dockerfile path in repo: seurat/sinclair_seurat_5/Dockerfile.v1
 | pigz | 2.4 |
 | preseq | NOTINDOCKER |
 | python2 | 2.7.18 |
-| python3 | 3.13.7 |
+| python3 | 3.13.8 |
 | qualimap | NOTINDOCKER |
 | rsem | NOTINDOCKER |
 | rseqc | NOTINDOCKER |
