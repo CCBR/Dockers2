@@ -18,25 +18,33 @@ dependencies:
   - r-cluster
   - r-cluster=2
   - r-cowplot
+  - r-dplyr
   - r-DT
   - r-essentials
   - r-evaluate>=1.0.3
   - r-farver
   - r-flexmix
+  - r-forcats
   - r-future.apply
+  - r-ggplot2<4
   - r-ggpubr
   - r-gridextra
   - r-harmony>=0.1
   - r-hdf5r
   - r-liger=1
+  - r-lubridate
   - r-png
   - r-presto
+  - r-purrr
+  - r-readr
   - r-remotes
   - r-reticulate
   - r-r.utils
   - r-scales
   - r-seurat=5.3
   - r-signac=1
-  - r-tidyverse
+  - r-stringr
+  - r-tibble
+  - r-tidyr
   - r-tinytex
   - scvi-tools=1.2
