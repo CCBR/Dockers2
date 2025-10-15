@@ -21,6 +21,7 @@ name: build-docker-auto
 
 permissions:
   contents: write
+  pull-requests: write
 
 on:
   push:
