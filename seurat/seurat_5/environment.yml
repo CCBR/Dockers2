@@ -31,7 +31,7 @@ dependencies:
   - r-gridextra
   - r-harmony>=0.1
   - r-hdf5r
-  - r-liger
+  - r-liger=1
   - r-lubridate
   - r-png
   - r-presto
