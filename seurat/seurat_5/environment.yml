@@ -8,6 +8,7 @@ dependencies:
   - bioconductor-celldex
   - bioconductor-genomeinfodbdata
   - bioconductor-glmgampoi
+  - bioconductor-gypsum
   - bioconductor-org.hs.eg.db
   - bioconductor-org.mm.eg.db
   - bioconductor-orthology.eg.db
