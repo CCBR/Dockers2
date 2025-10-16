@@ -2,11 +2,11 @@ Package: example
 Title: example R pkgs
 Version: 1.0.2
 Authors@R: c(
-    person("Philip", "Homan", , "philip.homan@nih.gov", role = "cre",
-           comment = c(ORCID = "0000-0002-3389-4931"))
+    person("Kelly", "Sovacool", , "kelly.sovacool@nih.gov", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0003-3283-829X")),
+    person("CCR Collaborative Bioinformatics Resource", role = "cph")
   )
-Description: A set of functions for analyzing single-cell RNA-seq data
-    using the Seurat workflow.
+Description: An example R package with a docker recipe.
 License: MIT
 Depends:
     R (>= 4.0)
