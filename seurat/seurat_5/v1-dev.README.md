@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/seurat_5:v1-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/6bd0cef865e6341b61aa2b2d81bc6892462e070f/seurat/seurat_5/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/af72ad2f272b33bf50edac3b24f0cce83dfaa43d/seurat/seurat_5/Dockerfile.v1
 
 
-Built on: 2025-10-15_21:24:02 
+Built on: 2025-10-16_14:06:26 
 
 Build tag: v1-dev 
 
@@ -35,7 +35,7 @@ Dockerfile path in repo: seurat/seurat_5/Dockerfile.v1
 | pigz | 2.4 |
 | preseq | NOTINDOCKER |
 | python2 | 2.7.18 |
-| python3 | 3.13.8 |
+| python3 | 3.13.9 |
 | qualimap | NOTINDOCKER |
 | rsem | NOTINDOCKER |
 | rseqc | NOTINDOCKER |
