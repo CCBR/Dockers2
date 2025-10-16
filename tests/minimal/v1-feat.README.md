@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/minimal:v1-feat
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/8e810abfd12fdc2c1dfe33064cd7f15f7c3135d4/tests/minimal/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/7461aa7f0d3f82fc6052b8da8bdf8a34e2ea1f49/tests/minimal/Dockerfile.v1
 
 
-Built on: 2025-01-13_18:25:46 
+Built on: 2025-09-29_20:13:10 
 
 Build tag: v1-feat 
 
@@ -25,7 +25,7 @@ Dockerfile path in repo: tests/minimal/Dockerfile.v1
 | fastqc | NOTINDOCKER |
 | fastQValidator | NOTINDOCKER |
 | fastqscreen | NOTINDOCKER |
-| git | 2.39.5 |
+| git | 2.47.3 |
 | java | NOTINDOCKER |
 | kraken2 | NOTINDOCKER |
 | kronatools | NOTINDOCKER |
@@ -35,7 +35,7 @@ Dockerfile path in repo: tests/minimal/Dockerfile.v1
 | pigz | NOTINDOCKER |
 | preseq | NOTINDOCKER |
 | python2 | NOTINDOCKER |
-| python3 | 3.11.11 |
+| python3 | 3.11.13 |
 | qualimap | NOTINDOCKER |
 | rsem | NOTINDOCKER |
 | rseqc | NOTINDOCKER |

@@ -1,0 +1,28 @@
+FROM nciccbr/ccbr_ubuntu_base_20.04:v7
+
+# build time variables
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+
+# R, python, and other packages available in conda should be installed with mamba here.
+# Specify all dependencies in environment.yml
+COPY environment.yml /data2/
+ENV CONDA_ENV=seurat5
+RUN conda update -n base -c conda-forge conda && \
+    mamba env create -n ${CONDA_ENV} -f /data2/environment.yml && \
+    echo "conda activate ${CONDA_ENV}" > ~/.bashrc && \
+    chmod -R a+rx /opt2
+ENV PATH="/opt2/conda/envs/${CONDA_ENV}/bin:$PATH"
+COPY install.R /data2/
+RUN Rscript /data2/install.R
+
+# Copy Dockerfile to container
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+
+WORKDIR /data2
