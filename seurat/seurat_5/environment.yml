@@ -31,6 +31,7 @@ dependencies:
   - r-gridextra
   - r-harmony>=0.1
   - r-hdf5r
+  - r-httr2
   - r-liger=1
   - r-lubridate
   - r-png
@@ -48,3 +49,4 @@ dependencies:
   - r-tidyr
   - r-tinytex
   - scvi-tools=1.2
+  - zlib
