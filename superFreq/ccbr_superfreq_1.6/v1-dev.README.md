@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/ccbr_superfreq_1.6:v1-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/e8f321b1055d97af250511136d462f579c2dce92/superFreq/ccbr_superfreq_1.6/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/09527757dfef7dd1344c5deab7c44e6f5d862265/superFreq/ccbr_superfreq_1.6/Dockerfile.v1
 
 
-Built on: 2025-11-12_15:20:11 
+Built on: 2025-11-12_18:20:04 
 
 Build tag: v1-dev 
 
