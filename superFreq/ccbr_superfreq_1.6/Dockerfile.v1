@@ -1,0 +1,36 @@
+FROM nciccbr/ccbr_ubuntu_base_20.04:v7
+
+# Build time variables
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+
+# Install R and dependencies via mamba
+COPY environment.yml /data2/
+ENV CONDA_ENV=superfreq
+RUN mamba env create -n ${CONDA_ENV} -f /data2/environment.yml && \
+    /opt2/conda/bin/conda init bash && \
+    echo "conda activate ${CONDA_ENV}" >> ~/.bashrc && \
+    chmod -R a+rx /opt2
+
+# Set PATH to include the conda environment
+ENV PATH="/opt2/conda/envs/${CONDA_ENV}/bin:/opt2/conda/bin:$PATH"
+
+# Install superFreq from GitHub with explicit error checking
+RUN /opt2/conda/envs/${CONDA_ENV}/bin/R -e "remotes::install_github('ChristofferFlensburg/superFreq@739037a', upgrade = 'never')" && \
+    echo "superFreq installation completed"
+
+# Test installation
+COPY test_superfreq.R /data2/
+RUN chmod +x /data2/test_superfreq.R && \
+    /opt2/conda/envs/${CONDA_ENV}/bin/Rscript /data2/test_superfreq.R
+
+# Copy Dockerfile to container
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+
+WORKDIR /data2
