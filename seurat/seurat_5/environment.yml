@@ -3,16 +3,16 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - bioconductor-annotationdbi
+  - bioconductor-annotationdbi=1.62.2
   - bioconductor-biocparallel
-  - bioconductor-celldex
+  - bioconductor-celldex>=1.20.0
   - bioconductor-genomeinfodbdata
   - bioconductor-glmgampoi
   - bioconductor-org.hs.eg.db
   - bioconductor-org.mm.eg.db
-  - bioconductor-orthology.eg.db
-  - bioconductor-scrnaseq
-  - bioconductor-singlecellexperiment
+  - bioconductor-orthology.eg.db=3.17.0
+  - bioconductor-scrnaseq=2.14.0
+  - bioconductor-singlecellexperiment=1.22.0
   - bioconductor-singler=2
   - r-base=4
   - r-cluster
