@@ -1,0 +1,25 @@
+name: ichorcna
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - seqtk=1.5
+  - fastp=0.24.0
+  - r-base=4.2
+  - r-devtools=2.4.5
+  - r-plyr=1.8.9
+  - r-stringi
+  - icu=70
+  - bioconductor-hmmcopy
+  - bioconductor-genomeinfodb
+  - bioconductor-genomicranges
+  - r-ichorcna=0.3.2
+  - cmake=3.26
+  - make
+  - cxx-compiler
+  - pip=25.1.1
+  - pip:
+    - atari==0.1.4
+    - igv-reports==1.16.1
