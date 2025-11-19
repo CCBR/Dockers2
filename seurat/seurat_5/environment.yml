@@ -5,7 +5,7 @@ channels:
 dependencies:
   - bioconductor-annotationdbi=1.62.2
   - bioconductor-biocparallel
-  - bioconductor-celldex>=1.20.0
+  - bioconductor-celldex>=1.16.0
   - bioconductor-genomeinfodbdata
   - bioconductor-glmgampoi
   - bioconductor-org.hs.eg.db
