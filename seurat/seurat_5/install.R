@@ -1,6 +1,9 @@
 #!/usr/bin/env Rscript
 args <- commandArgs(trailingOnly = TRUE)
 setRepositories(ind = 1:3)
+
+remotes::install_bioc("celldex", upgrade = "never")
+
 remotes::install_github("satijalab/seurat-wrappers@73466e3", upgrade = "never")
 
 # https://github.com/chris-mcginnis-ucsf/DoubletFinder/issues/244
