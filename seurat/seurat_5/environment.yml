@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - bioconductor-annotationdbi=1.62.2
+  - bioconductor-annotationdbi
   - bioconductor-biocparallel
   - bioconductor-celldex>=1.16.0
   - bioconductor-genomeinfodbdata
