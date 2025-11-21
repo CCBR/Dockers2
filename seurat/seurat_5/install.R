@@ -2,7 +2,6 @@
 args <- commandArgs(trailingOnly = TRUE)
 setRepositories(ind = 1:3)
 
-remotes::install_cran("alabaster.base", repos = "https://bioc.r-universe.dev/", upgrade = "never")
 remotes::install_cran("gypsum", repos = "https://bioc.r-universe.dev/", upgrade = "never")
 remotes::install_bioc("celldex", upgrade = "never")
 

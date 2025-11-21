@@ -3,6 +3,7 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
+  - bioconductor-alabaster.base
   - bioconductor-annotationdbi
   - bioconductor-biocparallel
   - bioconductor-genomeinfodbdata
@@ -13,7 +14,7 @@ dependencies:
   - bioconductor-scrnaseq
   - bioconductor-singlecellexperiment
   - bioconductor-singler
-  - r-base=4.5
+  - r-base=4.3
   - r-cluster
   - r-cluster=2
   - r-cowplot
