@@ -9,11 +9,11 @@ dependencies:
   - bioconductor-glmgampoi
   - bioconductor-org.hs.eg.db
   - bioconductor-org.mm.eg.db
-  - bioconductor-orthology.eg.db=3.17.0
-  - bioconductor-scrnaseq=2.14.0
-  - bioconductor-singlecellexperiment=1.22.0
-  - bioconductor-singler=2
-  - r-base=4
+  - bioconductor-orthology.eg.db
+  - bioconductor-scrnaseq
+  - bioconductor-singlecellexperiment
+  - bioconductor-singler
+  - r-base=4.5
   - r-cluster
   - r-cluster=2
   - r-cowplot
