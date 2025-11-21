@@ -2,6 +2,7 @@
 args <- commandArgs(trailingOnly = TRUE)
 setRepositories(ind = 1:3)
 
+remotes::install_cran("alabaster.base", repos = "https://bioc.r-universe.dev/", upgrade = "never")
 remotes::install_cran("gypsum", repos = "https://bioc.r-universe.dev/", upgrade = "never")
 remotes::install_bioc("celldex", upgrade = "never")
 
@@ -14,8 +15,10 @@ remotes::install_version("Routliers", repos = "https://cran.rstudio.com/", versi
 remotes::install_cran("BPCells", repos = "https://bnprks.r-universe.dev", upgrade = "never")
 
 abort_packages_not_installed <- function(...) {
-  package_status <- lapply(c(...), rlang::is_installed)
-  packages_not_installed <- Filter(isFALSE, package_status) |> unlist()
+  pkgs <- c(...)
+  package_status <- lapply(pkgs, rlang::is_installed) |> unlist()
+  names(package_status) <- pkgs
+  packages_not_installed <- Filter(isFALSE, package_status)
   if (length(packages_not_installed) > 0) {
     msg <- paste0(
       "The following package(s) are required but are not installed: \n  ",
