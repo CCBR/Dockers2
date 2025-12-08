@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/spac:v2-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/8ef63d8deb7931bdd1762750222fa36c0ee82789/spac/spac/Dockerfile.v2
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/e059fc368bc5e93b40b215e4eef977a2bcbe53cd/spac/spac/Dockerfile.v2
 
 
-Built on: 2025-12-05_18:23:43 
+Built on: 2025-12-08_20:28:30 
 
 Build tag: v2-dev 
 
