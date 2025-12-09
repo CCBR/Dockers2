@@ -74,7 +74,8 @@ ENV PYTHONPATH=/opt/conda/envs/${ENV_NAME}/lib/python3.9/site-packages:${PYTHONP
 
 # Step 6: "Install the SPAC package" from GitHub branch
 # (Replaces: pip install -e . with direct GitHub install)
-RUN /opt/conda/envs/${ENV_NAME}/bin/pip install \
+# Using --no-deps to preserve conda-installed package versions (pandas 1.5.3, scimap 2.1.3_dmap_pandas153)
+RUN /opt/conda/envs/${ENV_NAME}/bin/pip install --no-deps \
     "git+https://github.com/${GITHUB_REPO}.git@${GITHUB_BRANCH}"
 
 # Make conda activate spac environment automatically in bash shells
