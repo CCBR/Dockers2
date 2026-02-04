@@ -1,0 +1,26 @@
+FROM nciccbr/ccrgb_qctools:v4.0
+
+LABEL description="Adding reconCNV and circlize to ccrgb_qctools"
+LABEL maintainer="gangalapudiv2"
+
+# 1. R Dependencies
+# Added 'circlize' to the CRAN installation list
+RUN Rscript -e 'BiocManager::install("DNAcopy")' && \
+    Rscript -e 'install.packages(c("mclust", "data.table", "foreach", "doParallel", "circlize"), repos="https://cloud.r-project.org")'
+
+# 2. Python Dependencies 
+RUN pip3 install --no-cache-dir PyVCF bokeh Jinja2 pysam
+
+# 3. Setup reconCNV
+WORKDIR /opt2
+RUN git clone https://github.com/rghu/reconCNV.git
+
+# 4. Fix Shebang and Permissions
+RUN sed -i '1i #!/usr/bin/env python3' /opt2/reconCNV/reconCNV.py && \
+    chmod +x /opt2/reconCNV/reconCNV.py && \
+    find /opt2/reconCNV -name "*.py" -o -name "*.sh" | xargs chmod +x
+
+# 5. Path and Cleanup
+ENV PATH="/opt2/reconCNV:/opt2/reconCNV/scripts:$PATH"
+WORKDIR /data2
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
