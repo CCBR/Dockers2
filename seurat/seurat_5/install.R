@@ -49,5 +49,6 @@ abort_packages_not_installed(
   'Routliers',
   'BPCells',
   'gypsum',
-  'celldex'
+  'celldex',
+  'alabaster.base'
 )
