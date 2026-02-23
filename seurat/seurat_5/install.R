@@ -7,6 +7,7 @@ remotes::install_cran(
   repos = "https://bioc.r-universe.dev/",
   upgrade = "never"
 )
+remotes::install_bioc("alabaster.base", upgrade = "never")
 remotes::install_bioc("celldex", upgrade = "never")
 
 remotes::install_github("satijalab/seurat-wrappers@73466e3", upgrade = "never")
