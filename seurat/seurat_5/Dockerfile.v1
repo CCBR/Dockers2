@@ -22,7 +22,7 @@ ENV PATH="/opt2/conda/envs/${CONDA_ENV}/bin:$PATH"
 ENV R_LIBS_USER="/opt2/conda/envs/${CONDA_ENV}/lib/R/library/"
 COPY install.R /data2/
 RUN Rscript /data2/install.R && \
-    R -s -e "readr::write_tsv(tibble::as_tibble(installed.packages()), '/data2/r-packages.tsv')"
+    R -s -e "readr::write_csv(tibble::as_tibble(installed.packages()), '/data2/r-packages.csv')"
 
 # Copy Dockerfile to container
 COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
