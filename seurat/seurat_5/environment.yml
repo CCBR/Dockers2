@@ -15,7 +15,7 @@ dependencies:
   - bioconductor-singlecellexperiment
   - bioconductor-singler
   - bioconductor-celldex
-  - bioconductor-rdfh5
+  - bioconductor-rhdf5
   - bioconductor-assorthead
   - r-base=4.5
   - r-cluster
@@ -35,7 +35,7 @@ dependencies:
   - r-harmony>=0.1
   - r-hdf5r
   - r-httr2
-  - r-rliger=2.0
+  - r-rliger=2.2.1
   - r-lubridate
   - r-png
   - r-presto
@@ -46,7 +46,7 @@ dependencies:
   - r-r.utils
   - r-scales
   - r-seurat=5.3
-  - r-signac=1.16
+  - r-Signac=1.16.0
   - r-stringr
   - r-tibble
   - r-tidyr
