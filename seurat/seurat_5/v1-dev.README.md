@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/seurat_5:v1-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/b578b35c2ff345f8eb773641d1cd7f6bf5a47282/seurat/seurat_5/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/dbbaf1e15b2914ffe7159183559ca5c0912b6876/seurat/seurat_5/Dockerfile.v1
 
 
-Built on: 2025-11-19_22:26:40 
+Built on: 2026-02-24_20:48:27 
 
 Build tag: v1-dev 
 
@@ -26,7 +26,7 @@ Dockerfile path in repo: seurat/seurat_5/Dockerfile.v1
 | fastQValidator | NOTINDOCKER |
 | fastqscreen | NOTINDOCKER |
 | git | 2.25.1 |
-| java | 2025-10-21 |
+| java | 1.8.0_422 |
 | kraken2 | NOTINDOCKER |
 | kronatools | NOTINDOCKER |
 | multiqc | NOTINDOCKER |
@@ -35,7 +35,7 @@ Dockerfile path in repo: seurat/seurat_5/Dockerfile.v1
 | pigz | 2.4 |
 | preseq | NOTINDOCKER |
 | python2 | 2.7.18 |
-| python3 | 3.13.9 |
+| python3 | 3.14.3 |
 | qualimap | NOTINDOCKER |
 | rsem | NOTINDOCKER |
 | rseqc | NOTINDOCKER |
