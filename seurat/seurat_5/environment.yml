@@ -35,7 +35,7 @@ dependencies:
   - r-harmony>=0.1
   - r-hdf5r
   - r-httr2
-  - r-rliger=2.2.1
+  - r-rliger
   - r-lubridate
   - r-png
   - r-presto
@@ -46,7 +46,7 @@ dependencies:
   - r-r.utils
   - r-scales
   - r-seurat=5.3
-  - r-Signac=1.16.0
+  - r-signac
   - r-stringr
   - r-tibble
   - r-tidyr
