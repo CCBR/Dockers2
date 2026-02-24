@@ -35,7 +35,7 @@ dependencies:
   - r-harmony>=0.1
   - r-hdf5r
   - r-httr2
-  - r-liger=1
+  - r-rliger=2.0
   - r-lubridate
   - r-png
   - r-presto
