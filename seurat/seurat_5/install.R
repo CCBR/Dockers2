@@ -7,6 +7,7 @@ remotes::install_cran(
   repos = "https://bioc.r-universe.dev/",
   upgrade = "never"
 )
+remotes::install_cran("rliger", upgrade = "never")
 #remotes::install_bioc("rhdf5", upgrade = "never") 
 #remotes::install_bioc("assorthead", upgrade = "never")
 #remotes::install_bioc("alabaster.base", upgrade = "never")
