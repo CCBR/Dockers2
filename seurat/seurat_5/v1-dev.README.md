@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/seurat_5:v1-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/dbbaf1e15b2914ffe7159183559ca5c0912b6876/seurat/seurat_5/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/7c5c4f081bda2bf7b62f95c0fe914ffbf60d0a15/seurat/seurat_5/Dockerfile.v1
 
 
-Built on: 2026-02-24_20:48:27 
+Built on: 2026-02-25_15:01:56 
 
 Build tag: v1-dev 
 
