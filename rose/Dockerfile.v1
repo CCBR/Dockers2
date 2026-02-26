@@ -36,17 +36,10 @@ COPY _prep_rose_input.py /opt/ROSE/_prep_rose_input.py
 RUN chmod 755 /opt/ROSE/_prep_rose_input.py
 
 # Convenience wrappers
-RUN cat > /usr/local/bin/run-rose << 'EOF' && chmod +x /usr/local/bin/run-rose
-#!/usr/bin/env bash
-set -euo pipefail
-exec /opt/conda/envs/rose/bin/python /opt/ROSE/ROSE_main.py "$@"
-EOF
-
-RUN cat > /usr/local/bin/run-prep-rose << 'EOF' && chmod +x /usr/local/bin/run-prep-rose
-#!/usr/bin/env bash
-set -euo pipefail
-exec /opt/conda/envs/rose/bin/python /opt/ROSE/_prep_rose_input.py "$@"
-EOF
+COPY run-prep-rose /usr/local/bin/run-prep-rose
+COPY run-rose /usr/local/bin/run-rose
+RUN chmod +x /usr/local/bin/run-prep-rose
+RUN chmod +x /usr/local/bin/run-rose
 
 WORKDIR /work
 ENTRYPOINT ["/usr/bin/env", "bash", "-lc"]
