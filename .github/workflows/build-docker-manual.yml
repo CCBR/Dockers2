@@ -49,20 +49,20 @@ on:
       ccbr-actions-version:
         description: "The version or branch of ccbr_actions to use (see https://github.com/ccbr/actions)"
         required: true
-        default: "v0.2"
+        default: "v0.4"
 
 jobs:
   build-docker:
-    runs-on: ubuntu-latest    
+    runs-on: ubuntu-latest
     permissions:
-      contents: 'write'
+      contents: "write"
       pull-requests: write
     steps:
       - name: Checkout repository
         id: checkout
         uses: actions/checkout@v4
 
-      - uses: CCBR/actions/build-docker@v0.2
+      - uses: CCBR/actions/build-docker@v0.4
         with:
           dockerfile: ${{ github.event.inputs.dockerfile }}
           dockerhub-namespace: ${{ github.event.inputs.dockerhub-namespace }}
