@@ -1,0 +1,19 @@
+# Format: tool_name::command_in_path::version_txt::version_command
+# Use empty field for unused values (two consecutive :: with nothing between)
+# Pipes in version_command are preserved
+bcftools::bcftools::::bcftools 2>&1 | grep -m1 -i version |awk -F":" '{print $2}'
+bedops::bedops::::bedops --version 2>&1 | grep -i version |awk -F":" '{print $2}'
+bedtools::bedtools::::bedtools --version 2>&1 | awk '{print $NF}'
+bowtie::bowtie::::bowtie --version 2>&1 | grep -i version | grep bowtie | awk '{print $NF}'
+bowtie2::bowtie2::::bowtie2 --version 2>&1 | grep -i version | grep bowtie | awk '{print $NF}'
+bwa::bwa::::bwa 2>&1 | grep Version | awk '{print $NF}'
+cutadapt::cutadapt::::cutadapt --version 2>&1 | head -n1 | awk '{print $NF}'
+git::git::::git --version 2>&1 | awk '{print $NF}'
+java::java::::java -version 2>&1 | head -n1 | awk '{print $NF}'
+multiqc::multiqc::::multiqc --version 2>&1 | awk '{print $NF}'
+parallel::parallel::::parallel --version | head -n1 | awk '{print $NF}'
+pigz::pigz::::pigz --version 2>&1 | awk '{print $NF}'
+python2::python2::::python2 --version 2>&1 | awk '{print $NF}'
+python3::python3::::python3 --version 2>&1 | awk '{print $NF}'
+samtools::samtools::::samtools --version 2>&1 | head -n1 | awk '{print $NF}'
+vcftools::vcftools::::vcftools --version 2>&1 | head -n1 | awk '{print $NF}'
