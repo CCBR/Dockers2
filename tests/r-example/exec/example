@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+
+R --no-save --no-restore -s -e "example::greet()"

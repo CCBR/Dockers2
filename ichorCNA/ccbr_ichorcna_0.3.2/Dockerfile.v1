@@ -1,0 +1,41 @@
+FROM nciccbr/ccbr_ubuntu_base_20.04:v7
+
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+
+COPY environment.yml /data2/
+ENV CONDA_ENV=ichorcna
+RUN mamba env create -n ${CONDA_ENV} -f /data2/environment.yml && \
+    /opt2/conda/bin/conda init bash && \
+    echo "conda activate ${CONDA_ENV}" >> ~/.bashrc && \
+    chmod -R a+rx /opt2
+
+ENV PATH="/opt2/conda/envs/${CONDA_ENV}/bin:/opt2/conda/bin:$PATH"
+
+# Install HMMcopy utilities
+RUN cd /data2 && \
+    git clone https://github.com/shahcompbio/hmmcopy_utils.git && \
+    cd hmmcopy_utils && \
+    cmake . && \
+    make && \
+    cp bin/* /opt2/conda/envs/${CONDA_ENV}/bin/
+
+# Clone ichorCNA v0.3.2 for scripts
+RUN cd /data2 && \
+    git clone https://github.com/broadinstitute/ichorCNA.git && \
+    ln -s /data2/ichorCNA/scripts /opt2/conda/envs/${CONDA_ENV}/lib/R/library/ichorCNA/scripts
+
+# Copy and run test
+COPY test_ichorcna.sh /data2/
+RUN chmod +x /data2/test_ichorcna.sh && \
+    /bin/bash -c "source activate ${CONDA_ENV} && /data2/test_ichorcna.sh"
+
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+
+WORKDIR /data2
