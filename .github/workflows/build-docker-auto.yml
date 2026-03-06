@@ -19,6 +19,10 @@
 
 name: build-docker-auto
 
+permissions:
+  contents: write
+  pull-requests: write
+
 on:
   push:
     branches:
@@ -32,6 +36,11 @@ on:
       - dev
     paths:
       - "**/Dockerfile.*" # Only trigger if a Dockerfile.* is modified in any directory
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review # Ensures the workflow triggers only when a draft is marked "Ready for Review"
 
 env:
   suffix: ${{ github.base_ref == 'main' && github.event_name == 'pull_request' && 'main' || github.base_ref == 'dev' && github.event_name == 'pull_request' && 'dev' || 'feat' }}
@@ -86,7 +95,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.ref_name }} # branch name of push
 
-      - uses: CCBR/actions/build-docker@v0.2
+      - uses: CCBR/actions/build-docker@v0.5
         with:
           dockerfile: ${{ matrix.file }}
           dockerhub-namespace: nciccbr
@@ -95,5 +104,3 @@ jobs:
           suffix: ${{ env.suffix }}
           push: true
           github-token: ${{ github.token }}
-          ccbr-actions-version: v0.2
-          json-file: 'scripts/tool_version_commands.json'

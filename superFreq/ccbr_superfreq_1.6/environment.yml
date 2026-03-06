@@ -1,0 +1,15 @@
+name: superfreq
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-base=4.4.2
+  - r-devtools=2.4.5
+  - r-biocmanager=1.30.25
+  - bioconductor-genomeinfodb
+  - bioconductor-genomicfeatures=1.58.0
+  - bioconductor-variantannotation=1.52.0
+  - bioconductor-limma=3.62.1
+  - bioconductor-rsamtools=2.22.0
+  - varscan=2.4.6
