@@ -19,7 +19,7 @@ remotes::install_github("satijalab/seurat-wrappers@73466e3", upgrade = "never")
 remotes::install_github(
   "chris-mcginnis-ucsf/DoubletFinder@aee4431",
   upgrade = "never"
-)
+) 
 
 remotes::install_version(
   "Routliers",
