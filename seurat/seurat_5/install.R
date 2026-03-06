@@ -17,7 +17,7 @@ remotes::install_github("satijalab/seurat-wrappers@73466e3", upgrade = "never")
 
 # https://github.com/chris-mcginnis-ucsf/DoubletFinder/issues/244
 remotes::install_github(
-  "chris-mcginnis-ucsf/DoubletFinder@3b420df",
+  "chris-mcginnis-ucsf/DoubletFinder@aee4431",
   upgrade = "never"
 )
 
