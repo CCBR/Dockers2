@@ -49,7 +49,7 @@ on:
       ccbr-actions-version:
         description: "The version or branch of ccbr_actions to use (see https://github.com/ccbr/actions)"
         required: true
-        default: "v0.5"
+        default: "latest"
 
 jobs:
   build-docker:
@@ -62,7 +62,7 @@ jobs:
         id: checkout
         uses: actions/checkout@v4
 
-      - uses: CCBR/actions/build-docker@fix-print-versions
+      - uses: CCBR/actions/build-docker@latest
         with:
           dockerfile: ${{ github.event.inputs.dockerfile }}
           dockerhub-namespace: ${{ github.event.inputs.dockerhub-namespace }}
