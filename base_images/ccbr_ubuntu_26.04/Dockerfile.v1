@@ -38,8 +38,9 @@ RUN apt-get update && apt-get upgrade -y && \
     localedef -i en_US -f UTF-8 en_US.UTF-8 && \
     cpanm FindBin Term::ReadLine && \
     ln -s /usr/bin/python3 /usr/bin/python && \
-    python3 -m pip install --no-cache-dir --upgrade pip && \
-    pip3 install --no-cache-dir numpy scipy argparse pandas pysam multiqc && \
+    python3 -m venv /opt/pyenv && \
+    /opt/pyenv/bin/pip install --no-cache-dir --upgrade pip && \
+    /opt/pyenv/bin/pip install --no-cache-dir numpy scipy argparse pandas pysam multiqc && \
     rm -rf ~/.cache/pip* && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     apt-get autoclean && apt-get autoremove -y && \
@@ -54,7 +55,7 @@ COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
 RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
 
 # Set PATH and working directory
-ENV PATH="/opt2/:$PATH"
+ENV PATH="/opt/pyenv/bin:/opt2/:$PATH"
 # Unset PYTHONPATH to avoid conflicts with system Python
 ENV PYTHONPATH=""
 WORKDIR /data2
