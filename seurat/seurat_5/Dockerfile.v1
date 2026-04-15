@@ -9,7 +9,9 @@ ARG REPONAME="000000"
 ENV REPONAME=${REPONAME}
 ARG DOCKERFILE="Dockerfile"
 ENV DOCKERFILE=${DOCKERFILE}
-
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+    cmake
 # R, python, and other packages available in conda should be installed with mamba here.
 # Specify all dependencies in environment.yml
 COPY environment.yml /data2/
