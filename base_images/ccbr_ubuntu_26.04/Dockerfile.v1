@@ -26,7 +26,7 @@ RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
         bash coreutils ca-certificates netbase locales \
         build-essential cmake cpanminus bcftools bedops bedtools bowtie bowtie2 bwa \
-        bzip2 curl figlet g++ gcc gfortran git imagemagick libatlas-base-dev \
+        bzip2 curl figlet g++ gcc gfortran git imagemagick \
         libblas-dev libboost-dev libbz2-dev libcurl4-openssl-dev libexpat1-dev \
         libfreetype6-dev libgd-dev libgd-perl libgs-dev libgsl-dev \
         libhtml-template-compiled-perl libicu-dev libjudy-dev liblapack-dev \
@@ -34,7 +34,6 @@ RUN apt-get update && apt-get upgrade -y && \
         librtmp-dev libssl-dev libtool libxml-libxml-debugging-perl \
         libxml-opml-simplegen-perl libxml2-dev libxslt-dev make manpages-dev \
         openjdk-8-jdk parallel pigz python3-pip python3-dev rsync samtools unzip \
-        python2 \
         vim vcftools wget zlib1g zlib1g-dev && \
     localedef -i en_US -f UTF-8 en_US.UTF-8 && \
     cpanm FindBin Term::ReadLine && \
@@ -42,9 +41,6 @@ RUN apt-get update && apt-get upgrade -y && \
     python3 -m pip install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir numpy scipy argparse pandas pysam multiqc && \
     rm -rf ~/.cache/pip* && \
-    curl -k https://bootstrap.pypa.io/pip/2.7/get-pip.py --output get-pip.py && \
-    python2 get-pip.py && \
-    rm get-pip.py && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     apt-get autoclean && apt-get autoremove -y && \
     rm -rf /var/lib/{apt,dpkg,cache,log}/
