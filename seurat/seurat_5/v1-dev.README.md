@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/seurat_5:v1-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/7c5c4f081bda2bf7b62f95c0fe914ffbf60d0a15/seurat/seurat_5/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/d5c59c5c01151bc2c94e0c7f1eadbe1a3d37350a/seurat/seurat_5/Dockerfile.v1
 
 
-Built on: 2026-02-25_15:01:56 
+Built on: 2026-04-15_17:31:23 
 
 Build tag: v1-dev 
 
@@ -14,32 +14,19 @@ Dockerfile path in repo: seurat/seurat_5/Dockerfile.v1
 
 | Tool | Version |
 |---------|---------|
-| bbtools | NOTINDOCKER |
-| bcftools | 1.10.2 using htslib 1.10.2-3ubuntu0.1 |
+| bcftools | NOTINDOCKER |
 | bedops | 2.4.37 typical |
 | bedtools | v2.27.1 |
 | bowtie | 1.2.3 |
 | bowtie2 | 2.3.5.1 |
-| bwa | 0.7.17-r1188 |
+| bwa | NOTINDOCKER |
 | cutadapt | NOTINDOCKER |
-| fastqc | NOTINDOCKER |
-| fastQValidator | NOTINDOCKER |
-| fastqscreen | NOTINDOCKER |
 | git | 2.25.1 |
 | java | 1.8.0_422 |
-| kraken2 | NOTINDOCKER |
-| kronatools | NOTINDOCKER |
 | multiqc | NOTINDOCKER |
 | parallel | 20161222 |
-| picard | NOTINDOCKER |
 | pigz | 2.4 |
-| preseq | NOTINDOCKER |
 | python2 | 2.7.18 |
-| python3 | 3.14.3 |
-| qualimap | NOTINDOCKER |
-| rsem | NOTINDOCKER |
-| rseqc | NOTINDOCKER |
+| python3 | 3.12.7 |
 | samtools | 1.10 |
-| ucsc_tools | NOTINDOCKER |
 | vcftools | 0.1.16 |
-
