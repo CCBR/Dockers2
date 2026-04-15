@@ -54,5 +54,6 @@ abort_packages_not_installed(
   'BPCells',
   'gypsum',
   'alabaster.base',
-  'celldex'
+  'celldex',
+  'rliger'
 )
