@@ -1,5 +1,7 @@
 ## Dockers2 development version
 
+- New base container for Ubuntu 26.04.
+
 ## Dockers2 0.1.2
 
 - Create new containers for RENEE:
