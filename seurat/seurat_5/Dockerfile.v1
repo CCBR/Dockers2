@@ -1,4 +1,4 @@
-FROM nciccbr/ccbr_ubuntu_base_20.04:v7
+FROM nciccbr/ccbr_ubuntu_26.04:v1-dev
 
 # build time variables
 ARG BUILD_DATE="000000"
@@ -9,9 +9,7 @@ ARG REPONAME="000000"
 ENV REPONAME=${REPONAME}
 ARG DOCKERFILE="Dockerfile"
 ENV DOCKERFILE=${DOCKERFILE}
-RUN apt-get update && apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends \
-    cmake
+
 # R, python, and other packages available in conda should be installed with mamba here.
 # Specify all dependencies in environment.yml
 COPY environment.yml /data2/
