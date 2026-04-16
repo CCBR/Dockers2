@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/ccbr_ubuntu_26.04:v1-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/60ab7094e53d635a5c6d88c0a655c32e8e8581f2/base_images/ccbr_ubuntu_26.04/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/afea901344701647bef082e59ca0059d02c5f444/base_images/ccbr_ubuntu_26.04/Dockerfile.v1
 
 
-Built on: 2026-04-16_16:08:03 
+Built on: 2026-04-16_19:27:11 
 
 Build tag: v1-dev 
 
