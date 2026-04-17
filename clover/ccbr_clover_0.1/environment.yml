@@ -1,0 +1,14 @@
+name: ccbr_clover
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pysam
+  - blast=2.15.0
+  - megahit=1.2.9
+  - samtools
+  - bcftools
+  - htslib
+  - pip

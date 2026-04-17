@@ -1,0 +1,47 @@
+FROM nciccbr/ccbr_ubuntu_22.04:v4
+
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN wget --quiet "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" -O /tmp/miniforge.sh && \
+    /bin/bash /tmp/miniforge.sh -b -p /opt2/conda && \
+    rm -f /tmp/miniforge.sh && \
+    chmod -R a+rx /opt2/conda
+
+ENV PATH="/opt2/conda/bin:$PATH"
+
+RUN conda config --add channels bioconda && \
+    conda config --add channels conda-forge && \
+    conda config --add channels defaults && \
+    conda config --set channel_priority strict && \
+    conda install -n base -y mamba && \
+    conda clean -afy
+
+COPY environment.yml /data2/
+
+RUN mamba env create -n clover -f /data2/environment.yml && \
+    mamba clean -a -y
+
+ENV PATH="/opt2/conda/envs/clover/bin:/opt2/conda/bin:$PATH"
+ENV CLOVER_HOME="/opt2/clover"
+ENV CLOVER_BLAST_DB="/data/blastdb/hla_gen_db"
+ENV CLOVER_EXTRACTOR="/opt2/clover/extract_reads_paired.py"
+
+RUN mkdir -p /opt2/clover /data/input /data/output /data/blastdb
+
+COPY scripts/prepare_hla_allele_somatic_inputs.py /opt2/clover/
+COPY scripts/run_hla_allele_somatic.py /opt2/clover/
+COPY scripts/extract_reads_paired.py /opt2/clover/
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+
+WORKDIR /data
+
+CMD ["bash"]
