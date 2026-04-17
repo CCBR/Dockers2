@@ -57,14 +57,24 @@ jobs:
         id: checkout
         uses: actions/checkout@v6
         with:
+          fetch-depth: 2 # Need parent commit to diff against for HEAD~1..HEAD
           ref: ${{ github.head_ref || github.ref_name }}
 
       - id: changed-files
         name: Check changed files
-        uses: knu/changed-files@v1
-        with:
-          paths: |
-            **/Dockerfile.*
+        # Compare only the latest commit (HEAD~1..HEAD) so that subsequent pushes
+        # to a PR do not re-trigger builds for Dockerfiles touched in earlier commits.
+        run: |
+          files=$(git diff --name-only HEAD~1 HEAD | grep -E '(^|/)Dockerfile\.' || true)
+          echo "matched_files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$files" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+          if [ -z "$files" ]; then
+            echo 'matched_files_json=[]' >> "$GITHUB_OUTPUT"
+          else
+            json=$(echo "$files" | jq -R -s 'split("\n") | map(select(length > 0))')
+            echo "matched_files_json=$json" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Show changed files
         id: matrix
@@ -74,6 +84,7 @@ jobs:
 
   build-docker:
     needs: [ get-files ]
+    if: needs.get-files.outputs.json != '[]' # Skip if no Dockerfiles changed in the latest commit
     strategy:
       matrix:
         file: "${{ fromJson(needs.get-files.outputs.json) }}"
