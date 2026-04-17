@@ -43,7 +43,9 @@ on:
       - ready_for_review # Ensures the workflow triggers only when a draft is marked "Ready for Review"
 
 env:
-  suffix: ${{ github.base_ref == 'main' && github.event_name == 'pull_request' && 'main' || github.base_ref == 'dev' && github.event_name == 'pull_request' && 'dev' || 'feat' }}
+  suffix: ${{ github.base_ref == 'main' && github.event_name == 'pull_request' &&
+    'main' || github.base_ref == 'dev' && github.event_name == 'pull_request' &&
+    'dev' || 'feat' }}
 
 jobs:
   get-files:
@@ -53,14 +55,26 @@ jobs:
     steps:
       - name: Checkout repository
         id: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2 # Need parent commit to diff against for HEAD~1..HEAD
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - id: changed-files
         name: Check changed files
-        uses: knu/changed-files@v1
-        with:
-          paths: |
-            **/Dockerfile.*
+        # Compare only the latest commit (HEAD~1..HEAD) so that subsequent pushes
+        # to a PR do not re-trigger builds for Dockerfiles touched in earlier commits.
+        run: |
+          files=$(git diff --name-only HEAD~1 HEAD | grep -E '(^|/)Dockerfile\.' || true)
+          echo "matched_files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$files" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+          if [ -z "$files" ]; then
+            echo 'matched_files_json=[]' >> "$GITHUB_OUTPUT"
+          else
+            json=$(echo "$files" | jq -R -s 'split("\n") | map(select(length > 0))')
+            echo "matched_files_json=$json" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Show changed files
         id: matrix
@@ -69,7 +83,8 @@ jobs:
           echo "${{ steps.changed-files.outputs.matched_files }}" | sed 's/^/  /'
 
   build-docker:
-    needs: [get-files]
+    needs: [ get-files ]
+    if: needs.get-files.outputs.json != '[]' # Skip if no Dockerfiles changed in the latest commit
     strategy:
       matrix:
         file: "${{ fromJson(needs.get-files.outputs.json) }}"
@@ -81,19 +96,11 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
-        name: "checkout PR ${{ github.head_ref }}"
-        if: github.event_name == 'pull_request'
+      - uses: actions/checkout@v6
+        name: Checkout repository
         with:
           fetch-depth: 0
-          ref: ${{ github.head_ref }} # branch name of PR
-
-      - uses: actions/checkout@v4
-        name: "checkout push ${{ github.ref_name }}"
-        if: github.event_name == 'push'
-        with:
-          fetch-depth: 0
-          ref: ${{ github.ref_name }} # branch name of push
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - uses: CCBR/actions/build-docker@latest
         with:
