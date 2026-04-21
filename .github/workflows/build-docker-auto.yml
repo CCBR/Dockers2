@@ -1,21 +1,22 @@
-# This GitHub Actions workflow is designed to trigger a manual Docker build for each modified Dockerfile.
+# This GitHub Actions workflow automatically builds Docker images when Dockerfiles are modified.
 #
 # Workflow Name: build-docker-auto
-# Short Description: Trigger Build Docker Manual for Each modified Dockerfile
+# Short Description: Build Docker images for each modified Dockerfile
 #
 # Triggers:
-# - On push events to any branch except 'main' and 'dev', if any Dockerfile.* is modified.
+# - On push events to branches containing "autobuild" in the name, if any Dockerfile.* is modified.
 # - On pull request events to 'main' and 'dev' branches, if any Dockerfile.* is modified.
 #
 # Jobs:
-#   - Runs on the latest Ubuntu environment.
-#   - Steps:
-#     1. Check out the repository using actions/checkout@v4.
-#     2. Identify modified Dockerfiles using git diff and store them in the environment variable 'dockerfiles'.
-#     3. For each modified Dockerfile, trigger the 'build-docker-manual' workflow with the Dockerfile path and additional parameters.
+#   1. get-files: Detects changed Dockerfiles using the changed-files action with latest-commit mode.
+#      - PRs: latest commit only (fork-safe).
+#      - Push: full before...after range.
+#   2. build-docker: For each changed Dockerfile, builds and optionally pushes the Docker image using the build-docker action.
 #
-# Environment Variables:
-# - GITHUB_TOKEN: Used for authentication to trigger the 'build-docker-manual' workflow.
+# Notes:
+# - The changed-files action uses comparison-mode: latest-commit to avoid redundant builds when
+#   multiple commits in a single PR touch the same Dockerfile.
+# - The workflow is fork-safe: both get-files and build-docker steps work on fork pull requests.
 
 name: build-docker-auto
 
@@ -53,28 +54,14 @@ jobs:
     outputs:
       json: ${{ steps.changed-files.outputs.matched_files_json }}
     steps:
-      - name: Checkout repository
-        id: checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 2 # Need parent commit to diff against for HEAD~1..HEAD
-          ref: ${{ github.head_ref || github.ref_name }}
-
       - id: changed-files
         name: Check changed files
-        # Compare only the latest commit (HEAD~1..HEAD) so that subsequent pushes
-        # to a PR do not re-trigger builds for Dockerfiles touched in earlier commits.
-        run: |
-          files=$(git diff --name-only HEAD~1 HEAD | grep -E '(^|/)Dockerfile\.' || true)
-          echo "matched_files<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$files" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
-          if [ -z "$files" ]; then
-            echo 'matched_files_json=[]' >> "$GITHUB_OUTPUT"
-          else
-            json=$(echo "$files" | jq -R -s 'split("\n") | map(select(length > 0))')
-            echo "matched_files_json=$json" >> "$GITHUB_OUTPUT"
-          fi
+        uses: CCBR/actions/changed-files@latest
+        with:
+          token: ${{ github.token }}
+          paths: |
+            **/Dockerfile.*
+          comparison-mode: latest-commit
 
       - name: Show changed files
         id: matrix
@@ -100,6 +87,8 @@ jobs:
         name: Checkout repository
         with:
           fetch-depth: 0
+          repository: ${{ github.event.pull_request.head.repo.full_name ||
+            github.repository }}
           ref: ${{ github.head_ref || github.ref_name }}
 
       - uses: CCBR/actions/build-docker@latest
