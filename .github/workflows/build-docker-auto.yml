@@ -61,7 +61,7 @@ jobs:
           token: ${{ github.token }}
           paths: |
             **/Dockerfile.*
-          comparison-mode: latest-commit
+          comparison-mode: event
 
       - name: Show changed files
         id: matrix
