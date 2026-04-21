@@ -56,7 +56,7 @@ jobs:
     steps:
       - id: changed-files
         name: Check changed files
-        uses: CCBR/actions/changed-files@latest
+        uses: CCBR/actions/changed-files@main
         with:
           token: ${{ github.token }}
           paths: |
