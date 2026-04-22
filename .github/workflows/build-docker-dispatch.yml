@@ -105,8 +105,13 @@ jobs:
           git config --global user.email '258092125+CCBR-bot[bot]@users.noreply.github.com'
           git switch -C "${{ steps.process-payload.outputs.new_branch }}"
           git add ${{ env.DOCKERFILE_PATH }}
-          git commit -m "feat: add Dockerfile for ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}" || echo "nothing to commit"
 
+          if git diff --cached --quiet; then
+            echo "nothing to commit"
+          else
+            git commit -m "feat: add Dockerfile for ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}"
+            git push -u origin "${{ steps.process-payload.outputs.new_branch }}"
+          fi
       - uses: CCBR/actions/build-docker@main
         id: build-docker
         with:
@@ -124,6 +129,5 @@ jobs:
           DOCKERFILE_PATH: ${{ steps.process-payload.outputs.new_dockerfile_path }}
           GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
-          git push -u origin ${{ steps.process-payload.outputs.new_branch }} || echo "nothing to push"
           gh pr create --title "feat: add/update Dockerfile for ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}" \
             --body "Adds a Dockerfile for ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }} located at ${{ env.DOCKERFILE_PATH }}." || echo "PR unsuccessful"
