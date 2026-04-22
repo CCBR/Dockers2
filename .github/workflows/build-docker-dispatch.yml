@@ -29,7 +29,7 @@ permissions:
   pull-requests: read
 
 jobs:
-  copy-dockerfile:
+  build-docker:
     runs-on: ubuntu-latest
     steps:
       - name: process payload
@@ -107,7 +107,7 @@ jobs:
           git add ${{ env.DOCKERFILE_PATH }}
           git commit -m "feat: add Dockerfile for ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}" || echo "nothing to commit"
 
-      - uses: CCBR/actions/build-docker@latest
+      - uses: CCBR/actions/build-docker@main
         id: build-docker
         with:
           dockerfile: ${{ steps.process-payload.outputs.new_dockerfile_path }}
@@ -115,8 +115,9 @@ jobs:
           dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
           dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
           github-token: ${{ steps.generate-token.outputs.token }}
+          push: true
       - name: Open PR w/ new Dockerfile
-        if: steps.build-docker.outputs.BUILD_SUCCESS == 'true'
+        if: steps.build-docker.outputs.push_success == 'true'
         env:
           DOCKER_IMAGE_NAME: ${{ steps.process-payload.outputs.docker_image_name }}
           DOCKER_IMAGE_TAG: ${{ steps.process-payload.outputs.docker_image_tag }}
