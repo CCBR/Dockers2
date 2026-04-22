@@ -1,0 +1,128 @@
+name: build-docker-dispatch
+
+on:
+  repository_dispatch:
+    types: [ trigger-docker-build ]
+  workflow_dispatch:
+    inputs:
+      owner_repo:
+        description: "Name of the repository containing the dockerfile source (OWNER/REPO)"
+        required: true
+      ref:
+        description: "The git ref (branch, tag, or SHA) of the source repo to checkout"
+        required: true
+        default: main
+      dockerfile_path:
+        description: "Path to the Dockerfile in the source repository (e.g.
+          'path/to/Dockerfile')"
+        required: true
+        default: Dockerfile
+      docker_image_name:
+        description: "Name of the docker image to build (e.g. 'bwa', 'mosuite', 'spac')"
+        required: true
+      docker_image_tag:
+        description: "Tag to apply to the built docker image (e.g. 'v0.3.0')"
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  copy-dockerfile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: process payload
+        id: process-payload
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            owner_repo="${{ github.event.client_payload.owner_repo }}"
+            ref="${{ github.event.client_payload.ref }}"
+            dockerfile_path="${{ github.event.client_payload.dockerfile_path }}"
+            docker_image_name="${{ github.event.client_payload.docker_image_name }}"
+            docker_image_tag="${{ github.event.client_payload.docker_image_tag }}"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            owner_repo="${{ github.event.inputs.owner_repo }}"
+            ref="${{ github.event.inputs.ref }}"
+            dockerfile_path="${{ github.event.inputs.dockerfile_path }}"
+            docker_image_name="${{ github.event.inputs.docker_image_name }}"
+            docker_image_tag="${{ github.event.inputs.docker_image_tag }}"
+          else
+            echo "Unsupported event: ${GITHUB_EVENT_NAME}"
+            exit 1
+          fi
+          repo_name=$(echo "$owner_repo" | cut -d'/' -f2)
+          context_dir="${repo_name}/${docker_image_name}"
+          new_branch="update-${docker_image_name}-${docker_image_tag}"
+
+          echo "owner_repo=$owner_repo" >> $GITHUB_OUTPUT
+          echo "ref=$ref" >> $GITHUB_OUTPUT
+          echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
+          echo "src_dockerfile_path=$dockerfile_path" >> $GITHUB_OUTPUT
+          echo "new_dockerfile_path=$context_dir/Dockerfile.$docker_image_tag" >> $GITHUB_OUTPUT
+          echo "docker_image_name=$docker_image_name" >> $GITHUB_OUTPUT
+          echo "docker_image_tag=$docker_image_tag" >> $GITHUB_OUTPUT
+          echo "context_dir=$context_dir" >> $GITHUB_OUTPUT
+          echo "new_branch=$new_branch" >> $GITHUB_OUTPUT
+
+      - name: Generate a token
+        id: generate-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.CCBR_BOT_APP_ID }}
+          private-key: ${{ secrets.CCBR_BOT_PRIVATE_KEY }}
+          owner: CCBR
+      - uses: actions/checkout@v6
+        name: Checkout Dockers2
+        with:
+          persist-credentials: true
+          token: ${{ steps.generate-token.outputs.token }}
+      - uses: actions/checkout@v6
+        name: Checkout source repository
+        with:
+          fetch-depth: 0
+          repository: ${{ steps.process-payload.outputs.owner_repo }}
+          ref: ${{ steps.process-payload.outputs.ref }}
+          path: dispatch-repo
+      - name: Copy Dockerfile & context
+        env:
+          CONTEXT_DIR: ${{ steps.process-payload.outputs.context_dir }}
+          DOCKER_IMAGE_NAME: ${{ steps.process-payload.outputs.docker_image_name }}
+          DOCKER_IMAGE_TAG: ${{ steps.process-payload.outputs.docker_image_tag }}
+          NEW_DOCKERFILE_PATH: "${{ steps.process-payload.outputs.new_dockerfile_path }}"
+          SRC_DOCKERFILE_PATH: "${{ steps.process-payload.outputs.src_dockerfile_path }}"
+        run: |
+          mkdir -p "${{ env.CONTEXT_DIR }}"
+          rsync -a --exclude=".git/" dispatch-repo/ "${{ env.CONTEXT_DIR }}/"
+          cp "dispatch-repo/${{ env.SRC_DOCKERFILE_PATH }}" "${{ env.NEW_DOCKERFILE_PATH }}"
+      - name: Commit new Dockerfile
+        env:
+          DOCKER_IMAGE_NAME: ${{ steps.process-payload.outputs.docker_image_name }}
+          DOCKER_IMAGE_TAG: ${{ steps.process-payload.outputs.docker_image_tag }}
+          DOCKERFILE_PATH: ${{ steps.process-payload.outputs.new_dockerfile_path }}
+        run: |
+          git config --global user.name 'CCBR-bot[bot]'
+          git config --global user.email '258092125+CCBR-bot[bot]@users.noreply.github.com'
+          git switch -C "${{ steps.process-payload.outputs.new_branch }}"
+          git add ${{ env.DOCKERFILE_PATH }}
+          git commit -m "feat: add Dockerfile for ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}" || echo "nothing to commit"
+
+      - uses: CCBR/actions/build-docker@latest
+        id: build-docker
+        with:
+          dockerfile: ${{ steps.process-payload.outputs.new_dockerfile_path }}
+          dockerhub-namespace: nciccbr
+          dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
+          dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
+          github-token: ${{ steps.generate-token.outputs.token }}
+      - name: Open PR w/ new Dockerfile
+        if: steps.build-docker.outputs.BUILD_SUCCESS == 'true'
+        env:
+          DOCKER_IMAGE_NAME: ${{ steps.process-payload.outputs.docker_image_name }}
+          DOCKER_IMAGE_TAG: ${{ steps.process-payload.outputs.docker_image_tag }}
+          DOCKERFILE_PATH: ${{ steps.process-payload.outputs.new_dockerfile_path }}
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          git push -u origin ${{ steps.process-payload.outputs.new_branch }} || echo "nothing to push"
+          gh pr create --title "feat: add/update Dockerfile for ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}" \
+            --body "Adds a Dockerfile for ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }} located at ${{ env.DOCKERFILE_PATH }}." || echo "PR unsuccessful"
