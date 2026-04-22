@@ -67,17 +67,6 @@ RUN source /opt/conda/etc/profile.d/conda.sh && \
  && conda clean -afy
 
 # -----------------------------------------------------------------------------
-# 2. Copy the SCSAWorkflow repo into the image — branch-aware.
-#    Build context must be the repo root so this picks up:
-#      - src/spac/...   (entire SPAC package including new transform/ module)
-#      - setup.py / pyproject.toml
-#      - tools/spac_gpu/{run_gpu.sh, run_grapheno.py, merge_labels.py}
-#    Whatever git branch is checked out becomes the version installed below.
-# -----------------------------------------------------------------------------
-WORKDIR /opt/scsaworkflow
-COPY . .
-
-# -----------------------------------------------------------------------------
 # 3. Install SPAC into BOTH conda envs as an editable install of the
 #    copied tree. Identical to how the CPU Dockerfile installs SPAC, so
 #    the same branch's code is what runs in either container.
@@ -87,25 +76,18 @@ COPY . .
 # -----------------------------------------------------------------------------
 RUN source /opt/conda/etc/profile.d/conda.sh && \
     conda activate preprocess && \
-    pip install --no-cache-dir -e . && \
-    pip install --no-cache-dir phenograph
+    pip install --no-cache-dir spac@git+https://github.com/FNLCR-DMAP/SCSAWorkflow@phenograph-gpu-refactor && \
+    pip install --no-cache-dir phenograph # TODO add phenograph to spac dependencies?
 
 RUN source /opt/conda/etc/profile.d/conda.sh && \
     conda activate rapids && \
-    pip install --no-cache-dir -e .
+    pip install --no-cache-dir spac@git+https://github.com/FNLCR-DMAP/SCSAWorkflow@phenograph-gpu-refactor
 
 # -----------------------------------------------------------------------------
-# 4. Install the orchestrator and helpers used by the Galaxy GPU XML.
-#    The XML invokes `bash /opt/spac-gpu/run_gpu.sh <params.json>`.
-#    These files live in the repo at tools/spac_gpu/ so they're already
-#    inside /opt/scsaworkflow after step 2 — copy them to a stable path.
+# 4. The orchestrator and helpers used by the Galaxy GPU XML will be specified as scripts in spac's setup.py/pyproject.toml file
+#    The XML should invoke them as scripts in the $PATH, e.g. `bash run_gpu.sh <params.json>`.
 # -----------------------------------------------------------------------------
-RUN mkdir -p /opt/spac-gpu && \
-    cp /opt/scsaworkflow/tools/spac_gpu/run_gpu.sh /opt/spac-gpu/run_gpu.sh && \
-    cp /opt/scsaworkflow/tools/spac_gpu/run_grapheno.py /opt/spac-gpu/run_grapheno.py && \
-    cp /opt/scsaworkflow/tools/spac_gpu/merge_labels.py /opt/spac-gpu/merge_labels.py && \
-    chmod +x /opt/spac-gpu/run_gpu.sh && \
-    ln -s /opt/spac-gpu/run_gpu.sh /usr/local/bin/spac-gpu-run
+RUN which run_gpu.sh
 
 # -----------------------------------------------------------------------------
 # 5. Build-time sanity checks — fail fast if either env is broken.
