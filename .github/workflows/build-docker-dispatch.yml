@@ -103,11 +103,13 @@ jobs:
         run: |
           git config --global user.name 'CCBR-bot[bot]'
           git config --global user.email '258092125+CCBR-bot[bot]@users.noreply.github.com'
+          original_branch=$(git branch --show-current)
           git switch -C "${{ steps.process-payload.outputs.new_branch }}"
           git add ${{ env.DOCKERFILE_PATH }}
 
           if git diff --cached --quiet; then
             echo "nothing to commit"
+            git switch "$original_branch"
           else
             git commit -m "feat: add Dockerfile for ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}"
             git push -u origin "${{ steps.process-payload.outputs.new_branch }}"
