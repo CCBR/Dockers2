@@ -42,9 +42,6 @@ ENV CHROME_BIN=/usr/bin/chromium
 RUN conda install -n base -y conda-libmamba-solver && \
     conda config --set solver libmamba
 
-# Simulate exactly what a reviewer would do following README.md instructions
-WORKDIR /home/reviewer/SCSAWorkflow
-
 # Step 3: "Adding constumized scimap conda pacakge channel supported by DMAP"
 RUN conda config --add channels https://fnlcr-dmap.github.io/scimap/ && \
     conda config --add channels conda-forge && \
