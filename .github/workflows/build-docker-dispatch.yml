@@ -132,4 +132,5 @@ jobs:
           GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
           gh pr create --title "feat: add/update Dockerfile for ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}" \
-            --body "Adds a Dockerfile for ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }} located at ${{ env.DOCKERFILE_PATH }}." || echo "PR unsuccessful"
+            --body "Adds a Dockerfile located at `${{ env.DOCKERFILE_PATH }}`." || echo "PR unsuccessful" \
+            --reviewer @CCBR/AdminTeam
