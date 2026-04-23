@@ -1,4 +1,4 @@
-FROM nciccbr/ccbr_ubuntu_26.04:v1-dev
+FROM nciccbr/ccbr_ubuntu_24.04:v1-dev
 
 # build time variables
 ARG BUILD_DATE="000000"
