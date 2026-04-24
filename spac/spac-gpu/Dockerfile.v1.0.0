@@ -152,8 +152,10 @@ RUN git clone --depth 1 --branch "${GITHUB_BRANCH}" \
 #    + spac.transform.clustering.phenograph.prepare_features
 #    (what stage 1 and stage 3 load).
 #
-#    rapids env must import the full RAPIDS stack + spac grapheno module
-#    (what stage 2 loads).
+#    rapids env: CUDA libs (cuml, cugraph, cudf, cupy) cannot be imported
+#    without a GPU, so we use importlib.util.find_spec() to verify they
+#    are installed without initializing CUDA. SPAC grapheno is also
+#    checked via find_spec since it transitively imports CUDA packages.
 # -----------------------------------------------------------------------------
 RUN source /opt/conda/etc/profile.d/conda.sh && \
     conda activate preprocess && \
@@ -167,12 +169,15 @@ RUN source /opt/conda/etc/profile.d/conda.sh && \
 RUN source /opt/conda/etc/profile.d/conda.sh && \
     conda activate rapids && \
     echo "=== Verifying rapids env ===" && \
-    python -c "import cuml, cugraph, cudf, cupy; \
-        from dask_cuda import LocalCUDACluster; \
-        print(f'  cuml={cuml.__version__}, cugraph={cugraph.__version__}, cudf={cudf.__version__}')" && \
-    python -c "from spac.transform.clustering.phenograph.gpu.grapheno import \
-        phenograph_gpu, cluster, cluster_from_array, sort_by_size; \
-        print('  rapids env: SPAC GPU imports OK')"
+    python -c "import importlib.util; \
+        missing = [m for m in ('cuml','cugraph','cudf','cupy','dask_cuda') \
+                   if importlib.util.find_spec(m) is None]; \
+        assert not missing, f'Missing RAPIDS packages: {missing}'; \
+        print('  rapids env: RAPIDS packages installed')" && \
+    python -c "import importlib.util; \
+        spec = importlib.util.find_spec('spac.transform.clustering.phenograph.gpu.grapheno'); \
+        assert spec is not None, 'grapheno module not found'; \
+        print('  rapids env: SPAC GPU module installed')"
 
 # -----------------------------------------------------------------------------
 # 5. Verify the orchestration scripts are present and executable.
