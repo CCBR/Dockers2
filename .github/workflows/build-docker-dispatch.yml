@@ -104,7 +104,19 @@ jobs:
           git config --global user.name 'CCBR-bot[bot]'
           git config --global user.email '258092125+CCBR-bot[bot]@users.noreply.github.com'
           original_branch=$(git branch --show-current)
-          git switch -C "${{ steps.process-payload.outputs.new_branch }}"
+
+          branch_name="${{ steps.process-payload.outputs.new_branch }}"
+          # fetch the remote branch if it exists
+          if git ls-remote --exit-code --heads origin "$branch_name" >/dev/null 2>&1; then
+            git fetch origin "$branch_name:$branch_name"
+          fi
+          # switch to the branch (or create it if it doesn't exist)
+          if git show-ref --verify --quiet "refs/heads/$branch_name"; then
+            git switch "$branch_name"
+          else
+              git switch -c "$branch_name"
+          fi
+
           git add ${{ env.DOCKERFILE_PATH }}
 
           if git diff --cached --quiet; then
