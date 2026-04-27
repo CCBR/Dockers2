@@ -69,7 +69,7 @@ jobs:
         id: generate-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ vars.CCBR_BOT_APP_ID }}
+          client-id: ${{ vars.CCBR_BOT_APP_ID }}
           private-key: ${{ secrets.CCBR_BOT_PRIVATE_KEY }}
           owner: CCBR
       - uses: actions/checkout@v6
@@ -84,22 +84,13 @@ jobs:
           repository: ${{ steps.process-payload.outputs.owner_repo }}
           ref: ${{ steps.process-payload.outputs.ref }}
           path: dispatch-repo
-      - name: Copy Dockerfile & context
+      - name: Commit new Dockerfile
         env:
           CONTEXT_DIR: ${{ steps.process-payload.outputs.context_dir }}
           DOCKER_IMAGE_NAME: ${{ steps.process-payload.outputs.docker_image_name }}
           DOCKER_IMAGE_TAG: ${{ steps.process-payload.outputs.docker_image_tag }}
           NEW_DOCKERFILE_PATH: "${{ steps.process-payload.outputs.new_dockerfile_path }}"
           SRC_DOCKERFILE_PATH: "${{ steps.process-payload.outputs.src_dockerfile_path }}"
-        run: |
-          mkdir -p "${{ env.CONTEXT_DIR }}"
-          rsync -a --exclude=".git/" dispatch-repo/ "${{ env.CONTEXT_DIR }}/"
-          cp "dispatch-repo/${{ env.SRC_DOCKERFILE_PATH }}" "${{ env.NEW_DOCKERFILE_PATH }}"
-      - name: Commit new Dockerfile
-        env:
-          DOCKER_IMAGE_NAME: ${{ steps.process-payload.outputs.docker_image_name }}
-          DOCKER_IMAGE_TAG: ${{ steps.process-payload.outputs.docker_image_tag }}
-          DOCKERFILE_PATH: ${{ steps.process-payload.outputs.new_dockerfile_path }}
         run: |
           git config --global user.name 'CCBR-bot[bot]'
           git config --global user.email '258092125+CCBR-bot[bot]@users.noreply.github.com'
@@ -117,7 +108,12 @@ jobs:
               git switch -c "$branch_name"
           fi
 
-          git add ${{ env.DOCKERFILE_PATH }}
+          # Copy context dir
+          mkdir -p "${{ env.CONTEXT_DIR }}"
+          rsync -a --exclude=".git/" dispatch-repo/ "${{ env.CONTEXT_DIR }}/"
+          cp "dispatch-repo/${{ env.SRC_DOCKERFILE_PATH }}" "${{ env.NEW_DOCKERFILE_PATH }}"
+          # Only commit new dockerfile, not entire context dir
+          git add ${{ env.NEW_DOCKERFILE_PATH }}
 
           if git diff --cached --quiet; then
             echo "nothing to commit"
