@@ -67,9 +67,9 @@ jobs:
 
       - name: Generate a token
         id: generate-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ vars.CCBR_BOT_APP_ID }}
+          client-id: ${{ vars.CCBR_BOT_APP_ID }}
           private-key: ${{ secrets.CCBR_BOT_PRIVATE_KEY }}
           owner: CCBR
       - uses: actions/checkout@v6
@@ -84,7 +84,7 @@ jobs:
           repository: ${{ steps.process-payload.outputs.owner_repo }}
           ref: ${{ steps.process-payload.outputs.ref }}
           path: dispatch-repo
-      - name: Copy Dockerfile & context
+      - name: Commit new Dockerfile
         env:
           CONTEXT_DIR: ${{ steps.process-payload.outputs.context_dir }}
           DOCKER_IMAGE_NAME: ${{ steps.process-payload.outputs.docker_image_name }}
@@ -92,20 +92,28 @@ jobs:
           NEW_DOCKERFILE_PATH: "${{ steps.process-payload.outputs.new_dockerfile_path }}"
           SRC_DOCKERFILE_PATH: "${{ steps.process-payload.outputs.src_dockerfile_path }}"
         run: |
-          mkdir -p "${{ env.CONTEXT_DIR }}"
-          rsync -a --exclude=".git/" dispatch-repo/ "${{ env.CONTEXT_DIR }}/"
-          cp "dispatch-repo/${{ env.SRC_DOCKERFILE_PATH }}" "${{ env.NEW_DOCKERFILE_PATH }}"
-      - name: Commit new Dockerfile
-        env:
-          DOCKER_IMAGE_NAME: ${{ steps.process-payload.outputs.docker_image_name }}
-          DOCKER_IMAGE_TAG: ${{ steps.process-payload.outputs.docker_image_tag }}
-          DOCKERFILE_PATH: ${{ steps.process-payload.outputs.new_dockerfile_path }}
-        run: |
           git config --global user.name 'CCBR-bot[bot]'
           git config --global user.email '258092125+CCBR-bot[bot]@users.noreply.github.com'
           original_branch=$(git branch --show-current)
-          git switch -C "${{ steps.process-payload.outputs.new_branch }}"
-          git add ${{ env.DOCKERFILE_PATH }}
+
+          branch_name="${{ steps.process-payload.outputs.new_branch }}"
+          # fetch the remote branch if it exists
+          if git ls-remote --exit-code --heads origin "$branch_name" >/dev/null 2>&1; then
+            git fetch origin "$branch_name:$branch_name"
+          fi
+          # switch to the branch (or create it if it doesn't exist)
+          if git show-ref --verify --quiet "refs/heads/$branch_name"; then
+            git switch "$branch_name"
+          else
+              git switch -c "$branch_name"
+          fi
+
+          # Copy context dir
+          mkdir -p "${{ env.CONTEXT_DIR }}"
+          rsync -a --exclude=".git/" dispatch-repo/ "${{ env.CONTEXT_DIR }}/"
+          cp "dispatch-repo/${{ env.SRC_DOCKERFILE_PATH }}" "${{ env.NEW_DOCKERFILE_PATH }}"
+          # Only commit new dockerfile, not entire context dir
+          git add ${{ env.NEW_DOCKERFILE_PATH }}
 
           if git diff --cached --quiet; then
             echo "nothing to commit"
