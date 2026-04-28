@@ -24,6 +24,10 @@ COPY install.R /data2/
 RUN Rscript /data2/install.R && \
     R -s -e "readr::write_csv(tibble::as_tibble(installed.packages()), '/data2/r-packages.csv')"
 
+# fontconfig for pandoc / RMarkdown
+RUN chmod -R a+w /opt2/conda/envs/seurat5/var/cache/fontconfig \
+    && fc-cache --really-force --verbose
+
 # Copy Dockerfile to container
 COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
 
