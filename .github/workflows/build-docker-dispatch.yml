@@ -51,6 +51,22 @@ jobs:
             echo "Unsupported event: ${GITHUB_EVENT_NAME}"
             exit 1
           fi
+
+          # Fail early if any required field is missing
+          missing=()
+          [ -z "$owner_repo" ]      && missing+=("owner_repo")
+          [ -z "$ref" ]             && missing+=("ref")
+          [ -z "$dockerfile_path" ] && missing+=("dockerfile_path")
+          [ -z "$docker_image_name" ] && missing+=("docker_image_name")
+          [ -z "$docker_image_tag" ] && missing+=("docker_image_tag")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "Error: the following required inputs are missing or empty: ${missing[*]}"
+            echo "Event type: ${{ github.event_name }}"
+            echo "  For 'workflow_dispatch', supply these as workflow inputs."
+            echo "  For 'repository_dispatch', supply these in the client_payload."
+            exit 1
+          fi
+
           repo_name=$(echo "$owner_repo" | cut -d'/' -f2)
           context_dir="${repo_name}/${docker_image_name}"
           new_branch="update-${docker_image_name}-${docker_image_tag}"
@@ -111,7 +127,12 @@ jobs:
           # Copy context dir
           mkdir -p "${{ env.CONTEXT_DIR }}"
           rsync -a --exclude=".git/" dispatch-repo/ "${{ env.CONTEXT_DIR }}/"
-          cp "dispatch-repo/${{ env.SRC_DOCKERFILE_PATH }}" "${{ env.NEW_DOCKERFILE_PATH }}"
+          src="dispatch-repo/${{ env.SRC_DOCKERFILE_PATH }}"
+          if [ ! -f "$src" ]; then
+            echo "Error: Dockerfile not found at '$src' (configured dockerfile_path: '${{ env.SRC_DOCKERFILE_PATH }}')"
+            exit 1
+          fi
+          cp "$src" "${{ env.NEW_DOCKERFILE_PATH }}"
           # Only commit new dockerfile, not entire context dir
           git add ${{ env.NEW_DOCKERFILE_PATH }}
 
