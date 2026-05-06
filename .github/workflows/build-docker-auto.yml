@@ -1,21 +1,22 @@
-# This GitHub Actions workflow is designed to trigger a manual Docker build for each modified Dockerfile.
+# This GitHub Actions workflow automatically builds Docker images when Dockerfiles are modified.
 #
 # Workflow Name: build-docker-auto
-# Short Description: Trigger Build Docker Manual for Each modified Dockerfile
+# Short Description: Build Docker images for each modified Dockerfile
 #
 # Triggers:
-# - On push events to any branch except 'main' and 'dev', if any Dockerfile.* is modified.
+# - On push events to branches containing "autobuild" in the name, if any Dockerfile.* is modified.
 # - On pull request events to 'main' and 'dev' branches, if any Dockerfile.* is modified.
 #
 # Jobs:
-#   - Runs on the latest Ubuntu environment.
-#   - Steps:
-#     1. Check out the repository using actions/checkout@v4.
-#     2. Identify modified Dockerfiles using git diff and store them in the environment variable 'dockerfiles'.
-#     3. For each modified Dockerfile, trigger the 'build-docker-manual' workflow with the Dockerfile path and additional parameters.
+#   1. get-files: Detects changed Dockerfiles using the changed-files action with latest-commit mode.
+#      - PRs: latest commit only (fork-safe).
+#      - Push: full before...after range.
+#   2. build-docker: For each changed Dockerfile, builds and optionally pushes the Docker image using the build-docker action.
 #
-# Environment Variables:
-# - GITHUB_TOKEN: Used for authentication to trigger the 'build-docker-manual' workflow.
+# Notes:
+# - The changed-files action uses comparison-mode: latest-commit to avoid redundant builds when
+#   multiple commits in a single PR touch the same Dockerfile.
+# - The workflow is fork-safe: both get-files and build-docker steps work on fork pull requests.
 
 name: build-docker-auto
 
@@ -43,7 +44,9 @@ on:
       - ready_for_review # Ensures the workflow triggers only when a draft is marked "Ready for Review"
 
 env:
-  suffix: ${{ github.base_ref == 'main' && github.event_name == 'pull_request' && 'main' || github.base_ref == 'dev' && github.event_name == 'pull_request' && 'dev' || 'feat' }}
+  suffix: ${{ github.base_ref == 'main' && github.event_name == 'pull_request' &&
+    'main' || github.base_ref == 'dev' && github.event_name == 'pull_request' &&
+    'dev' || 'feat' }}
 
 jobs:
   get-files:
@@ -51,16 +54,14 @@ jobs:
     outputs:
       json: ${{ steps.changed-files.outputs.matched_files_json }}
     steps:
-      - name: Checkout repository
-        id: checkout
-        uses: actions/checkout@v4
-
       - id: changed-files
         name: Check changed files
-        uses: knu/changed-files@v1
+        uses: CCBR/actions/changed-files@main
         with:
+          token: ${{ github.token }}
           paths: |
             **/Dockerfile.*
+          comparison-mode: event
 
       - name: Show changed files
         id: matrix
@@ -69,7 +70,8 @@ jobs:
           echo "${{ steps.changed-files.outputs.matched_files }}" | sed 's/^/  /'
 
   build-docker:
-    needs: [get-files]
+    needs: [ get-files ]
+    if: needs.get-files.outputs.json != '[]' # Skip if no Dockerfiles changed in the latest commit
     strategy:
       matrix:
         file: "${{ fromJson(needs.get-files.outputs.json) }}"
@@ -81,21 +83,15 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
-        name: "checkout PR ${{ github.head_ref }}"
-        if: github.event_name == 'pull_request'
+      - uses: actions/checkout@v6
+        name: Checkout repository
         with:
           fetch-depth: 0
-          ref: ${{ github.head_ref }} # branch name of PR
+          repository: ${{ github.event.pull_request.head.repo.full_name ||
+            github.repository }}
+          ref: ${{ github.head_ref || github.ref_name }}
 
-      - uses: actions/checkout@v4
-        name: "checkout push ${{ github.ref_name }}"
-        if: github.event_name == 'push'
-        with:
-          fetch-depth: 0
-          ref: ${{ github.ref_name }} # branch name of push
-
-      - uses: CCBR/actions/build-docker@v0.5
+      - uses: CCBR/actions/build-docker@latest
         with:
           dockerfile: ${{ matrix.file }}
           dockerhub-namespace: nciccbr
