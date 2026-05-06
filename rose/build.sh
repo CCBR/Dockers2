@@ -1,6 +1,6 @@
 #!/bin/bash
 REPONAME="ccbr_rose"
-BUILD_TAG="v1"
+BUILD_TAG="v2"
 docker buildx build \
   --build-arg REPONAME="${REPONAME}" \
   --build-arg BUILD_TAG="${BUILD_TAG}" \

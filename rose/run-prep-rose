@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-exec /opt/conda/envs/rose/bin/python /opt/ROSE/_prep_rose_input.py "$@"
