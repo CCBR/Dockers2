@@ -25,8 +25,8 @@ on:
         required: true
 
 permissions:
-  contents: read
-  pull-requests: read
+  contents: write
+  pull-requests: write
 
 jobs:
   build-docker:
@@ -138,7 +138,7 @@ jobs:
 
           if git diff --cached --quiet; then
             echo "nothing to commit"
-            git switch "$original_branch"
+            git push -u origin "${{ steps.process-payload.outputs.new_branch }}"
           else
             git commit -m "feat: add Dockerfile for ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}"
             git push -u origin "${{ steps.process-payload.outputs.new_branch }}"
@@ -152,3 +152,23 @@ jobs:
           dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
           github-token: ${{ steps.generate-token.outputs.token }}
           push: true
+
+      - name: Open or update PR to dev
+        env:
+          BRANCH_NAME: ${{ steps.process-payload.outputs.new_branch }}
+          DOCKER_IMAGE_NAME: ${{ steps.process-payload.outputs.docker_image_name }}
+          DOCKER_IMAGE_TAG: ${{ steps.process-payload.outputs.docker_image_tag }}
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          existing_pr="$(gh pr list --head "$BRANCH_NAME" --base dev --json number --jq '.[0].number')"
+
+          if [ -n "$existing_pr" ]; then
+            gh pr edit "$existing_pr" --add-reviewer CCBR/AdminTeam || true
+          else
+            gh pr create \
+              --base dev \
+              --head "$BRANCH_NAME" \
+              --title "feat: add/update Dockerfile for ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" \
+              --body "Adds Dockerfile and generated image metadata updates for ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}." \
+              --reviewer CCBR/AdminTeam
+          fi
