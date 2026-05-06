@@ -6,7 +6,7 @@ Prepare and validate ROSE inputs from peak calls (Python 2.7 compatible).
 This script covers ROSE preflight items:
 1) Peak input normalization (MACS2/SEACR/GoPeaks/BED -> BED6)
 2) Alignment input checks (treatment/control BAM + index)
-3) Reference asset checks (TSS/refseq/optional blacklist)
+3) Reference asset checks (TSS/optional blacklist)
 4) ROSE parameter validation (stitch/tss distance, labels)
 5) Software/runtime checks (bedtools/samtools/ROSE_main.py)
 6) Pre-ROSE filtering (blacklist removal + TSS exclusion + stitching)
@@ -31,7 +31,9 @@ import tempfile
 def run_cmd(cmd, fail_msg, capture=True, cwd=None):
     try:
         if capture:
-            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
+            proc = subprocess.Popen(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd
+            )
             out, err = proc.communicate()
             rc = proc.returncode
         else:
@@ -40,7 +42,8 @@ def run_cmd(cmd, fail_msg, capture=True, cwd=None):
             out, err = "", ""
         if rc != 0:
             raise RuntimeError(
-                "%s\nCommand: %s\n%s" % (
+                "%s\nCommand: %s\n%s"
+                % (
                     fail_msg,
                     " ".join(cmd),
                     (err or "").strip(),
@@ -147,8 +150,6 @@ def load_peaks(path, peak_format, sample_id):
 
             rows.append((chrom, start, end, name, score, strand))
 
-    if not rows:
-        raise RuntimeError("No valid peak rows found in %s" % path)
     return rows
 
 
@@ -159,7 +160,9 @@ def write_bed6(rows, out_bed):
         os.makedirs(out_dir)
     with open(out_bed, "w") as handle:
         for r in rows_sorted:
-            handle.write("%s\t%d\t%d\t%s\t%.6f\t%s\n" % (r[0], r[1], r[2], r[3], r[4], r[5]))
+            handle.write(
+                "%s\t%d\t%d\t%s\t%.6f\t%s\n" % (r[0], r[1], r[2], r[3], r[4], r[5])
+            )
 
 
 def maybe_decompress_gz(in_path, workdir):
@@ -173,14 +176,18 @@ def maybe_decompress_gz(in_path, workdir):
 
 def filter_with_bedtools(bedtools_bin, in_bed, exclude_bed, out_bed, reason):
     cmd = [bedtools_bin, "intersect", "-a", in_bed, "-b", exclude_bed, "-v"]
-    out, _ = run_cmd(cmd, fail_msg="bedtools intersect failed during %s" % reason, capture=True)
+    out, _ = run_cmd(
+        cmd, fail_msg="bedtools intersect failed during %s" % reason, capture=True
+    )
     with open(out_bed, "w") as handle:
         handle.write(out.decode("utf-8") if isinstance(out, bytes) else out)
 
 
 def stitch_with_bedtools(bedtools_bin, in_bed, stitch_distance, out_bed):
     sort_cmd = [bedtools_bin, "sort", "-i", in_bed]
-    out, _ = run_cmd(sort_cmd, fail_msg="bedtools sort failed for stitched ROSE input", capture=True)
+    out, _ = run_cmd(
+        sort_cmd, fail_msg="bedtools sort failed for stitched ROSE input", capture=True
+    )
     if isinstance(out, bytes):
         out = out.decode("utf-8")
     fd, tmp_path = tempfile.mkstemp(suffix=".bed")
@@ -200,7 +207,11 @@ def stitch_with_bedtools(bedtools_bin, in_bed, stitch_distance, out_bed):
             "-o",
             "distinct,sum,distinct",
         ]
-        merged, _ = run_cmd(merge_cmd, fail_msg="bedtools merge failed while stitching peaks", capture=True)
+        merged, _ = run_cmd(
+            merge_cmd,
+            fail_msg="bedtools merge failed while stitching peaks",
+            capture=True,
+        )
         if isinstance(merged, bytes):
             merged = merged.decode("utf-8")
         with open(out_bed, "w") as handle:
@@ -265,6 +276,47 @@ def expected_rose_outputs(output_dir, sample_id):
     ]
 
 
+def write_reports(output_dir, report):
+    report_json = os.path.join(output_dir, "rose_preflight_report.json")
+    report_txt = os.path.join(output_dir, "rose_preflight_report.txt")
+    with open(report_json, "w") as outj:
+        json.dump(report, outj, indent=2, sort_keys=True)
+
+    with open(report_txt, "w") as outt:
+        outt.write("ROSE preflight summary\n")
+        outt.write("======================\n")
+        outt.write("Sample: %s\n" % report["sample_id"])
+        outt.write("Genome: %s\n" % report["genome"])
+        outt.write("Peak format: %s\n" % report["peak_format"])
+        outt.write("Input peaks: %d\n" % report["counts"]["input_bed6"])
+        outt.write(
+            "After TSS exclusion: %d\n" % report["counts"]["after_tss_exclusion"]
+        )
+        outt.write("Stitched peaks: %d\n" % report["counts"]["stitched"])
+        outt.write("Prepared stitched BED: %s\n" % report["prepared_stitched_bed"])
+        outt.write("Prepared stitched GFF: %s\n" % report["prepared_stitched_gff"])
+        outt.write(
+            "ROSE runnable (>= min_peaks=%d): %s\n"
+            % (report["min_peaks"], str(report["run_rose_allowed"]))
+        )
+        outt.write(
+            "Resource estimate: threads=%s, mem=%s, time=%s\n"
+            % (
+                report["resource_estimate"]["threads"],
+                report["resource_estimate"]["mem"],
+                report["resource_estimate"]["time"],
+            )
+        )
+        outt.write("Expected outputs:\n")
+        for item in report["expected_outputs"]:
+            outt.write("  - %s\n" % item)
+        if report.get("notes"):
+            outt.write("Notes:\n")
+            for n in report["notes"]:
+                outt.write("  - %s\n" % n)
+    return report_json, report_txt
+
+
 def validate_bam_and_index(bam_path, label):
     ensure_file(bam_path, label)
     bai1 = bam_path + ".bai"
@@ -277,35 +329,104 @@ def main():
     parser = argparse.ArgumentParser(
         description="Prepare ROSE-compatible stitched BED from MACS2/SEACR/GoPeaks peaks and run preflight checks."
     )
-    parser.add_argument("--peak-file", required=True, help="Input peak file (MACS2 narrow/broadPeak, SEACR, GoPeaks, or B
-ED).")
+    parser.add_argument(
+        "--peak-file",
+        required=True,
+        help="Input peak file (MACS2 narrow/broadPeak, SEACR, GoPeaks, or BED).",
+    )
     parser.add_argument(
         "--peak-format",
         default="auto",
-        choices=["auto", "macs2_narrowpeak", "macs2_broadpeak", "seacr", "gopeaks", "bed"],
+        choices=[
+            "auto",
+            "macs2_narrowpeak",
+            "macs2_broadpeak",
+            "seacr",
+            "gopeaks",
+            "bed",
+        ],
         help="Explicit peak format; default auto-detect.",
     )
-    parser.add_argument("--sample-id", required=True, help="Sample label used for ROSE region IDs and expected outputs.")
-    parser.add_argument("--treatment-bam", required=True, help="Treatment BAM used by ROSE (-r).")
-    parser.add_argument("--control-bam", default=None, help="Optional control BAM used by ROSE (-r).")
-    parser.add_argument("--genome", required=True, help="Genome label (e.g., hg38, mm10) for reporting.")
-    parser.add_argument("--tss-bed", required=True, help="TSS BED file used for promoter exclusion (can be .gz).")
-    parser.add_argument("--blacklist-bed", default=None, help="Optional blacklist BED to remove problematic loci.")
-    parser.add_argument("--stitch-distance", type=int, required=True, help="ROSE stitching distance in bp.")
-    parser.add_argument("--tss-distance", type=int, required=True, help="ROSE TSS exclusion distance in bp.")
-    parser.add_argument("--output-dir", required=True, help="Output directory for prepared files and reports.")
-    parser.add_argument("--prepared-bed-name", default="rose_input.prepared.stitched.bed", help="Prepared stitched BED fi
-lename.")
-    parser.add_argument("--prepared-gff-name", default="rose_input.prepared.stitched.gff", help="Prepared stitched GFF fi
-lename.")
-    parser.add_argument("--min-peaks", type=int, default=5, help="Minimum stitched peak count required to run ROSE.")
-    parser.add_argument("--rose-main", default="ROSE_main.py", help="ROSE executable name/path.")
-    parser.add_argument("--rose-root", default="/opt/ROSE", help="ROSE installation root; ROSE_main.py is run with cwd he
-re.")
-    parser.add_argument("--rose-python", default="/opt/conda/envs/rose/bin/python", help="Python executable used to run R
-OSE_main.py.")
-    parser.add_argument("--run-rose", action="store_true", help="Run ROSE_main.py after preflight and BED preparation.")
-    parser.add_argument("--keep-intermediate", action="store_true", help="Keep intermediate BED files in output dir.")
+    parser.add_argument(
+        "--sample-id",
+        required=True,
+        help="Sample label used for ROSE region IDs and expected outputs.",
+    )
+    parser.add_argument(
+        "--treatment-bam", required=True, help="Treatment BAM used by ROSE (-r)."
+    )
+    parser.add_argument(
+        "--control-bam", default=None, help="Optional control BAM used by ROSE (-r)."
+    )
+    parser.add_argument(
+        "--genome", required=True, help="Genome label (e.g., hg38, mm10) for reporting."
+    )
+    parser.add_argument(
+        "--tss-bed",
+        required=True,
+        help="TSS BED file used for promoter exclusion (can be .gz).",
+    )
+    parser.add_argument(
+        "--blacklist-bed",
+        default=None,
+        help="Optional blacklist BED to remove problematic loci.",
+    )
+    parser.add_argument(
+        "--stitch-distance",
+        type=int,
+        required=True,
+        help="ROSE stitching distance in bp.",
+    )
+    parser.add_argument(
+        "--tss-distance",
+        type=int,
+        required=True,
+        help="ROSE TSS exclusion distance in bp.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        required=True,
+        help="Output directory for prepared files and reports.",
+    )
+    parser.add_argument(
+        "--prepared-bed-name",
+        default="rose_input.prepared.stitched.bed",
+        help="Prepared stitched BED filename.",
+    )
+    parser.add_argument(
+        "--prepared-gff-name",
+        default="rose_input.prepared.stitched.gff",
+        help="Prepared stitched GFF filename.",
+    )
+    parser.add_argument(
+        "--min-peaks",
+        type=int,
+        default=5,
+        help="Minimum stitched peak count required to run ROSE.",
+    )
+    parser.add_argument(
+        "--rose-main", default="ROSE_main.py", help="ROSE executable name/path."
+    )
+    parser.add_argument(
+        "--rose-root",
+        default="/opt/ROSE",
+        help="ROSE installation root; ROSE_main.py is run with cwd here.",
+    )
+    parser.add_argument(
+        "--rose-python",
+        default="/opt/conda/envs/rose/bin/python",
+        help="Python executable used to run ROSE_main.py.",
+    )
+    parser.add_argument(
+        "--run-rose",
+        action="store_true",
+        help="Run ROSE_main.py after preflight and BED preparation.",
+    )
+    parser.add_argument(
+        "--keep-intermediate",
+        action="store_true",
+        help="Keep intermediate BED files in output dir.",
+    )
     args = parser.parse_args()
 
     output_dir = os.path.abspath(args.output_dir)
@@ -320,7 +441,12 @@ OSE_main.py.")
     treatment_bam = os.path.abspath(args.treatment_bam)
     control_bam = os.path.abspath(args.control_bam) if args.control_bam else None
     blacklist_bed = None
-    if args.blacklist_bed and str(args.blacklist_bed).strip().lower() not in ("", "none", "na", "null"):
+    if args.blacklist_bed and str(args.blacklist_bed).strip().lower() not in (
+        "",
+        "none",
+        "na",
+        "null",
+    ):
         blacklist_bed = os.path.abspath(args.blacklist_bed)
 
     ensure_file(peak_file, "peak file")
@@ -339,7 +465,11 @@ OSE_main.py.")
 
     bedtools_bin = ensure_executable("bedtools", "bedtools")
     samtools_bin = ensure_executable("samtools", "samtools")
-    rose_py = ensure_executable(args.rose_python, "ROSE python") if args.run_rose else args.rose_python
+    rose_py = (
+        ensure_executable(args.rose_python, "ROSE python")
+        if args.run_rose
+        else args.rose_python
+    )
     rose_root = os.path.abspath(args.rose_root)
     rose_main_path = args.rose_main
     if args.run_rose:
@@ -349,10 +479,20 @@ OSE_main.py.")
             rose_main_path = os.path.abspath(args.rose_main)
         ensure_file(rose_main_path, "ROSE_main.py")
         if not os.path.isdir(rose_root):
-            raise IOError("rose-root does not exist or is not a directory: %s" % rose_root)
+            raise IOError(
+                "rose-root does not exist or is not a directory: %s" % rose_root
+            )
 
-    bedtools_ver, _ = run_cmd([bedtools_bin, "--version"], fail_msg="Unable to query bedtools version", capture=True)
-    samtools_ver, _ = run_cmd([samtools_bin, "--version"], fail_msg="Unable to query samtools version", capture=True)
+    bedtools_ver, _ = run_cmd(
+        [bedtools_bin, "--version"],
+        fail_msg="Unable to query bedtools version",
+        capture=True,
+    )
+    samtools_ver, _ = run_cmd(
+        [samtools_bin, "--version"],
+        fail_msg="Unable to query samtools version",
+        capture=True,
+    )
     if isinstance(bedtools_ver, bytes):
         bedtools_ver = bedtools_ver.decode("utf-8")
     if isinstance(samtools_ver, bytes):
@@ -368,23 +508,89 @@ OSE_main.py.")
     bed6_raw = os.path.join(intermediate_dir, "01_input_as_bed6.bed")
     write_bed6(raw_rows, bed6_raw)
 
+    raw_n = len(raw_rows)
+    stitched_bed = os.path.join(output_dir, args.prepared_bed_name)
+    stitched_gff = os.path.join(output_dir, args.prepared_gff_name)
+
+    # Early exit for empty/tiny peak sets before expensive filtering/stitching.
+    if raw_n < args.min_peaks:
+        open(stitched_bed, "w").close()
+        open(stitched_gff, "w").close()
+        report = {
+            "genome": args.genome,
+            "sample_id": sanitize_sample_id(args.sample_id),
+            "peak_file": peak_file,
+            "peak_format": peak_format,
+            "treatment_bam": treatment_bam,
+            "control_bam": control_bam,
+            "tss_bed": tss_bed,
+            "blacklist_bed": blacklist_bed,
+            "stitch_distance": args.stitch_distance,
+            "tss_distance": args.tss_distance,
+            "min_peaks": args.min_peaks,
+            "counts": {
+                "input_bed6": raw_n,
+                "after_blacklist": raw_n,
+                "after_tss_exclusion": 0,
+                "stitched": 0,
+            },
+            "software": {
+                "bedtools": bedtools_ver,
+                "samtools": samtools_ver,
+                "rose_main": args.rose_main,
+            },
+            "resource_estimate": estimate_resources(0),
+            "expected_outputs": expected_rose_outputs(output_dir, args.sample_id),
+            "prepared_stitched_bed": stitched_bed,
+            "prepared_stitched_gff": stitched_gff,
+            "run_rose_requested": args.run_rose,
+            "run_rose_allowed": False,
+            "rose_command": None,
+            "notes": [
+                "Input peaks below min_peaks threshold; skipping filtering/stitching and ROSE execution.",
+            ],
+        }
+        report_json, report_txt = write_reports(output_dir, report)
+        if not args.keep_intermediate and os.path.isdir(intermediate_dir):
+            for p in os.listdir(intermediate_dir):
+                fp = os.path.join(intermediate_dir, p)
+                if os.path.isfile(fp):
+                    os.remove(fp)
+            try:
+                os.rmdir(intermediate_dir)
+            except OSError:
+                pass
+        print(
+            "[OK] Peak count below threshold (%d < %d); wrote empty prepared files."
+            % (raw_n, args.min_peaks)
+        )
+        print("[OK] Prepared ROSE stitched BED: %s" % stitched_bed)
+        print("[OK] Prepared ROSE stitched GFF: %s" % stitched_gff)
+        print("[OK] Wrote report JSON: %s" % report_json)
+        print("[OK] Wrote report TXT:  %s" % report_txt)
+        return 0
+
     stage_bed = bed6_raw
     if blacklist_bed:
         no_blacklist = os.path.join(intermediate_dir, "02_no_blacklist.bed")
-        filter_with_bedtools(bedtools_bin, stage_bed, blacklist_bed, no_blacklist, "blacklist filtering")
+        filter_with_bedtools(
+            bedtools_bin, stage_bed, blacklist_bed, no_blacklist, "blacklist filtering"
+        )
         stage_bed = no_blacklist
 
     tss_plain = maybe_decompress_gz(tss_bed, intermediate_dir)
     no_tss = os.path.join(intermediate_dir, "03_no_tss_overlap.bed")
-    filter_with_bedtools(bedtools_bin, stage_bed, tss_plain, no_tss, "TSS exclusion filtering")
+    filter_with_bedtools(
+        bedtools_bin, stage_bed, tss_plain, no_tss, "TSS exclusion filtering"
+    )
 
-    stitched_bed = os.path.join(output_dir, args.prepared_bed_name)
     stitch_with_bedtools(bedtools_bin, no_tss, args.stitch_distance, stitched_bed)
-    stitched_gff = os.path.join(output_dir, args.prepared_gff_name)
     convert_stitched_bed_to_rose_gff(stitched_bed, stitched_gff)
 
     raw_n = count_nonempty_lines(bed6_raw)
-    no_blacklist_n = count_nonempty_lines(stage_bed) if os.path.exists(stage_bed) else raw_n
+    no_blacklist_n = (
+        count_nonempty_lines(stage_bed) if os.path.exists(stage_bed) else raw_n
+    )
     no_tss_n = count_nonempty_lines(no_tss)
     stitched_n = count_nonempty_lines(stitched_bed)
 
@@ -428,6 +634,7 @@ OSE_main.py.")
         "blacklist_bed": blacklist_bed,
         "stitch_distance": args.stitch_distance,
         "tss_distance": args.tss_distance,
+        "min_peaks": args.min_peaks,
         "counts": {
             "input_bed6": raw_n,
             "after_blacklist": no_blacklist_n,
@@ -447,35 +654,7 @@ OSE_main.py.")
         "run_rose_allowed": run_rose_allowed,
         "rose_command": rose_cmd,
     }
-
-    report_json = os.path.join(output_dir, "rose_preflight_report.json")
-    report_txt = os.path.join(output_dir, "rose_preflight_report.txt")
-    with open(report_json, "w") as outj:
-        json.dump(report, outj, indent=2, sort_keys=True)
-
-    with open(report_txt, "w") as outt:
-        outt.write("ROSE preflight summary\n")
-        outt.write("======================\n")
-        outt.write("Sample: %s\n" % report["sample_id"])
-        outt.write("Genome: %s\n" % report["genome"])
-        outt.write("Peak format: %s\n" % report["peak_format"])
-        outt.write("Input peaks: %d\n" % raw_n)
-        outt.write("After TSS exclusion: %d\n" % no_tss_n)
-        outt.write("Stitched peaks: %d\n" % stitched_n)
-        outt.write("Prepared stitched BED: %s\n" % stitched_bed)
-        outt.write("Prepared stitched GFF: %s\n" % stitched_gff)
-        outt.write("ROSE runnable (>= min_peaks=%d): %s\n" % (args.min_peaks, str(run_rose_allowed)))
-        outt.write(
-            "Resource estimate: threads=%s, mem=%s, time=%s\n"
-            % (
-                report["resource_estimate"]["threads"],
-                report["resource_estimate"]["mem"],
-                report["resource_estimate"]["time"],
-            )
-        )
-        outt.write("Expected outputs:\n")
-        for item in report["expected_outputs"]:
-            outt.write("  - %s\n" % item)
+    report_json, report_txt = write_reports(output_dir, report)
 
     if not args.keep_intermediate and os.path.isdir(intermediate_dir):
         for p in os.listdir(intermediate_dir):
@@ -502,3 +681,4 @@ if __name__ == "__main__":
     except Exception as exc:
         print("[ERROR] %s" % str(exc), file=sys.stderr)
         sys.exit(1)
+
