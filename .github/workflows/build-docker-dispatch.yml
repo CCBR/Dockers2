@@ -30,6 +30,10 @@ permissions:
 
 jobs:
   build-docker:
+    name: >-
+      ${{ github.event_name == 'repository_dispatch'
+          && format('{0} | {1}', github.event.client_payload.owner_repo, github.event.client_payload.docker_image_name)
+          || format('{0} | {1}', github.event.inputs.owner_repo, github.event.inputs.docker_image_name) }}
     runs-on: ubuntu-latest
     steps:
       - name: process payload
