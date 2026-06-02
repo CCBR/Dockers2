@@ -1,5 +1,6 @@
 ## Dockers2 development version
 
+- New versions of ROSE: [ccbr_rose](rose/ccbr_rose)
 - New base container for Ubuntu 26.04.
 
 ## Dockers2 0.1.2
