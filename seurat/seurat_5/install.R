@@ -22,7 +22,7 @@ remotes::install_github(
 )
 
 remotes::install_github(
-  "CCBR/SCOT"
+  "CCBR/SCOT", ref = "main"
 )
 
 remotes::install_version(
