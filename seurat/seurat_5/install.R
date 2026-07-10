@@ -21,6 +21,10 @@ remotes::install_github(
   upgrade = "never"
 )
 
+remotes::install_github(
+  "CCBR/SCOT"
+)
+
 remotes::install_version(
   "Routliers",
   repos = "https://cran.rstudio.com/",
