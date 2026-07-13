@@ -21,10 +21,6 @@ remotes::install_github(
   upgrade = "never"
 )
 
-remotes::install_github(
-  "CCBR/SCOT", ref = "main"
-)
-
 remotes::install_version(
   "Routliers",
   repos = "https://cran.rstudio.com/",
@@ -35,6 +31,10 @@ remotes::install_cran(
   "BPCells",
   repos = "https://bnprks.r-universe.dev",
   upgrade = "never"
+)
+
+remotes::install_github(
+  "CCBR/SCOT", ref = "main"
 )
 
 abort_packages_not_installed <- function(...) {
