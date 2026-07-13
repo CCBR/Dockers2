@@ -17,6 +17,7 @@ dependencies:
   - bioconductor-celldex
   - bioconductor-rhdf5
   - bioconductor-assorthead
+  - bioconductor-banksy
   - r-base=4.4.3
   - r-cluster
   - r-cluster=2
