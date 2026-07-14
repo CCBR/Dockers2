@@ -12,7 +12,7 @@ remotes::install_cran(
 #remotes::install_bioc("assorthead", upgrade = "never")
 #remotes::install_bioc("alabaster.base", upgrade = "never")
 #remotes::install_bioc("celldex", upgrade = "never")
-
+remotes::install_github("prabhakarlab/Banksy", ref = "legacy", upgrade = "never")
 remotes::install_github("satijalab/seurat-wrappers@73466e3", upgrade = "never")
 
 # https://github.com/chris-mcginnis-ucsf/DoubletFinder/issues/244
