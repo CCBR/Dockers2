@@ -18,7 +18,6 @@ dependencies:
   - bioconductor-rhdf5
   - bioconductor-assorthead
   - biocondoctuor-spatialexperiment
- # - bioconductor-banksy
   - r-base=4.4.3
   - r-cluster
   - r-cluster=2
