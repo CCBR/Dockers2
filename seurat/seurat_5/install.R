@@ -33,10 +33,13 @@ remotes::install_cran(
   upgrade = "never"
 )
 
+# install scot w/ imports + suggests
 remotes::install_github(
-  "CCBR/SCOT", ref = "main"
+  "CCBR/SCOT", ref = "main", dependencies = TRUE
 )
 
+# make sure scot was installed properly
+library(SCOT)
 abort_packages_not_installed <- function(...) {
   pkgs <- c(...)
   package_status <- lapply(pkgs, rlang::is_installed) |> unlist()
@@ -59,5 +62,6 @@ abort_packages_not_installed(
   'gypsum',
   'alabaster.base',
   'celldex',
-  'rliger'
+  'rliger',
+  'SCOT'
 )
