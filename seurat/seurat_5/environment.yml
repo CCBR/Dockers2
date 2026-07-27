@@ -18,6 +18,8 @@ dependencies:
   - bioconductor-rhdf5
   - bioconductor-assorthead
   - bioconductor-spatialexperiment
+  - bioconductor-scDblFinder
+  - bioconductor-ontoProc
   - r-base=4.4.3
   - r-cluster
   - r-cluster=2
@@ -37,6 +39,7 @@ dependencies:
   - r-hdf5r
   - r-httr2
   - r-liger
+  - r-rliger
   - r-lubridate
   - r-png
   - r-presto
