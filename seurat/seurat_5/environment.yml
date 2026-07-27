@@ -39,7 +39,6 @@ dependencies:
   - r-hdf5r
   - r-httr2
   - r-liger
-  - r-rliger
   - r-lubridate
   - r-png
   - r-presto
