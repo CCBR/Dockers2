@@ -38,6 +38,7 @@ dependencies:
   - r-harmony>=0.1
   - r-hdf5r
   - r-httr2
+  - r-rcppplanc
   - r-liger
   - r-lubridate
   - r-png
