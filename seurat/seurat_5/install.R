@@ -12,7 +12,7 @@ remotes::install_cran(
 #remotes::install_bioc("assorthead", upgrade = "never")
 #remotes::install_bioc("alabaster.base", upgrade = "never")
 #remotes::install_bioc("celldex", upgrade = "never")
-
+remotes::install_github("prabhakarlab/Banksy", ref = "legacy", upgrade = "never")
 remotes::install_github("satijalab/seurat-wrappers@73466e3", upgrade = "never")
 
 # https://github.com/chris-mcginnis-ucsf/DoubletFinder/issues/244
@@ -33,6 +33,13 @@ remotes::install_cran(
   upgrade = "never"
 )
 
+# install scot w/ imports + suggests
+remotes::install_github(
+  "CCBR/SCOT", ref = "main", dependencies = TRUE
+)
+
+# make sure scot was installed properly
+library(SCOT)
 abort_packages_not_installed <- function(...) {
   pkgs <- c(...)
   package_status <- lapply(pkgs, rlang::is_installed) |> unlist()
@@ -55,5 +62,6 @@ abort_packages_not_installed(
   'gypsum',
   'alabaster.base',
   'celldex',
-  'rliger'
+  'rliger',
+  'SCOT'
 )

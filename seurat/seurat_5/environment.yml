@@ -17,6 +17,9 @@ dependencies:
   - bioconductor-celldex
   - bioconductor-rhdf5
   - bioconductor-assorthead
+  - bioconductor-spatialexperiment
+  - bioconductor-scDblFinder
+  - bioconductor-ontoProc
   - r-base=4.4.3
   - r-cluster
   - r-cluster=2
@@ -35,6 +38,7 @@ dependencies:
   - r-harmony>=0.1
   - r-hdf5r
   - r-httr2
+  - r-rcppplanc
   - r-liger
   - r-lubridate
   - r-png
