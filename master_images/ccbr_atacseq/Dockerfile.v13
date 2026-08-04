@@ -140,8 +140,12 @@ RUN \
 # (chr1, chr2, ... instead of NCBI's NC_060925.1, ...) and seqlengths set,
 # per NCBI's assembly report, before the TxDb was built (renaming/setting
 # seqlengths on a TxDb *after* creation does not persist through saveDb()).
-# The resulting portable .sqlite (~283MB, gzipped to ~80MB to stay under
-# GitHub's 100MB per-file push limit) is committed at
+# The 25-feature chrR annotation (rDNA repeat unit: IGS/ETS/18S/ITS/5.8S/28S/
+# TTF1 sites) used by ASPEN's hs1_chrR genome build is also merged in as its
+# own seqlevel (chrR, length 44838) so a single TxDb serves both hs1 (no
+# chrR) and hs1_chrR (with chrR) callers. The resulting portable .sqlite
+# (~283MB, gzipped to ~80MB to stay under GitHub's 100MB per-file push
+# limit) is committed at
 # resources/annotation/TxDb.Hsapiens.NCBI.T2T.CHM13v2.0.sqlite.gz, copied into
 # the image and gunzipped below (Layer 5) rather than rebuilt at
 # container-build time -- this avoids a large (~1.7GB uncompressed) GFF3
