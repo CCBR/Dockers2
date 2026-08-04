@@ -26,10 +26,9 @@ RUN wget -q -O bedToGenePred http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_
     chmod a+x bedToGenePred && \
     wget -q -O genePredToGtf http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/genePredToGtf && \
     chmod a+x /opt2/genePredToGtf && \
+    wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | apt-key add - && \
     echo "deb https://cloud.r-project.org/bin/linux/ubuntu focal-cran44/" \
         > /etc/apt/sources.list.d/cran_r44.list && \
-    wget -qO /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc \
-        https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc && \
     apt-get update && \
     apt-get install -y --no-install-recommends r-base r-base-dev && \
     apt-get clean && rm -rf /var/lib/apt/lists/* && \
