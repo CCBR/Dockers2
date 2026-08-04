@@ -26,19 +26,24 @@ ENV DOCKERFILE=${DOCKERFILE} \
 
 # ── Layer 1: R 4.4 + additional system packages ──────────────────────────────
 # Ubuntu 20.04 (focal) default apt gives R 3.6.3; BiocT2T requires R >= 4.3.
-# Add the CRAN focal-cran44 PPA and upgrade r-base before any R work.
-# Key fetched via HTTPS (keyserver ports are blocked in GitHub Actions runners).
-RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc \
-        | apt-key add - && \
-    echo "deb https://cloud.r-project.org/bin/linux/ubuntu focal-cran44/" \
-        > /etc/apt/sources.list.d/cran_r44.list && \
-    apt-get update && \
+# Strategy:
+#   1. apt-get update + install gnupg2 from the default Ubuntu repo (no key needed).
+#   2. curl | gpg --dearmor → write binary key to /etc/apt/trusted.gpg.d/.
+#   3. Add CRAN focal-cran44 with signed-by= (modern apt 2.0 style, no apt-key).
+#   4. Second apt-get update picks up CRAN; install r-base/r-base-dev (R 4.4).
+# This avoids apt-key add (which fails on empty/piped input) and keyserver ports.
+RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        bc pandoc \
-        r-base r-base-dev \
+        gnupg2 bc pandoc \
         libfontconfig1-dev \
         libharfbuzz-dev libfribidi-dev \
         libtiff5-dev libjpeg-dev && \
+    curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc \
+        | gpg --dearmor -o /etc/apt/trusted.gpg.d/cran_ubuntu.gpg && \
+    echo "deb [signed-by=/etc/apt/trusted.gpg.d/cran_ubuntu.gpg] https://cloud.r-project.org/bin/linux/ubuntu focal-cran44/" \
+        > /etc/apt/sources.list.d/cran_r44.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends r-base r-base-dev && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ── Layer 2: Python packages ──────────────────────────────────────────────────
