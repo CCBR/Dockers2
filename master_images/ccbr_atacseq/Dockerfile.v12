@@ -17,14 +17,23 @@ ENV IMAGENAME=${IMAGENAME}
 ARG BASEIMAGENAME="000000"
 ENV BASEIMAGENAME=${BASEIMAGENAME}
 
-# Re-apply v11 tools (bedToGenePred, genePredToGtf) and add v12 BiocT2T/T2T TxDb
-# in a single RUN layer to stay within overlay2 max-depth limit
+# Re-apply v11 tools (bedToGenePred, genePredToGtf), upgrade R to 4.4 for
+# BiocT2T support (v1.10 base ships R 3.6 which predates Bioconductor 3.17),
+# and install BiocT2T/T2T TxDb — all in a single RUN to stay within overlay2
+# max-depth limit
 WORKDIR /opt2
 RUN wget -q -O bedToGenePred http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/bedToGenePred && \
     chmod a+x bedToGenePred && \
     wget -q -O genePredToGtf http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/genePredToGtf && \
     chmod a+x /opt2/genePredToGtf && \
-    Rscript -e 'if (!requireNamespace("remotes", quietly=TRUE)) install.packages("remotes"); remotes::install_github("Bioconductor/BiocT2T")' && \
+    echo "deb https://cloud.r-project.org/bin/linux/ubuntu focal-cran44/" \
+        > /etc/apt/sources.list.d/cran_r44.list && \
+    wget -qO /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc \
+        https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends r-base r-base-dev && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    Rscript -e 'install.packages("BiocManager", repos="https://cloud.r-project.org"); BiocManager::install("BiocT2T", ask=FALSE)' && \
     Rscript -e 'BiocT2T::install_early_t2t_txdb()'
 
 # Copy Dockerfile and set permissions in a single layer
