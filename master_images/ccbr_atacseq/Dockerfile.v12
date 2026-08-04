@@ -1,4 +1,4 @@
-FROM nciccbr/ccbr_atacseq:v11-feat
+FROM nciccbr/ccbr_atacseq:v1.10
 
 LABEL maintainer="Vishal Koparde *(kopardev on GitHub)*"
 LABEL github_handle="kopardev"
@@ -17,11 +17,17 @@ ENV IMAGENAME=${IMAGENAME}
 ARG BASEIMAGENAME="000000"
 ENV BASEIMAGENAME=${BASEIMAGENAME}
 
-# Install BiocT2T and TxDb.Hsapiens.NCBI.CHM13v2 for hs1/hs1_chrR T2T genome support
-RUN Rscript -e 'if (!requireNamespace("BiocManager", quietly=TRUE)) install.packages("BiocManager"); BiocManager::install("BiocT2T", ask=FALSE)' && \
+# Re-apply v11 tools (bedToGenePred, genePredToGtf) and add v12 BiocT2T/T2T TxDb
+# in a single RUN layer to stay within overlay2 max-depth limit
+WORKDIR /opt2
+RUN wget -q -O bedToGenePred http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/bedToGenePred && \
+    chmod a+x bedToGenePred && \
+    wget -q -O genePredToGtf http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/genePredToGtf && \
+    chmod a+x /opt2/genePredToGtf && \
+    Rscript -e 'if (!requireNamespace("BiocManager", quietly=TRUE)) install.packages("BiocManager"); BiocManager::install("BiocT2T", ask=FALSE)' && \
     Rscript -e 'BiocT2T::install_early_t2t_txdb()'
 
-# Copy Dockerfile and other files in a single layer
+# Copy Dockerfile and set permissions in a single layer
 COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
 RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
 
