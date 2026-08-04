@@ -34,7 +34,8 @@ RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries && \
     echo 'Acquire::https::Timeout "30";' >> /etc/apt/apt.conf.d/80-retries
 
 # ── Layer 1: R 4.x + additional system packages ──────────────────────────────
-# Ubuntu 20.04 (focal) default apt gives R 3.6.3; BiocT2T requires R >= 4.3.
+# Ubuntu 20.04 (focal) default apt gives R 3.6.3; txdbmaker/GenomicFeatures
+# (used below to build the T2T-CHM13v2.0 TxDb) require R >= 4.4.
 # Strategy:
 #   1. apt-get update (retried in a loop, see Layer 0 note) + install gnupg2
 #      from the default Ubuntu repo (no key needed).
@@ -118,6 +119,7 @@ RUN \
     cd /opt2/homer && \
     wget -q http://homer.ucsd.edu/homer/configureHomer.pl && \
     perl configureHomer.pl -install && \
+    rm -f configureHomer.pl && \
     \
     # ── UCSC tools: bedToGenePred + genePredToGtf (v385) ─────────────────── \
     cd /opt2 && \
@@ -127,9 +129,27 @@ RUN \
     chmod a+x genePredToGtf
 
 # ── Layer 4: R packages (CRAN + Bioconductor, all in one RUN) ────────────────
+# NOTE on T2T-CHM13v2.0 support (issue #422): the originally-requested
+# "BiocT2T" package does not exist — https://github.com/bioc/BiocT2T is a
+# 404, and it is absent from the full Bioconductor 3.23 package list. There
+# is also no ready-made "TxDb.Hsapiens.NCBI.CHM13v2" package. Instead, a TxDb
+# is built directly from NCBI's official T2T-CHM13v2.0 RefSeq annotation
+# (GCF_009914755.1) using txdbmaker::makeTxDbFromGFF(), with seqlevels
+# converted to UCSC style (chr1, chr2, ... instead of NCBI's 1, 2, ...) per
+# the issue's note, then saved as a portable .sqlite TxDb that ASPEN's R
+# scripts can load directly via AnnotationDbi::loadDb().
 RUN Rscript -e 'options(repos=c(CRAN="https://cloud.r-project.org")); install.packages(c("argparse","dplyr","shiny","plotly","rmarkdown"))' && \
-    Rscript -e 'if (!requireNamespace("BiocManager",quietly=TRUE)) install.packages("BiocManager"); BiocManager::install(c("ChIPseeker","TxDb.Hsapiens.UCSC.hg19.knownGene","TxDb.Hsapiens.UCSC.hg38.knownGene","TxDb.Mmusculus.UCSC.mm9.knownGene","TxDb.Mmusculus.UCSC.mm10.knownGene","org.Hs.eg.db","org.Mm.eg.db","limma","edgeR","DESeq2","TxDb.Btaurus.UCSC.bosTau9.refGene","TxDb.Mmulatta.UCSC.rheMac10.refGene","org.Mmu.eg.db","BiocT2T"),ask=FALSE)' && \
-    Rscript -e 'BiocT2T::install_early_t2t_txdb()'
+    Rscript -e 'options(repos=c(CRAN="https://cloud.r-project.org")); if (!requireNamespace("BiocManager",quietly=TRUE)) install.packages("BiocManager"); BiocManager::install(c("ChIPseeker","TxDb.Hsapiens.UCSC.hg19.knownGene","TxDb.Hsapiens.UCSC.hg38.knownGene","TxDb.Mmusculus.UCSC.mm9.knownGene","TxDb.Mmusculus.UCSC.mm10.knownGene","org.Hs.eg.db","org.Mm.eg.db","limma","edgeR","DESeq2","TxDb.Btaurus.UCSC.bosTau9.refGene","TxDb.Mmulatta.UCSC.rheMac10.refGene","org.Mmu.eg.db","txdbmaker"),ask=FALSE)' && \
+    mkdir -p /opt2/annotation && \
+    wget -q -O /tmp/T2T-CHM13v2.0_genomic.gff.gz \
+        https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/009/914/755/GCF_009914755.1_T2T-CHM13v2.0/GCF_009914755.1_T2T-CHM13v2.0_genomic.gff.gz && \
+    gunzip /tmp/T2T-CHM13v2.0_genomic.gff.gz && \
+    Rscript -e ' \
+        txdb <- txdbmaker::makeTxDbFromGFF("/tmp/T2T-CHM13v2.0_genomic.gff", format="gff3", dataSource="NCBI RefSeq GCF_009914755.1", organism="Homo sapiens"); \
+        GenomeInfoDb::seqlevelsStyle(txdb) <- "UCSC"; \
+        AnnotationDbi::saveDb(txdb, file="/opt2/annotation/TxDb.Hsapiens.NCBI.T2T.CHM13v2.0.sqlite") \
+    ' && \
+    rm -rf /tmp/*
 
 # ── Update PATH for MEME, HOMER, Genrich ─────────────────────────────────────
 ENV PATH="/opt2/meme/bin:/opt2/meme/libexec/meme-5.3.3:/opt2/homer/bin:/opt2/Genrich-0.6.1:${PATH}"
