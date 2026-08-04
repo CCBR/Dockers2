@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/ccbr_atacseq:v13-feat
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/fb575c60a777e0ce858a86b33f0a9472740c194a/master_images/ccbr_atacseq/Dockerfile.v13
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/51bc9dd7d3d624af2abd5c49e31ff53b793ac4e3/master_images/ccbr_atacseq/Dockerfile.v13
 
 
-Built on: 2026-08-04_20:05:32 
+Built on: 2026-08-04_22:02:00 
 
 Build tag: v13-feat 
 
