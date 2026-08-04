@@ -34,8 +34,9 @@ RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries && \
     echo 'Acquire::https::Timeout "30";' >> /etc/apt/apt.conf.d/80-retries
 
 # ── Layer 1: R 4.x + additional system packages ──────────────────────────────
-# Ubuntu 20.04 (focal) default apt gives R 3.6.3; txdbmaker/GenomicFeatures
-# (used below to build the T2T-CHM13v2.0 TxDb) require R >= 4.4.
+# Ubuntu 20.04 (focal) default apt gives R 3.6.3; ChIPseeker/GenomicFeatures
+# and the other Bioconductor packages installed below (Layer 4) require
+# R >= 4.4.
 # Strategy:
 #   1. apt-get update (retried in a loop, see Layer 0 note) + install gnupg2
 #      from the default Ubuntu repo (no key needed).
@@ -133,23 +134,22 @@ RUN \
 # "BiocT2T" package does not exist — https://github.com/bioc/BiocT2T is a
 # 404, and it is absent from the full Bioconductor 3.23 package list. There
 # is also no ready-made "TxDb.Hsapiens.NCBI.CHM13v2" package. Instead, a TxDb
-# is built directly from NCBI's official T2T-CHM13v2.0 RefSeq annotation
-# (GCF_009914755.1) using txdbmaker::makeTxDbFromGFF(), with seqlevels
-# converted to UCSC style (chr1, chr2, ... instead of NCBI's 1, 2, ...) per
-# the issue's note, then saved as a portable .sqlite TxDb that ASPEN's R
-# scripts can load directly via AnnotationDbi::loadDb().
+# was pre-built (outside this Dockerfile, on Biowulf) from NCBI's official
+# T2T-CHM13v2.0 RefSeq annotation (GCF_009914755.1) via
+# txdbmaker::makeTxDbFromGRanges(), with seqlevels renamed to UCSC style
+# (chr1, chr2, ... instead of NCBI's NC_060925.1, ...) and seqlengths set,
+# per NCBI's assembly report, before the TxDb was built (renaming/setting
+# seqlengths on a TxDb *after* creation does not persist through saveDb()).
+# The resulting portable .sqlite (~283MB, gzipped to ~80MB to stay under
+# GitHub's 100MB per-file push limit) is committed at
+# resources/annotation/TxDb.Hsapiens.NCBI.T2T.CHM13v2.0.sqlite.gz, copied into
+# the image and gunzipped below (Layer 5) rather than rebuilt at
+# container-build time -- this avoids a large (~1.7GB uncompressed) GFF3
+# download/parse plus the GenomeInfoDbData runtime dependency during every
+# image build. It's loaded directly by ASPEN's R scripts via
+# AnnotationDbi::loadDb().
 RUN Rscript -e 'options(repos=c(CRAN="https://cloud.r-project.org")); install.packages(c("argparse","dplyr","shiny","plotly","rmarkdown"))' && \
-    Rscript -e 'options(repos=c(CRAN="https://cloud.r-project.org")); if (!requireNamespace("BiocManager",quietly=TRUE)) install.packages("BiocManager"); BiocManager::install(c("ChIPseeker","TxDb.Hsapiens.UCSC.hg19.knownGene","TxDb.Hsapiens.UCSC.hg38.knownGene","TxDb.Mmusculus.UCSC.mm9.knownGene","TxDb.Mmusculus.UCSC.mm10.knownGene","org.Hs.eg.db","org.Mm.eg.db","limma","edgeR","DESeq2","TxDb.Btaurus.UCSC.bosTau9.refGene","TxDb.Mmulatta.UCSC.rheMac10.refGene","org.Mmu.eg.db","txdbmaker"),ask=FALSE)' && \
-    mkdir -p /opt2/annotation && \
-    wget -q -O /tmp/T2T-CHM13v2.0_genomic.gff.gz \
-        https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/009/914/755/GCF_009914755.1_T2T-CHM13v2.0/GCF_009914755.1_T2T-CHM13v2.0_genomic.gff.gz && \
-    gunzip /tmp/T2T-CHM13v2.0_genomic.gff.gz && \
-    Rscript -e ' \
-        txdb <- txdbmaker::makeTxDbFromGFF("/tmp/T2T-CHM13v2.0_genomic.gff", format="gff3", dataSource="NCBI RefSeq GCF_009914755.1", organism="Homo sapiens"); \
-        GenomeInfoDb::seqlevelsStyle(txdb) <- "UCSC"; \
-        AnnotationDbi::saveDb(txdb, file="/opt2/annotation/TxDb.Hsapiens.NCBI.T2T.CHM13v2.0.sqlite") \
-    ' && \
-    rm -rf /tmp/*
+    Rscript -e 'options(repos=c(CRAN="https://cloud.r-project.org")); if (!requireNamespace("BiocManager",quietly=TRUE)) install.packages("BiocManager"); BiocManager::install(c("ChIPseeker","TxDb.Hsapiens.UCSC.hg19.knownGene","TxDb.Hsapiens.UCSC.hg38.knownGene","TxDb.Mmusculus.UCSC.mm9.knownGene","TxDb.Mmusculus.UCSC.mm10.knownGene","org.Hs.eg.db","org.Mm.eg.db","limma","edgeR","DESeq2","TxDb.Btaurus.UCSC.bosTau9.refGene","TxDb.Mmulatta.UCSC.rheMac10.refGene","org.Mmu.eg.db"),ask=FALSE)'
 
 # ── Update PATH for MEME, HOMER, Genrich ─────────────────────────────────────
 ENV PATH="/opt2/meme/bin:/opt2/meme/libexec/meme-5.3.3:/opt2/homer/bin:/opt2/Genrich-0.6.1:${PATH}"
@@ -159,7 +159,10 @@ ENV PATH="/opt2/meme/bin:/opt2/meme/libexec/meme-5.3.3:/opt2/homer/bin:/opt2/Gen
 # picardcloud.jar — hardcoded at /opt2 by ASPEN MarkDuplicates rules
 # bedSort, bedGraphToBigWig — pre-built UCSC binaries
 # transpose.sh — utility script
+# annotation/TxDb.Hsapiens.NCBI.T2T.CHM13v2.0.sqlite.gz — pre-built T2T-CHM13v2.0
+# TxDb (see Layer 4 note above), gunzipped below to /opt2/annotation/TxDb.Hsapiens.NCBI.T2T.CHM13v2.0.sqlite
 COPY resources/ /opt2/
+RUN gunzip /opt2/annotation/TxDb.Hsapiens.NCBI.T2T.CHM13v2.0.sqlite.gz
 
 # ── Layer 6: Permissions ──────────────────────────────────────────────────────
 RUN chmod -R a+rx /opt2
