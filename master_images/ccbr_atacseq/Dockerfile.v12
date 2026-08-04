@@ -24,7 +24,7 @@ RUN wget -q -O bedToGenePred http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_
     chmod a+x bedToGenePred && \
     wget -q -O genePredToGtf http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/genePredToGtf && \
     chmod a+x /opt2/genePredToGtf && \
-    Rscript -e 'if (!requireNamespace("BiocManager", quietly=TRUE)) install.packages("BiocManager"); BiocManager::install("BiocT2T", ask=FALSE)' && \
+    Rscript -e 'if (!requireNamespace("remotes", quietly=TRUE)) install.packages("remotes"); remotes::install_github("Bioconductor/BiocT2T")' && \
     Rscript -e 'BiocT2T::install_early_t2t_txdb()'
 
 # Copy Dockerfile and set permissions in a single layer
