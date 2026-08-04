@@ -24,15 +24,25 @@ ENV DOCKERFILE=${DOCKERFILE} \
 # libcurl4-openssl-dev, libxml2-dev, libxslt-dev, cpanminus, perl,
 # /opt2, /data2, argparse.bash, PATH=/opt2
 
+# ── Layer 0: Harden apt against flaky mirror connectivity ────────────────────
+# GitHub-hosted runners intermittently fail to reach archive.ubuntu.com during
+# `apt-get update` (well-documented: actions/runner-images#675). Configure apt
+# to retry failed fetches with generous timeouts so transient network blips
+# during this multi-hour multi-tool build don't fail the whole layer.
+RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries && \
+    echo 'Acquire::http::Timeout "30";' >> /etc/apt/apt.conf.d/80-retries && \
+    echo 'Acquire::https::Timeout "30";' >> /etc/apt/apt.conf.d/80-retries
+
 # ── Layer 1: R 4.4 + additional system packages ──────────────────────────────
 # Ubuntu 20.04 (focal) default apt gives R 3.6.3; BiocT2T requires R >= 4.3.
 # Strategy:
-#   1. apt-get update + install gnupg2 from the default Ubuntu repo (no key needed).
+#   1. apt-get update (retried in a loop, see Layer 0 note) + install gnupg2
+#      from the default Ubuntu repo (no key needed).
 #   2. curl | gpg --dearmor → write binary key to /etc/apt/trusted.gpg.d/.
 #   3. Add CRAN focal-cran44 with signed-by= (modern apt 2.0 style, no apt-key).
 #   4. Second apt-get update picks up CRAN; install r-base/r-base-dev (R 4.4).
 # This avoids apt-key add (which fails on empty/piped input) and keyserver ports.
-RUN apt-get update && \
+RUN for i in 1 2 3 4 5; do apt-get update && break || sleep 15; done && \
     apt-get install -y --no-install-recommends \
         gnupg2 bc pandoc \
         libfontconfig1-dev \
@@ -42,7 +52,7 @@ RUN apt-get update && \
         | gpg --dearmor -o /etc/apt/trusted.gpg.d/cran_ubuntu.gpg && \
     echo "deb [signed-by=/etc/apt/trusted.gpg.d/cran_ubuntu.gpg] https://cloud.r-project.org/bin/linux/ubuntu focal-cran44/" \
         > /etc/apt/sources.list.d/cran_r44.list && \
-    apt-get update && \
+    for i in 1 2 3 4 5; do apt-get update && break || sleep 15; done && \
     apt-get install -y --no-install-recommends r-base r-base-dev && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
