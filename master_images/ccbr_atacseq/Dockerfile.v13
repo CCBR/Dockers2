@@ -54,7 +54,8 @@ RUN for i in 1 2 3 4 5; do apt-get update && break || sleep 15; done && \
         gnupg2 bc pandoc \
         libfontconfig1-dev \
         libharfbuzz-dev libfribidi-dev \
-        libtiff5-dev libjpeg-dev && \
+        libtiff5-dev libjpeg-dev \
+        libuv1-dev libcairo2-dev && \
     curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc \
         | gpg --dearmor -o /etc/apt/trusted.gpg.d/cran_ubuntu.gpg && \
     echo "deb [signed-by=/etc/apt/trusted.gpg.d/cran_ubuntu.gpg] https://cloud.r-project.org/bin/linux/ubuntu focal-cran40/" \
@@ -152,8 +153,27 @@ RUN \
 # download/parse plus the GenomeInfoDbData runtime dependency during every
 # image build. It's loaded directly by ASPEN's R scripts via
 # AnnotationDbi::loadDb().
-RUN Rscript -e 'options(repos=c(CRAN="https://cloud.r-project.org")); install.packages(c("argparse","dplyr","shiny","plotly","rmarkdown"))' && \
-    Rscript -e 'options(repos=c(CRAN="https://cloud.r-project.org")); if (!requireNamespace("BiocManager",quietly=TRUE)) install.packages("BiocManager"); BiocManager::install(c("ChIPseeker","TxDb.Hsapiens.UCSC.hg19.knownGene","TxDb.Hsapiens.UCSC.hg38.knownGene","TxDb.Mmusculus.UCSC.mm9.knownGene","TxDb.Mmusculus.UCSC.mm10.knownGene","org.Hs.eg.db","org.Mm.eg.db","limma","edgeR","DESeq2","TxDb.Btaurus.UCSC.bosTau9.refGene","TxDb.Mmulatta.UCSC.rheMac10.refGene","org.Mmu.eg.db"),ask=FALSE)'
+# NOTE: install.packages()/BiocManager::install() only *warn* on individual
+# package failures, never stop() -- so a plain Rscript call here would exit 0
+# (and Docker would report a "successful" build) even if e.g. ChIPseeker
+# itself silently failed to install. Each call below re-checks with
+# requireNamespace() and stop()s (non-zero exit -> failed RUN -> failed build)
+# if anything requested didn't actually make it in.
+RUN Rscript -e ' \
+        options(repos=c(CRAN="https://cloud.r-project.org")); \
+        pkgs <- c("argparse","dplyr","shiny","plotly","rmarkdown"); \
+        install.packages(pkgs); \
+        missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly=TRUE)]; \
+        if (length(missing)) stop("Failed to install CRAN package(s): ", paste(missing, collapse=", ")) \
+    ' && \
+    Rscript -e ' \
+        options(repos=c(CRAN="https://cloud.r-project.org")); \
+        if (!requireNamespace("BiocManager",quietly=TRUE)) install.packages("BiocManager"); \
+        pkgs <- c("ChIPseeker","TxDb.Hsapiens.UCSC.hg19.knownGene","TxDb.Hsapiens.UCSC.hg38.knownGene","TxDb.Mmusculus.UCSC.mm9.knownGene","TxDb.Mmusculus.UCSC.mm10.knownGene","org.Hs.eg.db","org.Mm.eg.db","limma","edgeR","DESeq2","TxDb.Btaurus.UCSC.bosTau9.refGene","TxDb.Mmulatta.UCSC.rheMac10.refGene","org.Mmu.eg.db"); \
+        BiocManager::install(pkgs, ask=FALSE); \
+        missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly=TRUE)]; \
+        if (length(missing)) stop("Failed to install Bioconductor package(s): ", paste(missing, collapse=", ")) \
+    '
 
 # ── Update PATH for MEME, HOMER, Genrich ─────────────────────────────────────
 ENV PATH="/opt2/meme/bin:/opt2/meme/libexec/meme-5.3.3:/opt2/homer/bin:/opt2/Genrich-0.6.1:${PATH}"
