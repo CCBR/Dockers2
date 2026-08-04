@@ -33,14 +33,19 @@ RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries && \
     echo 'Acquire::http::Timeout "30";' >> /etc/apt/apt.conf.d/80-retries && \
     echo 'Acquire::https::Timeout "30";' >> /etc/apt/apt.conf.d/80-retries
 
-# ── Layer 1: R 4.4 + additional system packages ──────────────────────────────
+# ── Layer 1: R 4.x + additional system packages ──────────────────────────────
 # Ubuntu 20.04 (focal) default apt gives R 3.6.3; BiocT2T requires R >= 4.3.
 # Strategy:
 #   1. apt-get update (retried in a loop, see Layer 0 note) + install gnupg2
 #      from the default Ubuntu repo (no key needed).
 #   2. curl | gpg --dearmor → write binary key to /etc/apt/trusted.gpg.d/.
-#   3. Add CRAN focal-cran44 with signed-by= (modern apt 2.0 style, no apt-key).
-#   4. Second apt-get update picks up CRAN; install r-base/r-base-dev (R 4.4).
+#   3. Add CRAN "cran40" repo with signed-by= (modern apt 2.0 style, no apt-key).
+#      NOTE: "cran40" is CRAN's fixed suffix marking the R>=4.0 ABI/binary repo —
+#      it is NOT tied to a specific R minor version. It always resolves to
+#      whatever the current R release is (R 4.4+ as of this writing).
+#      "cran44" does NOT exist as a repo path (404) — this was the actual
+#      cause of the previous build failure, not network flakiness.
+#   4. Second apt-get update picks up CRAN; install r-base/r-base-dev.
 # This avoids apt-key add (which fails on empty/piped input) and keyserver ports.
 RUN for i in 1 2 3 4 5; do apt-get update && break || sleep 15; done && \
     apt-get install -y --no-install-recommends \
@@ -50,8 +55,8 @@ RUN for i in 1 2 3 4 5; do apt-get update && break || sleep 15; done && \
         libtiff5-dev libjpeg-dev && \
     curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc \
         | gpg --dearmor -o /etc/apt/trusted.gpg.d/cran_ubuntu.gpg && \
-    echo "deb [signed-by=/etc/apt/trusted.gpg.d/cran_ubuntu.gpg] https://cloud.r-project.org/bin/linux/ubuntu focal-cran44/" \
-        > /etc/apt/sources.list.d/cran_r44.list && \
+    echo "deb [signed-by=/etc/apt/trusted.gpg.d/cran_ubuntu.gpg] https://cloud.r-project.org/bin/linux/ubuntu focal-cran40/" \
+        > /etc/apt/sources.list.d/cran_r40.list && \
     for i in 1 2 3 4 5; do apt-get update && break || sleep 15; done && \
     apt-get install -y --no-install-recommends r-base r-base-dev && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
