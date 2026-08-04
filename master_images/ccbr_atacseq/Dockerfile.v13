@@ -1,0 +1,129 @@
+FROM nciccbr/ccbr_ubuntu_20.04:v8
+
+LABEL maintainer="Vishal Koparde *(kopardev on GitHub)*"
+LABEL github_handle="kopardev"
+
+# Build time variables — re-declared so build-docker action can pass --build-arg
+ARG DOCKERFILE="Dockerfile"
+ARG BUILD_DATE="000000"
+ARG BUILD_TAG="000000"
+ARG REPONAME="000000"
+ARG IMAGENAME="000000"
+ARG BASEIMAGENAME="000000"
+ENV DOCKERFILE=${DOCKERFILE} \
+    BUILD_DATE=${BUILD_DATE} \
+    BUILD_TAG=${BUILD_TAG} \
+    REPONAME=${REPONAME} \
+    IMAGENAME=${IMAGENAME} \
+    BASEIMAGENAME=${BASEIMAGENAME}
+
+# ── v8 base already provides (NOT re-installed here) ─────────────────────────
+# bwa, bowtie2, bedtools, bedops, samtools, cmake, build-essential, g++, gcc,
+# openjdk-8-jdk, python3 + numpy/scipy/pandas/pysam/argparse, parallel, pigz,
+# wget, curl, libssl-dev, libncurses-dev, libbz2-dev, liblzma-dev,
+# libcurl4-openssl-dev, libxml2-dev, libxslt-dev, cpanminus, perl,
+# /opt2, /data2, argparse.bash, PATH=/opt2
+
+# ── Layer 1: R 4.4 + additional system packages ──────────────────────────────
+# Ubuntu 20.04 (focal) default apt gives R 3.6.3; BiocT2T requires R >= 4.3.
+# Add the CRAN focal-cran44 PPA and upgrade r-base before any R work.
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 && \
+    echo "deb https://cloud.r-project.org/bin/linux/ubuntu focal-cran44/" \
+        > /etc/apt/sources.list.d/cran_r44.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        bc pandoc \
+        r-base r-base-dev \
+        libfontconfig1-dev \
+        libharfbuzz-dev libfribidi-dev \
+        libtiff5-dev libjpeg-dev && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# ── Layer 2: Python packages ──────────────────────────────────────────────────
+RUN pip install --no-cache-dir \
+        cutadapt==1.18 \
+        MACS2==2.2.5 \
+        multiqc==1.10.1 \
+        matplotlib \
+        deeptools \
+        idr
+
+# ── Layer 3: Compiled/downloaded bioinformatics tools (all in ONE RUN) ────────
+# Tools added across v1.1–v12: htslib, preseq, FastQC, Genrich, MEME Suite,
+# HOMER, bedToGenePred, genePredToGtf.
+# bedSort and bedGraphToBigWig come from COPY (resources/) below.
+# Source trees removed and MEME binaries stripped at the end to reduce size.
+WORKDIR /opt2
+RUN \
+    # ── htslib 1.12 (required by preseq) ─────────────────────────────────── \
+    wget -q https://github.com/samtools/htslib/releases/download/1.12/htslib-1.12.tar.bz2 && \
+    tar -xjf htslib-1.12.tar.bz2 && \
+    cd htslib-1.12 && ./configure && make && make install && \
+    cd /opt2 && rm -rf htslib-1.12 htslib-1.12.tar.bz2 && \
+    \
+    # ── preseq 3.1.2 ─────────────────────────────────────────────────────── \
+    wget -q https://github.com/smithlabcode/preseq/releases/download/v3.1.2/preseq-3.1.2.tar.gz && \
+    tar -xzf preseq-3.1.2.tar.gz && \
+    cd preseq-3.1.2 && ./configure --enable-hts && make && make install && \
+    cd /opt2 && rm -rf preseq-3.1.2 preseq-3.1.2.tar.gz && \
+    \
+    # ── FastQC 0.11.9 ────────────────────────────────────────────────────── \
+    wget -q https://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.9.zip && \
+    unzip -q fastqc_v0.11.9.zip && rm fastqc_v0.11.9.zip && \
+    chmod 755 /opt2/FastQC/fastqc && \
+    ln -s /opt2/FastQC/fastqc /usr/local/bin/fastqc && \
+    \
+    # ── Genrich 0.6.1 ────────────────────────────────────────────────────── \
+    wget -q https://github.com/jsh58/Genrich/archive/refs/tags/v0.6.1.tar.gz && \
+    tar -xzf v0.6.1.tar.gz && rm v0.6.1.tar.gz && \
+    cd Genrich-0.6.1 && make && \
+    cd /opt2 && \
+    \
+    # ── MEME Suite 5.3.3 (compile, strip binaries, remove source) ─────────── \
+    wget -q https://meme-suite.org/meme/meme-software/5.3.3/meme-5.3.3.tar.gz && \
+    tar -xzf meme-5.3.3.tar.gz && rm meme-5.3.3.tar.gz && \
+    cd meme-5.3.3 && \
+    ./configure --prefix=/opt2/meme \
+        --with-url=http://meme-suite.org/ \
+        --enable-build-libxml2 \
+        --enable-build-libxslt && \
+    make && make install && \
+    cd /opt2 && rm -rf meme-5.3.3 && \
+    strip /opt2/meme/bin/* 2>/dev/null || true && \
+    \
+    # ── HOMER (binary only; no -install <genome> — ASPEN passes raw FASTA) ─ \
+    mkdir -p /opt2/homer && \
+    cd /opt2/homer && \
+    wget -q http://homer.ucsd.edu/homer/configureHomer.pl && \
+    perl configureHomer.pl -install && \
+    \
+    # ── UCSC tools: bedToGenePred + genePredToGtf (v385) ─────────────────── \
+    cd /opt2 && \
+    wget -q -O bedToGenePred http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/bedToGenePred && \
+    chmod a+x bedToGenePred && \
+    wget -q -O genePredToGtf http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/genePredToGtf && \
+    chmod a+x genePredToGtf
+
+# ── Layer 4: R packages (CRAN + Bioconductor, all in one RUN) ────────────────
+RUN Rscript -e 'options(repos=c(CRAN="https://cloud.r-project.org")); install.packages(c("argparse","dplyr","shiny","plotly","rmarkdown"))' && \
+    Rscript -e 'if (!requireNamespace("BiocManager",quietly=TRUE)) install.packages("BiocManager"); BiocManager::install(c("ChIPseeker","TxDb.Hsapiens.UCSC.hg19.knownGene","TxDb.Hsapiens.UCSC.hg38.knownGene","TxDb.Mmusculus.UCSC.mm9.knownGene","TxDb.Mmusculus.UCSC.mm10.knownGene","org.Hs.eg.db","org.Mm.eg.db","limma","edgeR","DESeq2","TxDb.Btaurus.UCSC.bosTau9.refGene","TxDb.Mmulatta.UCSC.rheMac10.refGene","org.Mmu.eg.db","BiocT2T"),ask=FALSE)' && \
+    Rscript -e 'BiocT2T::install_early_t2t_txdb()'
+
+# ── Update PATH for MEME, HOMER, Genrich ─────────────────────────────────────
+ENV PATH="/opt2/meme/bin:/opt2/meme/libexec/meme-5.3.3:/opt2/homer/bin:/opt2/Genrich-0.6.1:${PATH}"
+
+# ── Layer 5: Resource files from build context ────────────────────────────────
+# TruSeq_and_nextera_adapters.consolidated.fa — hardcoded adapter path in ASPEN
+# picardcloud.jar — hardcoded at /opt2 by ASPEN MarkDuplicates rules
+# bedSort, bedGraphToBigWig — pre-built UCSC binaries
+# transpose.sh — utility script
+COPY resources/ /opt2/
+
+# ── Layer 6: Permissions ──────────────────────────────────────────────────────
+RUN chmod -R a+rx /opt2
+
+# ── Copy Dockerfile into image for provenance ─────────────────────────────────
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+RUN chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+
+WORKDIR /data2
