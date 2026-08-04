@@ -27,7 +27,9 @@ ENV DOCKERFILE=${DOCKERFILE} \
 # ── Layer 1: R 4.4 + additional system packages ──────────────────────────────
 # Ubuntu 20.04 (focal) default apt gives R 3.6.3; BiocT2T requires R >= 4.3.
 # Add the CRAN focal-cran44 PPA and upgrade r-base before any R work.
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 && \
+# Key fetched via HTTPS (keyserver ports are blocked in GitHub Actions runners).
+RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc \
+        | apt-key add - && \
     echo "deb https://cloud.r-project.org/bin/linux/ubuntu focal-cran44/" \
         > /etc/apt/sources.list.d/cran_r44.list && \
     apt-get update && \
