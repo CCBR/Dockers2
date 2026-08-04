@@ -1,4 +1,4 @@
-FROM nciccbr/ccbr_atacseq:v11
+FROM nciccbr/ccbr_atacseq:v11-feat
 
 LABEL maintainer="Vishal Koparde *(kopardev on GitHub)*"
 LABEL github_handle="kopardev"
