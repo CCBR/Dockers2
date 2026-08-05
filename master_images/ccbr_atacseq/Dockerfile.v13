@@ -169,7 +169,7 @@ RUN Rscript -e ' \
     Rscript -e ' \
         options(repos=c(CRAN="https://cloud.r-project.org")); \
         if (!requireNamespace("BiocManager",quietly=TRUE)) install.packages("BiocManager"); \
-        pkgs <- c("ChIPseeker","TxDb.Hsapiens.UCSC.hg19.knownGene","TxDb.Hsapiens.UCSC.hg38.knownGene","TxDb.Mmusculus.UCSC.mm9.knownGene","TxDb.Mmusculus.UCSC.mm10.knownGene","org.Hs.eg.db","org.Mm.eg.db","limma","edgeR","DESeq2","TxDb.Btaurus.UCSC.bosTau9.refGene","TxDb.Mmulatta.UCSC.rheMac10.refGene","org.Mmu.eg.db"); \
+        pkgs <- c("ChIPseeker","TxDb.Hsapiens.UCSC.hg19.knownGene","TxDb.Hsapiens.UCSC.hg38.knownGene","TxDb.Mmusculus.UCSC.mm9.knownGene","TxDb.Mmusculus.UCSC.mm10.knownGene","org.Hs.eg.db","org.Mm.eg.db","limma","edgeR","DESeq2","TxDb.Btaurus.UCSC.bosTau9.refGene","org.Bt.eg.db","TxDb.Mmulatta.UCSC.rheMac10.refGene","org.Mmu.eg.db"); \
         BiocManager::install(pkgs, ask=FALSE); \
         missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly=TRUE)]; \
         if (length(missing)) stop("Failed to install Bioconductor package(s): ", paste(missing, collapse=", ")) \
