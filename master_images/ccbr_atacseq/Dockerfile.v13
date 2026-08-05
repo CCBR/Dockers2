@@ -161,7 +161,7 @@ RUN \
 # if anything requested didn't actually make it in.
 RUN Rscript -e ' \
         options(repos=c(CRAN="https://cloud.r-project.org")); \
-        pkgs <- c("argparse","dplyr","shiny","plotly","rmarkdown"); \
+        pkgs <- c("argparse","dplyr","tidyverse","shiny","plotly","rmarkdown"); \
         install.packages(pkgs); \
         missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly=TRUE)]; \
         if (length(missing)) stop("Failed to install CRAN package(s): ", paste(missing, collapse=", ")) \
