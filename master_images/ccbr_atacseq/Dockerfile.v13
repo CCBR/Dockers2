@@ -53,8 +53,10 @@ RUN for i in 1 2 3 4 5; do apt-get update && break || sleep 15; done && \
     apt-get install -y --no-install-recommends \
         gnupg2 bc pandoc \
         libfontconfig1-dev \
+        libfreetype6-dev libpng-dev \
         libharfbuzz-dev libfribidi-dev \
         libtiff5-dev libjpeg-dev \
+        libwebp-dev \
         libuv1-dev libcairo2-dev && \
     curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc \
         | gpg --dearmor -o /etc/apt/trusted.gpg.d/cran_ubuntu.gpg && \
