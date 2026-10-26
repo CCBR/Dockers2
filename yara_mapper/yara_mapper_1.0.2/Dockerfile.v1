@@ -1,10 +1,13 @@
+
 # Yara mapper + samtools from bioconda
 FROM mambaorg/micromamba:1.5.10
-
+ 
 RUN micromamba install -y -n base -c conda-forge -c bioconda \
-        yara=1.0.2 samtools=1.21 procps-ng python=3.11\
+        yara=1.0.2 samtools=1.21 procps-ng python=3.11 \
     && micromamba clean -a -y
-
+ 
 ENV PATH=/opt/conda/bin:$PATH
+# run as root (micromamba base defaults to mambauser, which can't write to mounted dirs in CI)
+USER root
 WORKDIR /data
 CMD ["bash"]
