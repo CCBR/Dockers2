@@ -58,10 +58,10 @@ RUN set -eu; \
         --output /usr/local/bin/micromamba; \
     chmod 0755 /usr/local/bin/micromamba; \
     mkdir -p "${MAMBA_ROOT_PREFIX}"; \
-    printf 'channels:\n  - bioconda\n  - conda-forge\nchannel_priority: strict\n' \
+    printf 'channels:\n  - conda-forge\n  - bioconda\nchannel_priority: strict\n' \
         > "${CONDARC}"; \
     micromamba create --yes --prefix "${MAMBA_ROOT_PREFIX}/envs/base" \
-        --override-channels --channel bioconda --channel conda-forge \
+        --override-channels --channel conda-forge --channel bioconda \
         "python=3.11" numpy scipy pandas pysam multiqc; \
     micromamba clean --all --yes
 
