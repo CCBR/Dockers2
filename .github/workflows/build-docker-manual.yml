@@ -20,12 +20,17 @@
 name: build-docker-manual
 run-name: build-docker ${{ inputs.dockerfile }}-${{ inputs.suffix }}
 
+permissions:
+  contents: write
+  pull-requests: write
+
 on:
   workflow_dispatch:
     inputs:
       dockerfile:
         type: string
-        description: path to the Dockerfile in the repo (e.g. common/ccbr_bwa/Dockerfile)
+        description: path to the Dockerfile in the repo (e.g.
+          base_images/ccbr_ubuntu_22.04/Dockerfile.v4)
         required: true
       dockerhub-namespace:
         type: string
@@ -34,31 +39,35 @@ on:
         default: nciccbr
       suffix:
         type: string
-        description: Suffix to add to image tag eg. "dev" to add "-dev"
+        description: Suffix to add to image tag (e.g. "dev" to add "-dev")
         required: true
         default: feat
       push:
         type: boolean
-        description: Push to DockerHub (leave unchecked to just build the container without pushing)
+        description: Push to DockerHub (leave unchecked to just build the container
+          without pushing)
         required: true
         default: false
       ccbr-actions-version:
-        description: "The version of ccbr_actions to use"
+        description: "The version or branch of ccbr_actions to use (see
+          https://github.com/ccbr/actions)"
         required: true
-        default: "v0.2"
+        default: "latest"
 
 jobs:
   build-docker:
-    runs-on: ubuntu-latest    
+    runs-on: ubuntu-latest
     permissions:
-      contents: 'write'
+      contents: "write"
       pull-requests: write
     steps:
       - name: Checkout repository
         id: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
 
-      - uses: CCBR/actions/build-docker@v0.2
+      - uses: CCBR/actions/build-docker@latest
         with:
           dockerfile: ${{ github.event.inputs.dockerfile }}
           dockerhub-namespace: ${{ github.event.inputs.dockerhub-namespace }}
