@@ -1,0 +1,42 @@
+FROM nciccbr/ccbr_atacseq:v1.10
+
+LABEL maintainer="Vishal Koparde *(kopardev on GitHub)*"
+LABEL github_handle="kopardev"
+
+# Build time variables
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG IMAGENAME="000000"
+ENV IMAGENAME=${IMAGENAME}
+ARG BASEIMAGENAME="000000"
+ENV BASEIMAGENAME=${BASEIMAGENAME}
+
+# Re-apply v11 tools (bedToGenePred, genePredToGtf), upgrade R to 4.4 for
+# BiocT2T support (v1.10 base ships R 3.6 which predates Bioconductor 3.17),
+# and install BiocT2T/T2T TxDb — all in a single RUN to stay within overlay2
+# max-depth limit
+WORKDIR /opt2
+RUN wget -q -O bedToGenePred http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/bedToGenePred && \
+    chmod a+x bedToGenePred && \
+    wget -q -O genePredToGtf http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/genePredToGtf && \
+    chmod a+x /opt2/genePredToGtf && \
+    wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | apt-key add - && \
+    echo "deb https://cloud.r-project.org/bin/linux/ubuntu focal-cran44/" \
+        > /etc/apt/sources.list.d/cran_r44.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends r-base r-base-dev && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    Rscript -e 'install.packages("BiocManager", repos="https://cloud.r-project.org"); BiocManager::install("BiocT2T", ask=FALSE)' && \
+    Rscript -e 'BiocT2T::install_early_t2t_txdb()'
+
+# Copy Dockerfile and set permissions in a single layer
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+
+WORKDIR /data2
