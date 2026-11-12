@@ -1,0 +1,79 @@
+FROM ubuntu:26.04
+
+LABEL maintainer="Vishal Koparde *(kopardev on GitHub)*"
+LABEL github_handle="kopardev"
+
+# Build time variables
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG IMAGENAME="000000"
+ENV IMAGENAME=${IMAGENAME}
+ARG BASEIMAGENAME="000000"
+ENV BASEIMAGENAME=${BASEIMAGENAME}
+
+ARG MICROMAMBA_VERSION="1.5.10"
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Etc/UTC
+ENV MAMBA_ROOT_PREFIX=/opt2/micromamba
+ENV CONDARC=/opt2/micromamba/.condarc
+
+RUN mkdir -p /opt2 /data2 && \
+    ln -snf /usr/share/zoneinfo/America/New_York /etc/localtime && \
+    echo "America/New_York" > /etc/timezone && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        bash coreutils ca-certificates netbase locales \
+        build-essential cmake cpanminus bcftools bedops bedtools bowtie bowtie2 bwa \
+        fastqc fastp trimmomatic hisat2 minimap2 rna-star subread salmon kallisto \
+        seqtk seqkit tabix \
+        bzip2 curl figlet g++ gcc gfortran git imagemagick \
+        libblas-dev libboost-dev libbz2-dev libcurl4-openssl-dev libexpat1-dev \
+        libfreetype6-dev libgd-dev libgd-perl libgs-dev libgsl-dev \
+        libhtml-template-compiled-perl libicu-dev libjudy-dev liblapack-dev \
+        liblzma-dev libmysqlclient-dev libncurses-dev libopenmpi-dev libpng-dev \
+        librtmp-dev libssl-dev libtool libxml-libxml-debugging-perl \
+        libxml-opml-simplegen-perl libxml2-dev libxslt-dev make \
+        openjdk-8-jdk parallel pigz rsync samtools unzip \
+        vim vcftools wget zlib1g zlib1g-dev && \
+    localedef -i en_US -f UTF-8 en_US.UTF-8 && \
+    cpanm FindBin Term::ReadLine && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN set -eu; \
+    case "$(dpkg --print-architecture)" in \
+        amd64) micromamba_platform=linux-64 ;; \
+        arm64) micromamba_platform=linux-aarch64 ;; \
+        ppc64el) micromamba_platform=linux-ppc64le ;; \
+        s390x) micromamba_platform=linux-s390x ;; \
+        *) echo "Unsupported architecture: $(dpkg --print-architecture)" >&2; exit 1 ;; \
+    esac; \
+    curl --fail --location --silent --show-error \
+        "https://github.com/mamba-org/micromamba-releases/releases/download/${MICROMAMBA_VERSION}/micromamba-${micromamba_platform}" \
+        --output /usr/local/bin/micromamba; \
+    chmod 0755 /usr/local/bin/micromamba; \
+    mkdir -p "${MAMBA_ROOT_PREFIX}"; \
+    printf 'channels:\n  - bioconda\n  - conda-forge\nchannel_priority: strict\n' \
+        > "${CONDARC}"; \
+    micromamba create --yes --prefix "${MAMBA_ROOT_PREFIX}/envs/base" \
+        --override-channels --channel bioconda --channel conda-forge \
+        "python=3.11" numpy scipy pandas pysam multiqc; \
+    micromamba clean --all --yes
+
+ENV PATH="/opt2/micromamba/envs/base/bin:/opt2/:$PATH"
+
+# Copy Dockerfile and other files in a single layer
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+RUN chmod -R a+rX /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+
+# Unset PYTHONPATH to avoid conflicts with environment Python
+ENV PYTHONPATH=""
+WORKDIR /data2
+
+HEALTHCHECK NONE
