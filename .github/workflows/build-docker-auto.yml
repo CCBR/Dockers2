@@ -8,14 +8,14 @@
 # - On pull request events to 'main' and 'dev' branches, if any Dockerfile.* is modified.
 #
 # Jobs:
-#   1. get-files: Detects changed Dockerfiles using the changed-files action with latest-commit mode.
-#      - PRs: latest commit only (fork-safe).
-#      - Push: full before...after range.
+#   1. get-files: Detects changed Dockerfiles across the event range.
+#      - Initial branch pushes use the first pushed commit's parent as the diff base.
+#      - Other pushes and pull requests use the changed-files action.
 #   2. build-docker: For each changed Dockerfile, builds and optionally pushes the Docker image using the build-docker action.
 #
 # Notes:
-# - The changed-files action uses comparison-mode: latest-commit to avoid redundant builds when
-#   multiple commits in a single PR touch the same Dockerfile.
+# - Initial pushes have an all-zero `before` SHA, so changed Dockerfiles are collected from git
+#   history instead of calling the compare API with an invalid SHA.
 # - The workflow is fork-safe: both get-files and build-docker steps work on fork pull requests.
 
 name: build-docker-auto
@@ -52,10 +52,52 @@ jobs:
   get-files:
     runs-on: ubuntu-latest
     outputs:
-      json: ${{ steps.changed-files.outputs.matched_files_json }}
+      json: ${{ steps.initial-push.outputs.matched_files_json || steps.changed-files.outputs.matched_files_json }}
     steps:
+      - name: Checkout initial push history
+        if: github.event_name == 'push' && github.event.before == '0000000000000000000000000000000000000000'
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Find Dockerfiles in initial push
+        id: initial-push
+        if: github.event_name == 'push' && github.event.before == '0000000000000000000000000000000000000000'
+        env:
+          FIRST_PUSH_COMMIT: ${{ github.event.commits[0].id }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$FIRST_PUSH_COMMIT" ]]; then
+            echo "::error::Initial push event did not include any commits."
+            exit 1
+          fi
+
+          parents="$(git rev-list --parents -n 1 "$FIRST_PUSH_COMMIT")"
+          read -r _ base_sha _ <<< "$parents"
+          if [[ -n "${base_sha:-}" ]]; then
+            changed_files="$(git diff --name-only --diff-filter=ACMRT "$base_sha" "$GITHUB_SHA")"
+          else
+            changed_files="$(git ls-tree --name-only -r "$GITHUB_SHA")"
+          fi
+
+          matched_files_json="$(printf '%s\n' "$changed_files" | python3 -c '
+          import json
+          import sys
+
+          files = [
+              path for path in sys.stdin.read().splitlines()
+              if path.rsplit("/", 1)[-1].startswith("Dockerfile.")
+          ]
+          print(json.dumps(files))
+          ')"
+
+          echo "matched_files_json=$matched_files_json" >> "$GITHUB_OUTPUT"
+          echo "Matched Dockerfiles: $matched_files_json"
+
       - id: changed-files
         name: Check changed files
+        if: github.event_name != 'push' || github.event.before != '0000000000000000000000000000000000000000'
         uses: CCBR/actions/changed-files@main
         with:
           token: ${{ github.token }}
@@ -65,13 +107,14 @@ jobs:
 
       - name: Show changed files
         id: matrix
+        env:
+          MATCHED_FILES_JSON: ${{ steps.initial-push.outputs.matched_files_json || steps.changed-files.outputs.matched_files_json }}
         run: |
-          echo "matched files:"
-          echo "${{ steps.changed-files.outputs.matched_files }}" | sed 's/^/  /'
+          echo "Matched Dockerfiles: $MATCHED_FILES_JSON"
 
   build-docker:
     needs: [ get-files ]
-    if: needs.get-files.outputs.json != '[]' # Skip if no Dockerfiles changed in the latest commit
+    if: needs.get-files.outputs.json != '[]' # Skip if no Dockerfiles changed in the event range
     strategy:
       matrix:
         file: "${{ fromJson(needs.get-files.outputs.json) }}"
