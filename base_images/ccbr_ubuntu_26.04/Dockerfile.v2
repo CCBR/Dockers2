@@ -17,7 +17,7 @@ ENV IMAGENAME=${IMAGENAME}
 ARG BASEIMAGENAME="000000"
 ENV BASEIMAGENAME=${BASEIMAGENAME}
 
-ARG MICROMAMBA_VERSION="1.5.10"
+ARG MICROMAMBA_VERSION="2.10.0-0"
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
 ENV MAMBA_ROOT_PREFIX=/opt2/micromamba
@@ -51,7 +51,6 @@ RUN set -eu; \
         amd64) micromamba_platform=linux-64 ;; \
         arm64) micromamba_platform=linux-aarch64 ;; \
         ppc64el) micromamba_platform=linux-ppc64le ;; \
-        s390x) micromamba_platform=linux-s390x ;; \
         *) echo "Unsupported architecture: $(dpkg --print-architecture)" >&2; exit 1 ;; \
     esac; \
     curl --fail --location --silent --show-error \
