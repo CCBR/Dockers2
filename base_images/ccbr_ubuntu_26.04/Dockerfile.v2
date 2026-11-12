@@ -3,7 +3,7 @@ FROM ubuntu:26.04
 LABEL maintainer="Vishal Koparde *(kopardev on GitHub)*"
 LABEL github_handle="kopardev"
 
-# Build time variables
+# Build-time variables
 ARG DOCKERFILE="Dockerfile"
 ENV DOCKERFILE=${DOCKERFILE}
 ARG BUILD_DATE="000000"
