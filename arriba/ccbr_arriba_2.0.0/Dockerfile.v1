@@ -1,5 +1,19 @@
 FROM nciccbr/ccbr_ubuntu_22.04:v4
 
+# Build time variables
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG IMAGENAME="000000"
+ENV IMAGENAME=${IMAGENAME}
+ARG BASEIMAGENAME="000000"
+ENV BASEIMAGENAME=${BASEIMAGENAME}
+
 # Arriba/v2.0.0 Dockerfile (v0.0.1)
 
 # Arriba/v2.0.0 requires `STAR >= 2.7.6a` to be installed on the target system.
@@ -48,6 +62,7 @@ RUN mkdir -p /opt2/picard && \
     mv picardcloud.jar picard.jar && \
     chmod -R a+rx /opt2/picard && \
     echo "2.27.5" > /opt2/picard/version.txt
+ENV PICARDJARPATH="/opt2/picard"
 
 # download_references.sh wrapper
 RUN echo '#!/bin/bash\n\

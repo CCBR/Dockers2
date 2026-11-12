@@ -1,0 +1,14 @@
+bioconductor-csaw==1.40.0
+bioconductor-chipseqdbdata
+bioconductor-edger
+bioconductor-rsamtools
+bioconductor-enhancedvolcano
+bioconductor-chipseeker
+bioconductor-TxDb.Mmusculus.UCSC.mm10.knownGene
+bioconductor-TxDb.Hsapiens.UCSC.hg38.knownGene
+bioconductor-org.Mm.eg.db
+bioconductor-org.Hs.eg.db
+bioconductor-genomicranges
+r-tidyr
+r-stringr
+r-dplyr

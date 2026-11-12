@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/ccbr_arriba_2.0.0:v1-feat
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/77e2ef18c4f4d8b9ddfe5e3d93ece4320f16b020/arriba/ccbr_arriba_2.0.0/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/8a3ba59bdee6e6c26ef0007948f849ef9940bdf4/arriba/ccbr_arriba_2.0.0/Dockerfile.v1
 
 
-Built on: 2024-11-20_18:48:44 
+Built on: 2024-11-22_18:25:18 
 
 Build tag: v1-feat 
 

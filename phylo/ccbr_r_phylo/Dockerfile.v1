@@ -1,0 +1,40 @@
+FROM nciccbr/ccbr_ubuntu_22.04:v4
+
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install Miniforge/conda/mamba into /opt2/conda
+RUN wget --quiet "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" -O /tmp/miniforge.sh && \
+    /bin/bash /tmp/miniforge.sh -b -p /opt2/conda && \
+    rm -f /tmp/miniforge.sh && \
+    chmod -R a+rx /opt2/conda
+
+ENV PATH="/opt2/conda/bin:$PATH"
+
+RUN conda config --add channels bioconda && \
+    conda config --add channels conda-forge && \
+    conda config --add channels defaults && \
+    conda config --set channel_priority strict && \
+    conda install -n base -y mamba && \
+    conda clean -afy
+
+COPY environment.yml /data2/
+
+RUN mamba env create -n r-phylo -f /data2/environment.yml && \
+    mamba clean -a -y
+
+ENV PATH="/opt2/conda/envs/r-phylo/bin:/opt2/conda/bin:$PATH"
+
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+
+WORKDIR /data2
+
+

@@ -1,0 +1,46 @@
+FROM bioconductor/bioconductor_docker:RELEASE_3_18
+
+# Set environment variables to reduce interactive prompts during installation
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Etc/UTC
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+LABEL maintainer="Vishal Koparde *(kopardev on GitHub)*"
+LABEL github_handle="kopardev"
+
+# Build time variables
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG IMAGENAME="000000"
+ENV IMAGENAME=${IMAGENAME}
+ARG BASEIMAGENAME="000000"
+ENV BASEIMAGENAME=${BASEIMAGENAME}
+
+# Install Quarto CLI (for HTML report rendering)
+RUN wget -q https://quarto.org/download/latest/quarto-linux-amd64.deb -O /tmp/quarto.deb && \
+    apt-get update && apt-get install -y --no-install-recommends /tmp/quarto.deb && \
+    rm -f /tmp/quarto.deb && rm -rf /var/lib/apt/lists/*
+
+# R/Bioconductor dependencies
+RUN R -q -e "install.packages(c('argparse','tidyverse','viridis'), repos='https://cloud.r-project.org')" && \
+    R -q -e "if (!requireNamespace('BiocManager', quietly=TRUE)) install.packages('BiocManager', repos='https://cloud.r-project.org')" && \
+    R -q -e "BiocManager::install(c('chipenrich','BiocParallel','AnnotationDbi','org.Hs.eg.db','org.Mm.eg.db'), ask=FALSE, update=FALSE)"
+
+# Copy Dockerfile and other files in a single layer
+RUN mkdir -p /opt2 && mkdir -p /data2
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+WORKDIR /data2
+
+ENTRYPOINT ["/bin/bash"]
+

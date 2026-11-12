@@ -1,23 +1,28 @@
-# This GitHub Actions workflow is designed to trigger a manual Docker build for each modified Dockerfile.
+# This GitHub Actions workflow automatically builds Docker images when Dockerfiles are modified.
 #
 # Workflow Name: build-docker-auto
-# Short Description: Trigger Build Docker Manual for Each modified Dockerfile
+# Short Description: Build Docker images for each modified Dockerfile
 #
 # Triggers:
-# - On push events to any branch except 'main' and 'dev', if any Dockerfile.* is modified.
+# - On push events to branches containing "autobuild" in the name, if any Dockerfile.* is modified.
 # - On pull request events to 'main' and 'dev' branches, if any Dockerfile.* is modified.
 #
 # Jobs:
-#   - Runs on the latest Ubuntu environment.
-#   - Steps:
-#     1. Check out the repository using actions/checkout@v4.
-#     2. Identify modified Dockerfiles using git diff and store them in the environment variable 'dockerfiles'.
-#     3. For each modified Dockerfile, trigger the 'build-docker-manual' workflow with the Dockerfile path and additional parameters.
+#   1. get-files: Detects changed Dockerfiles across the event range.
+#      - Initial branch pushes use the first pushed commit's parent as the diff base.
+#      - Other pushes and pull requests use the changed-files action.
+#   2. build-docker: For each changed Dockerfile, builds and optionally pushes the Docker image using the build-docker action.
 #
-# Environment Variables:
-# - GITHUB_TOKEN: Used for authentication to trigger the 'build-docker-manual' workflow.
+# Notes:
+# - Initial pushes have an all-zero `before` SHA, so changed Dockerfiles are collected from git
+#   history instead of calling the compare API with an invalid SHA.
+# - The workflow is fork-safe: both get-files and build-docker steps work on fork pull requests.
 
 name: build-docker-auto
+
+permissions:
+  contents: write
+  pull-requests: write
 
 on:
   push:
@@ -32,35 +37,84 @@ on:
       - dev
     paths:
       - "**/Dockerfile.*" # Only trigger if a Dockerfile.* is modified in any directory
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review # Ensures the workflow triggers only when a draft is marked "Ready for Review"
 
 env:
-  suffix: ${{ github.base_ref == 'main' && github.event_name == 'pull_request' && 'main' || github.base_ref == 'dev' && github.event_name == 'pull_request' && 'dev' || 'feat' }}
+  suffix: ${{ github.base_ref == 'main' && github.event_name == 'pull_request' &&
+    'main' || github.base_ref == 'dev' && github.event_name == 'pull_request' &&
+    'dev' || 'feat' }}
 
 jobs:
   get-files:
     runs-on: ubuntu-latest
     outputs:
-      json: ${{ steps.changed-files.outputs.matched_files_json }}
+      json: ${{ steps.initial-push.outputs.matched_files_json || steps.changed-files.outputs.matched_files_json }}
     steps:
-      - name: Checkout repository
-        id: checkout
-        uses: actions/checkout@v4
+      - name: Checkout initial push history
+        if: github.event_name == 'push' && github.event.before == '0000000000000000000000000000000000000000'
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Find Dockerfiles in initial push
+        id: initial-push
+        if: github.event_name == 'push' && github.event.before == '0000000000000000000000000000000000000000'
+        env:
+          FIRST_PUSH_COMMIT: ${{ github.event.commits[0].id }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$FIRST_PUSH_COMMIT" ]]; then
+            echo "::error::Initial push event did not include any commits."
+            exit 1
+          fi
+
+          parents="$(git rev-list --parents -n 1 "$FIRST_PUSH_COMMIT")"
+          read -r _ base_sha _ <<< "$parents"
+          if [[ -n "${base_sha:-}" ]]; then
+            changed_files="$(git diff --name-only --diff-filter=ACMRT "$base_sha" "$GITHUB_SHA")"
+          else
+            changed_files="$(git ls-tree --name-only -r "$GITHUB_SHA")"
+          fi
+
+          matched_files_json="$(printf '%s\n' "$changed_files" | python3 -c '
+          import json
+          import sys
+
+          files = [
+              path for path in sys.stdin.read().splitlines()
+              if path.rsplit("/", 1)[-1].startswith("Dockerfile.")
+          ]
+          print(json.dumps(files))
+          ')"
+
+          echo "matched_files_json=$matched_files_json" >> "$GITHUB_OUTPUT"
+          echo "Matched Dockerfiles: $matched_files_json"
 
       - id: changed-files
         name: Check changed files
-        uses: knu/changed-files@v1
+        if: github.event_name != 'push' || github.event.before != '0000000000000000000000000000000000000000'
+        uses: CCBR/actions/changed-files@main
         with:
+          token: ${{ github.token }}
           paths: |
             **/Dockerfile.*
+          comparison-mode: event
 
       - name: Show changed files
         id: matrix
+        env:
+          MATCHED_FILES_JSON: ${{ steps.initial-push.outputs.matched_files_json || steps.changed-files.outputs.matched_files_json }}
         run: |
-          echo "matched files:"
-          echo "${{ steps.changed-files.outputs.matched_files }}" | sed 's/^/  /'
+          echo "Matched Dockerfiles: $MATCHED_FILES_JSON"
 
   build-docker:
-    needs: [get-files]
+    needs: [ get-files ]
+    if: needs.get-files.outputs.json != '[]' # Skip if no Dockerfiles changed in the event range
     strategy:
       matrix:
         file: "${{ fromJson(needs.get-files.outputs.json) }}"
@@ -72,21 +126,15 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
-        name: "checkout PR ${{ github.head_ref }}"
-        if: github.event_name == 'pull_request'
+      - uses: actions/checkout@v6
+        name: Checkout repository
         with:
           fetch-depth: 0
-          ref: ${{ github.head_ref }} # branch name of PR
+          repository: ${{ github.event.pull_request.head.repo.full_name ||
+            github.repository }}
+          ref: ${{ github.head_ref || github.ref_name }}
 
-      - uses: actions/checkout@v4
-        name: "checkout push ${{ github.ref_name }}"
-        if: github.event_name == 'push'
-        with:
-          fetch-depth: 0
-          ref: ${{ github.ref_name }} # branch name of push
-
-      - uses: CCBR/actions/build-docker@v0.2
+      - uses: CCBR/actions/build-docker@latest
         with:
           dockerfile: ${{ matrix.file }}
           dockerhub-namespace: nciccbr
@@ -95,5 +143,3 @@ jobs:
           suffix: ${{ env.suffix }}
           push: true
           github-token: ${{ github.token }}
-          ccbr-actions-version: v0.2
-          json-file: 'scripts/tool_version_commands.json'
