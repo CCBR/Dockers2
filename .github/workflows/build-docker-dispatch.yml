@@ -39,52 +39,86 @@ jobs:
     steps:
       - name: process payload
         id: process-payload
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PAYLOAD_OWNER_REPO: ${{ github.event.client_payload.owner_repo }}
+          PAYLOAD_REF: ${{ github.event.client_payload.ref }}
+          PAYLOAD_DOCKERFILE_PATH: ${{ github.event.client_payload.dockerfile_path }}
+          PAYLOAD_IMAGE_NAME: ${{ github.event.client_payload.docker_image_name }}
+          PAYLOAD_IMAGE_TAG: ${{ github.event.client_payload.docker_image_tag }}
+          INPUT_OWNER_REPO: ${{ github.event.inputs.owner_repo }}
+          INPUT_REF: ${{ github.event.inputs.ref }}
+          INPUT_DOCKERFILE_PATH: ${{ github.event.inputs.dockerfile_path }}
+          INPUT_IMAGE_NAME: ${{ github.event.inputs.docker_image_name }}
+          INPUT_IMAGE_TAG: ${{ github.event.inputs.docker_image_tag }}
         run: |
-          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            owner_repo="${{ github.event.client_payload.owner_repo }}"
-            ref="${{ github.event.client_payload.ref }}"
-            dockerfile_path="${{ github.event.client_payload.dockerfile_path }}"
-            docker_image_name="${{ github.event.client_payload.docker_image_name }}"
-            docker_image_tag="${{ github.event.client_payload.docker_image_tag }}"
-          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            owner_repo="${{ github.event.inputs.owner_repo }}"
-            ref="${{ github.event.inputs.ref }}"
-            dockerfile_path="${{ github.event.inputs.dockerfile_path }}"
-            docker_image_name="${{ github.event.inputs.docker_image_name }}"
-            docker_image_tag="${{ github.event.inputs.docker_image_tag }}"
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "repository_dispatch" ]]; then
+            owner_repo="$PAYLOAD_OWNER_REPO"
+            ref="$PAYLOAD_REF"
+            dockerfile_path="$PAYLOAD_DOCKERFILE_PATH"
+            docker_image_name="$PAYLOAD_IMAGE_NAME"
+            docker_image_tag="$PAYLOAD_IMAGE_TAG"
+          elif [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            owner_repo="$INPUT_OWNER_REPO"
+            ref="$INPUT_REF"
+            dockerfile_path="$INPUT_DOCKERFILE_PATH"
+            docker_image_name="$INPUT_IMAGE_NAME"
+            docker_image_tag="$INPUT_IMAGE_TAG"
           else
-            echo "Unsupported event: ${GITHUB_EVENT_NAME}"
+            echo "::error::Unsupported event: $EVENT_NAME"
             exit 1
           fi
 
-          # Fail early if any required field is missing
-          missing=()
-          [ -z "$owner_repo" ]      && missing+=("owner_repo")
-          [ -z "$ref" ]             && missing+=("ref")
-          [ -z "$dockerfile_path" ] && missing+=("dockerfile_path")
-          [ -z "$docker_image_name" ] && missing+=("docker_image_name")
-          [ -z "$docker_image_tag" ] && missing+=("docker_image_tag")
-          if [ ${#missing[@]} -gt 0 ]; then
-            echo "Error: the following required inputs are missing or empty: ${missing[*]}"
-            echo "Event type: ${{ github.event_name }}"
-            echo "  For 'workflow_dispatch', supply these as workflow inputs."
-            echo "  For 'repository_dispatch', supply these in the client_payload."
+          missing=""
+          [[ -n "$owner_repo" ]] || missing+=" owner_repo"
+          [[ -n "$ref" ]] || missing+=" ref"
+          [[ -n "$dockerfile_path" ]] || missing+=" dockerfile_path"
+          [[ -n "$docker_image_name" ]] || missing+=" docker_image_name"
+          [[ -n "$docker_image_tag" ]] || missing+=" docker_image_tag"
+          if [[ -n "$missing" ]]; then
+            echo "::error::Missing required inputs:$missing"
             exit 1
           fi
 
-          repo_name=$(echo "$owner_repo" | cut -d'/' -f2)
+          if [[ ! "$owner_repo" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
+            echo "::error::owner_repo must be an OWNER/REPO name."
+            exit 1
+          fi
+          if [[ ! "$docker_image_name" =~ ^[a-z0-9]([a-z0-9._-]*[a-z0-9])?$ ]]; then
+            echo "::error::docker_image_name must be a lowercase image repository name."
+            exit 1
+          fi
+          if [[ ! "$docker_image_tag" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]*$ || ${#docker_image_tag} -gt 128 ]]; then
+            echo "::error::docker_image_tag is not a valid Docker tag."
+            exit 1
+          fi
+          if [[ "$ref" == *$'\n'* || "$ref" == *$'\r'* ||
+                "$dockerfile_path" == *$'\n'* || "$dockerfile_path" == *$'\r'* ||
+                "$dockerfile_path" == /* || "/$dockerfile_path/" == */../* ]]; then
+            echo "::error::The ref or Dockerfile path is invalid."
+            exit 1
+          fi
+
+          repo_name="${owner_repo#*/}"
           context_dir="${repo_name}/${docker_image_name}"
           new_branch="update-${docker_image_name}-${docker_image_tag}"
+          if ! git check-ref-format --branch "$new_branch" >/dev/null; then
+            echo "::error::The image name and tag do not form a valid branch name."
+            exit 1
+          fi
 
-          echo "owner_repo=$owner_repo" >> $GITHUB_OUTPUT
-          echo "ref=$ref" >> $GITHUB_OUTPUT
-          echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
-          echo "src_dockerfile_path=$dockerfile_path" >> $GITHUB_OUTPUT
-          echo "new_dockerfile_path=$context_dir/Dockerfile.$docker_image_tag" >> $GITHUB_OUTPUT
-          echo "docker_image_name=$docker_image_name" >> $GITHUB_OUTPUT
-          echo "docker_image_tag=$docker_image_tag" >> $GITHUB_OUTPUT
-          echo "context_dir=$context_dir" >> $GITHUB_OUTPUT
-          echo "new_branch=$new_branch" >> $GITHUB_OUTPUT
+          {
+            echo "owner_repo=$owner_repo"
+            echo "ref=$ref"
+            echo "repo_name=$repo_name"
+            echo "src_dockerfile_path=$dockerfile_path"
+            echo "new_dockerfile_path=$context_dir/Dockerfile.$docker_image_tag"
+            echo "docker_image_name=$docker_image_name"
+            echo "docker_image_tag=$docker_image_tag"
+            echo "context_dir=$context_dir"
+            echo "new_branch=$new_branch"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Generate a token
         id: generate-token
@@ -99,58 +133,105 @@ jobs:
       - uses: actions/checkout@v6
         name: Checkout Dockers2
         with:
+          ref: main
           persist-credentials: true
           token: ${{ steps.generate-token.outputs.token }}
+      - name: Check source checkout location
+        run: |
+          source_checkout="$GITHUB_WORKSPACE/.ccbr-dispatch-source"
+          if [[ -e "$source_checkout" || -L "$source_checkout" ]]; then
+            echo "::error::Reserved source checkout path already exists: $source_checkout"
+            exit 1
+          fi
       - uses: actions/checkout@v6
         name: Checkout source repository
         with:
           fetch-depth: 0
           repository: ${{ steps.process-payload.outputs.owner_repo }}
           ref: ${{ steps.process-payload.outputs.ref }}
-          path: dispatch-repo
-      - name: Commit new Dockerfile
+          path: .ccbr-dispatch-source
+          persist-credentials: false
+      - name: Prepare update branch and Dockerfile
         env:
+          BRANCH_NAME: ${{ steps.process-payload.outputs.new_branch }}
           CONTEXT_DIR: ${{ steps.process-payload.outputs.context_dir }}
-          DOCKER_IMAGE_NAME: ${{ steps.process-payload.outputs.docker_image_name }}
-          DOCKER_IMAGE_TAG: ${{ steps.process-payload.outputs.docker_image_tag }}
           NEW_DOCKERFILE_PATH: "${{ steps.process-payload.outputs.new_dockerfile_path }}"
           SRC_DOCKERFILE_PATH: "${{ steps.process-payload.outputs.src_dockerfile_path }}"
         run: |
-          git config --global user.name 'CCBR-bot[bot]'
-          git config --global user.email '258092125+CCBR-bot[bot]@users.noreply.github.com'
-          original_branch=$(git branch --show-current)
+          set -euo pipefail
+          git config --local user.name 'CCBR-bot[bot]'
+          git config --local user.email '258092125+CCBR-bot[bot]@users.noreply.github.com'
 
-          branch_name="${{ steps.process-payload.outputs.new_branch }}"
-          # fetch the remote branch if it exists
-          if git ls-remote --exit-code --heads origin "$branch_name" >/dev/null 2>&1; then
-            git fetch origin "$branch_name:$branch_name"
+          remote_branch="$(git ls-remote --heads origin "$BRANCH_NAME")"
+          if [[ -n "$remote_branch" ]]; then
+            git fetch origin "$BRANCH_NAME:$BRANCH_NAME"
           fi
-          # switch to the branch (or create it if it doesn't exist)
-          if git show-ref --verify --quiet "refs/heads/$branch_name"; then
-            git switch "$branch_name"
+          if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME"; then
+            git switch "$BRANCH_NAME"
           else
-              git switch -c "$branch_name"
+            git switch -c "$BRANCH_NAME"
           fi
 
-          # Copy context dir
-          mkdir -p "${{ env.CONTEXT_DIR }}"
-          rsync -a --exclude=".git/" dispatch-repo/ "${{ env.CONTEXT_DIR }}/"
-          src="dispatch-repo/${{ env.SRC_DOCKERFILE_PATH }}"
-          if [ ! -f "$src" ]; then
-            echo "Error: Dockerfile not found at '$src' (configured dockerfile_path: '${{ env.SRC_DOCKERFILE_PATH }}')"
-            exit 1
-          fi
-          cp "$src" "${{ env.NEW_DOCKERFILE_PATH }}"
-          # Only commit new dockerfile, not entire context dir
-          git add ${{ env.NEW_DOCKERFILE_PATH }}
+          src="$(python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import sys
 
+          root = Path(".ccbr-dispatch-source").resolve()
+          source = (root / os.environ["SRC_DOCKERFILE_PATH"]).resolve()
+          if not source.is_relative_to(root) or not source.is_file():
+              print("::error::Dockerfile must be a file inside the source repository.", file=sys.stderr)
+              raise SystemExit(1)
+          print(source)
+          PY
+          )"
+          mkdir -p "$CONTEXT_DIR"
+          rsync -a --exclude='.git' .ccbr-dispatch-source/ "$CONTEXT_DIR/"
+          cp "$src" "$NEW_DOCKERFILE_PATH"
+
+      - name: Record source context
+        id: source-context
+        env:
+          SOURCE_REPOSITORY: ${{ steps.process-payload.outputs.owner_repo }}
+          NEW_DOCKERFILE_PATH: ${{ steps.process-payload.outputs.new_dockerfile_path }}
+        run: |
+          set -euo pipefail
+          export SOURCE_COMMIT
+          SOURCE_COMMIT="$(git -C .ccbr-dispatch-source rev-parse --verify HEAD)"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          dockerfile = Path(os.environ["NEW_DOCKERFILE_PATH"])
+          metadata = dockerfile.with_name(f".{dockerfile.name}.source.json")
+          metadata.write_text(
+              json.dumps(
+                  {"repository": os.environ["SOURCE_REPOSITORY"], "commit": os.environ["SOURCE_COMMIT"]},
+                  indent=2,
+              ) + "\n",
+              encoding="utf-8",
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              print(f"metadata={metadata.as_posix()}", file=output)
+          PY
+
+      - name: Commit new Dockerfile
+        env:
+          BRANCH_NAME: ${{ steps.process-payload.outputs.new_branch }}
+          DOCKER_IMAGE_NAME: ${{ steps.process-payload.outputs.docker_image_name }}
+          DOCKER_IMAGE_TAG: ${{ steps.process-payload.outputs.docker_image_tag }}
+          NEW_DOCKERFILE_PATH: ${{ steps.process-payload.outputs.new_dockerfile_path }}
+          SOURCE_METADATA_PATH: ${{ steps.source-context.outputs.metadata }}
+        run: |
+          set -euo pipefail
+          git add -- "$NEW_DOCKERFILE_PATH" "$SOURCE_METADATA_PATH"
           if git diff --cached --quiet; then
             echo "nothing to commit"
-            git push -u origin "${{ steps.process-payload.outputs.new_branch }}"
           else
-            git commit -m "feat: add Dockerfile for ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}"
-            git push -u origin "${{ steps.process-payload.outputs.new_branch }}"
+            git commit -m "feat: add Dockerfile for $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG"
           fi
+          git push -u origin "$BRANCH_NAME"
       - uses: CCBR/actions/build-docker@v0.9.0
         id: build-docker
         with:
@@ -160,22 +241,25 @@ jobs:
           dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
           registries: dockerhub,ghcr
           github-token: ${{ steps.generate-token.outputs.token }}
+          suffix: dev
           push: true
 
-      - name: Open or update PR to dev
+      - name: Open or update PR to main
         env:
           BRANCH_NAME: ${{ steps.process-payload.outputs.new_branch }}
           DOCKER_IMAGE_NAME: ${{ steps.process-payload.outputs.docker_image_name }}
           DOCKER_IMAGE_TAG: ${{ steps.process-payload.outputs.docker_image_tag }}
           GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
-          existing_pr="$(gh pr list --head "$BRANCH_NAME" --base dev --json number --jq '.[0].number')"
+          existing_pr="$(gh pr list --head "$BRANCH_NAME" --base main --json number --jq '.[0].number')"
 
           if [ -n "$existing_pr" ]; then
-            gh pr edit "$existing_pr" --add-reviewer CCBR/AdminTeam || true
+            if ! gh pr edit "$existing_pr" --add-reviewer CCBR/AdminTeam; then
+              echo "::warning::Could not add CCBR/AdminTeam as a reviewer to PR #$existing_pr."
+            fi
           else
             gh pr create \
-              --base dev \
+              --base main \
               --head "$BRANCH_NAME" \
               --title "feat: add/update Dockerfile for ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" \
               --body "Adds Dockerfile and generated image metadata updates for ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}." \
