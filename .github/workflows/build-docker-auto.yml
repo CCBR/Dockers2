@@ -23,6 +23,7 @@ name: build-docker-auto
 permissions:
   contents: write
   pull-requests: write
+  packages: write
 
 on:
   push:
@@ -98,7 +99,7 @@ jobs:
       - id: changed-files
         name: Check changed files
         if: github.event_name != 'push' || github.event.before != '0000000000000000000000000000000000000000'
-        uses: CCBR/actions/changed-files@main
+        uses: CCBR/actions/changed-files@copilot/update-build-docker-action
         with:
           token: ${{ github.token }}
           paths: |
@@ -125,6 +126,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      packages: write
     steps:
       - uses: actions/checkout@v6
         name: Checkout repository
@@ -134,12 +136,14 @@ jobs:
             github.repository }}
           ref: ${{ github.head_ref || github.ref_name }}
 
-      - uses: CCBR/actions/build-docker@latest
+      - uses: CCBR/actions/build-docker@copilot/update-build-docker-action
         with:
           dockerfile: ${{ matrix.file }}
           dockerhub-namespace: nciccbr
           dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
           dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
+          # Fork PR tokens cannot write packages.
+          registries: ${{ github.event.pull_request.head.repo.fork && 'dockerhub' || 'dockerhub,ghcr' }}
           suffix: ${{ env.suffix }}
           push: true
           github-token: ${{ github.token }}
