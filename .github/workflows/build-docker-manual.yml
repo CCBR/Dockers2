@@ -6,6 +6,7 @@
 # - dockerfile: Path to the Dockerfile in the repository (e.g., common/ccbr_bwa/Dockerfile). This input is required.
 # - dockerhub-namespace: DockerHub namespace or organization name (e.g., nciccbr). This input is required and defaults to 'nciccbr'.
 # - push: Boolean flag to determine whether to push the built image to Docker Hub and GHCR. This input is required and defaults to 'false'.
+# - suffix: "main" for the stable version tag, or "dev" for a preview tag.
 # - platforms: Optional comma-separated target platforms (e.g., linux/amd64,linux/arm64). Leave empty to build for the runner's platform.
 #   Multi-platform images must be pushed and require a Dockerfile that installs architecture-appropriate dependencies.
 #
@@ -20,7 +21,7 @@
 #   - Updates the DockerHub description with the contents of the temporary README file if the image was successfully pushed.
 
 name: build-docker-manual
-run-name: build-docker ${{ inputs.dockerfile }}-${{ inputs.suffix }}
+run-name: build-docker ${{ inputs.dockerfile }} (${{ inputs.suffix }})
 
 permissions:
   contents: write
@@ -41,10 +42,13 @@ on:
         required: true
         default: nciccbr
       suffix:
-        type: string
-        description: Suffix to add to image tag (e.g. "dev" to add "-dev")
+        type: choice
+        description: "Tag type: main for the version tag, dev for a -dev preview"
         required: true
-        default: feat
+        default: dev
+        options:
+          - dev
+          - main
       push:
         type: boolean
         description: Push to Docker Hub and GHCR (leave unchecked to just build the container
@@ -72,11 +76,33 @@ jobs:
       pull-requests: write
       packages: write
     steps:
+      - name: Validate tag selection
+        env:
+          SUFFIX: ${{ inputs.suffix }}
+          PUSH: ${{ inputs.push }}
+        run: |
+          case "$SUFFIX" in
+            main|dev) ;;
+            *)
+              echo "::error::Choose main for a stable tag or dev for a preview tag."
+              exit 1
+              ;;
+          esac
+          if [[ "$PUSH" == "true" && "$SUFFIX" == "main" && "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Stable tags can only be published from main."
+            exit 1
+          fi
+
       - name: Checkout repository
         id: checkout
         uses: actions/checkout@v6
         with:
           ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Restore source context
+        uses: ./.github/actions/restore-docker-context
+        with:
+          dockerfile: ${{ inputs.dockerfile }}
 
       - uses: CCBR/actions/build-docker@v0.9.0
         with:
