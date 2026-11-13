@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/ccbr_ubuntu_26.04:v2-feat
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/5663583f994e3be9b91855118a52eeeba8ba47e2/base_images/ccbr_ubuntu_26.04/Dockerfile.v2
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/8acd368ba7e6d23558b259912c9a02745666d87d/base_images/ccbr_ubuntu_26.04/Dockerfile.v2
 
 
-Built on: 2026-11-12_02:00:44 
+Built on: 2026-11-13_17:50:20 
 
 Build tag: v2-feat 
 
