@@ -2,13 +2,15 @@
 
 from pathlib import Path
 import os
+import re
 import subprocess
 
 import pytest
 import yaml
 
 WORKFLOWS = Path(__file__).resolve().parents[1] / ".github" / "workflows"
-ACTION_REF = "copilot/update-build-docker-action"
+WORKFLOW_NAMES = ["auto", "manual", "dispatch"]
+RELEASE_TAG = re.compile(r"v\d+\.\d+\.\d+")
 
 
 def load_workflow(name):
@@ -25,11 +27,29 @@ def build_step(workflow):
     )
 
 
-@pytest.mark.parametrize("name", ["auto", "manual", "dispatch"])
-def test_build_workflows_use_test_branch_and_package_permissions(name):
+def ccbr_action_refs(workflow):
+    """Collect the refs of all CCBR/actions steps in a workflow."""
+    return [
+        step["uses"].split("@", 1)[1]
+        for job in workflow["jobs"].values()
+        for step in job.get("steps", [])
+        if step.get("uses", "").startswith("CCBR/actions/")
+    ]
+
+
+def test_build_workflows_pin_one_ccbr_actions_release():
+    refs = {
+        ref for name in WORKFLOW_NAMES for ref in ccbr_action_refs(load_workflow(name))
+    }
+    assert len(refs) == 1, f"CCBR/actions refs differ across workflows: {refs}"
+    assert RELEASE_TAG.fullmatch(refs.pop())
+
+
+@pytest.mark.parametrize("name", WORKFLOW_NAMES)
+def test_build_workflows_have_package_permissions(name):
     workflow = load_workflow(name)
     job = workflow["jobs"]["build-docker"]
-    assert build_step(workflow)["uses"] == f"CCBR/actions/build-docker@{ACTION_REF}"
+    assert build_step(workflow)
     assert workflow["permissions"]["packages"] == "write"
     if "permissions" in job:
         assert job["permissions"]["packages"] == "write"
@@ -44,7 +64,7 @@ def test_automatic_workflow_handles_forks_and_pushes():
         "|| 'dockerhub,ghcr' }}"
     )
     assert any(
-        step.get("uses") == f"CCBR/actions/changed-files@{ACTION_REF}"
+        step.get("uses", "").startswith("CCBR/actions/changed-files@")
         for step in workflow["jobs"]["get-files"]["steps"]
     )
     assert step["with"]["platforms"] == "${{ steps.platforms.outputs.platforms }}"

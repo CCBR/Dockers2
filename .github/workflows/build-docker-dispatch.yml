@@ -151,7 +151,7 @@ jobs:
             git commit -m "feat: add Dockerfile for ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}"
             git push -u origin "${{ steps.process-payload.outputs.new_branch }}"
           fi
-      - uses: CCBR/actions/build-docker@copilot/update-build-docker-action
+      - uses: CCBR/actions/build-docker@v0.9.0
         id: build-docker
         with:
           dockerfile: ${{ steps.process-payload.outputs.new_dockerfile_path }}

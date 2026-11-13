@@ -100,7 +100,7 @@ jobs:
       - id: changed-files
         name: Check changed files
         if: github.event_name != 'push' || github.event.before != '0000000000000000000000000000000000000000'
-        uses: CCBR/actions/changed-files@copilot/update-build-docker-action
+        uses: CCBR/actions/changed-files@v0.9.0
         with:
           token: ${{ github.token }}
           paths: |
@@ -183,7 +183,7 @@ jobs:
           echo "platforms=$platforms" >> "$GITHUB_OUTPUT"
           echo "Building $dockerfile for: $platforms"
 
-      - uses: CCBR/actions/build-docker@copilot/update-build-docker-action
+      - uses: CCBR/actions/build-docker@v0.9.0
         with:
           dockerfile: ${{ matrix.file }}
           dockerhub-namespace: nciccbr
