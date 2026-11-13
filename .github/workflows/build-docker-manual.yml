@@ -1,16 +1,18 @@
-# This GitHub Actions workflow is designed to manually build and optionally push a Docker image to DockerHub.
+# This GitHub Actions workflow is designed to manually build and optionally push a Docker image to Docker Hub and GHCR.
 #
 # Workflow Name: build-docker-manual
 #
 # Inputs:
 # - dockerfile: Path to the Dockerfile in the repository (e.g., common/ccbr_bwa/Dockerfile). This input is required.
 # - dockerhub-namespace: DockerHub namespace or organization name (e.g., nciccbr). This input is required and defaults to 'nciccbr'.
-# - push: Boolean flag to determine whether to push the built image to DockerHub. This input is required and defaults to 'false'.
+# - push: Boolean flag to determine whether to push the built image to Docker Hub and GHCR. This input is required and defaults to 'false'.
+# - platforms: Optional comma-separated target platforms (e.g., linux/amd64,linux/arm64). Leave empty to build for the runner's platform.
+#   Multi-platform images must be pushed and require a Dockerfile that installs architecture-appropriate dependencies.
 #
 # Jobs:
 # - build-docker: This job runs on an Ubuntu latest runner and performs the following steps:
 #   - Checks out the repository.
-#   - Logs in to DockerHub if the 'push' input is set to 'true'.
+#   - Logs in to Docker Hub and GHCR if the 'push' input is set to 'true'.
 #   - Prepares build-time variables by running a custom script.
 #   - Checks variables and creates a temporary README file with build details.
 #   - Builds and optionally pushes the Docker image using the docker/build-push-action.
@@ -23,6 +25,7 @@ run-name: build-docker ${{ inputs.dockerfile }}-${{ inputs.suffix }}
 permissions:
   contents: write
   pull-requests: write
+  packages: write
 
 on:
   workflow_dispatch:
@@ -44,10 +47,17 @@ on:
         default: feat
       push:
         type: boolean
-        description: Push to DockerHub (leave unchecked to just build the container
+        description: Push to Docker Hub and GHCR (leave unchecked to just build the container
           without pushing)
         required: true
         default: false
+      platforms:
+        type: string
+        description: Comma-separated target platforms (e.g.
+          linux/amd64,linux/arm64 for Linux and Apple Silicon). Leave empty
+          for the runner's platform; multi-platform builds require push.
+        required: false
+        default: ""
       ccbr-actions-version:
         description: "The version or branch of ccbr_actions to use (see
           https://github.com/ccbr/actions)"
@@ -60,6 +70,7 @@ jobs:
     permissions:
       contents: "write"
       pull-requests: write
+      packages: write
     steps:
       - name: Checkout repository
         id: checkout
@@ -67,14 +78,16 @@ jobs:
         with:
           ref: ${{ github.head_ref || github.ref_name }}
 
-      - uses: CCBR/actions/build-docker@latest
+      - uses: CCBR/actions/build-docker@v0.9.0
         with:
           dockerfile: ${{ github.event.inputs.dockerfile }}
           dockerhub-namespace: ${{ github.event.inputs.dockerhub-namespace }}
           dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
           dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
+          registries: dockerhub,ghcr
           suffix: ${{ github.event.inputs.suffix }}
           push: ${{ github.event.inputs.push }}
+          platforms: ${{ github.event.inputs.platforms }}
           ccbr-actions-version: ${{ github.event.inputs.ccbr-actions-version }}
           github-token: ${{ github.token }}
           github-actor: ${{ github.actor }}

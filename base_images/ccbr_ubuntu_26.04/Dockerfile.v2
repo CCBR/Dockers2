@@ -1,3 +1,4 @@
+# build-platforms: linux/amd64,linux/arm64
 FROM ubuntu:26.04
 
 LABEL maintainer="Vishal Koparde *(kopardev on GitHub)*"
