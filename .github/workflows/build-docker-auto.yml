@@ -17,6 +17,7 @@
 # - Initial pushes have an all-zero `before` SHA, so changed Dockerfiles are collected from git
 #   history instead of calling the compare API with an invalid SHA.
 # - The workflow is fork-safe: both get-files and build-docker steps work on fork pull requests.
+# - Dockerfiles can opt into additional architectures with a `# build-platforms:` comment.
 
 name: build-docker-auto
 
@@ -136,6 +137,52 @@ jobs:
             github.repository }}
           ref: ${{ github.head_ref || github.ref_name }}
 
+      - name: Determine Docker build platforms
+        id: platforms
+        env:
+          DOCKERFILE_PATH: ${{ matrix.file }}
+        run: |
+          set -euo pipefail
+
+          dockerfile="$GITHUB_WORKSPACE/$DOCKERFILE_PATH"
+          declarations="$(grep -E '^[[:space:]]*#[[:space:]]*build-platforms:' "$dockerfile" || true)"
+          if [[ -z "$declarations" ]]; then
+            platforms="linux/amd64"
+          else
+            declaration_count="$(printf '%s\n' "$declarations" | wc -l | tr -d ' ')"
+            if [[ "$declaration_count" != "1" ]]; then
+              echo "::error::$dockerfile must contain at most one build-platforms declaration."
+              exit 1
+            fi
+
+            platforms="${declarations#*:}"
+            platforms="${platforms//[[:space:]]/}"
+            if [[ -z "$platforms" ]]; then
+              echo "::error::The build-platforms declaration in $dockerfile is empty."
+              exit 1
+            fi
+
+            if [[ ! "$platforms" =~ ^linux/(amd64|arm64)(,linux/(amd64|arm64))*$ ]]; then
+              echo "::error::Malformed or unsupported build-platforms declaration in $dockerfile: $platforms. Supported platforms are linux/amd64 and linux/arm64."
+              exit 1
+            fi
+
+            IFS=',' read -r -a platform_list <<< "$platforms"
+            seen_platforms=","
+            for platform in "${platform_list[@]}"; do
+              if [[ "$seen_platforms" == *",$platform,"* ]]; then
+                echo "::error::Duplicate platform '$platform' in $dockerfile."
+                exit 1
+              fi
+              seen_platforms+="$platform,"
+            done
+
+            platforms="$(IFS=,; echo "${platform_list[*]}")"
+          fi
+
+          echo "platforms=$platforms" >> "$GITHUB_OUTPUT"
+          echo "Building $dockerfile for: $platforms"
+
       - uses: CCBR/actions/build-docker@copilot/update-build-docker-action
         with:
           dockerfile: ${{ matrix.file }}
@@ -146,4 +193,5 @@ jobs:
           registries: ${{ github.event.pull_request.head.repo.fork && 'dockerhub' || 'dockerhub,ghcr' }}
           suffix: ${{ env.suffix }}
           push: true
+          platforms: ${{ steps.platforms.outputs.platforms }}
           github-token: ${{ github.token }}

@@ -1,5 +1,6 @@
 ## Dockers2 development version
 
+- Support per-Dockerfile architecture declarations for automatic image builds. (#455, @kelly-sovacool)
 - New base container for Ubuntu 26.04.
 - Adds SCOT to the seurat/seurat_5 container #419
 

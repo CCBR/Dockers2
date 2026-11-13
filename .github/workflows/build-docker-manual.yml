@@ -6,6 +6,8 @@
 # - dockerfile: Path to the Dockerfile in the repository (e.g., common/ccbr_bwa/Dockerfile). This input is required.
 # - dockerhub-namespace: DockerHub namespace or organization name (e.g., nciccbr). This input is required and defaults to 'nciccbr'.
 # - push: Boolean flag to determine whether to push the built image to Docker Hub and GHCR. This input is required and defaults to 'false'.
+# - platforms: Optional comma-separated target platforms (e.g., linux/amd64,linux/arm64). Leave empty to build for the runner's platform.
+#   Multi-platform images must be pushed and require a Dockerfile that installs architecture-appropriate dependencies.
 #
 # Jobs:
 # - build-docker: This job runs on an Ubuntu latest runner and performs the following steps:
@@ -49,6 +51,13 @@ on:
           without pushing)
         required: true
         default: false
+      platforms:
+        type: string
+        description: Comma-separated target platforms (e.g.
+          linux/amd64,linux/arm64 for Linux and Apple Silicon). Leave empty
+          for the runner's platform; multi-platform builds require push.
+        required: false
+        default: ""
       ccbr-actions-version:
         description: "The version or branch of ccbr_actions to use (see
           https://github.com/ccbr/actions)"
@@ -78,6 +87,7 @@ jobs:
           registries: dockerhub,ghcr
           suffix: ${{ github.event.inputs.suffix }}
           push: ${{ github.event.inputs.push }}
+          platforms: ${{ github.event.inputs.platforms }}
           ccbr-actions-version: ${{ github.event.inputs.ccbr-actions-version }}
           github-token: ${{ github.token }}
           github-actor: ${{ github.actor }}
