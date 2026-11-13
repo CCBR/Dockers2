@@ -1,2 +1,6 @@
 .DS_Store
 /logs/
+.koparde*
+**/plans/
+# >>> quiver managed v1 >>>
+# <<< quiver managed v1 <<<

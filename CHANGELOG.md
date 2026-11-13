@@ -2,6 +2,7 @@
 
 - New versions of ROSE: [ccbr_rose](rose/ccbr_rose)
 - New base container for Ubuntu 26.04.
+- Adds SCOT to the seurat/seurat_5 container #419
 
 ## Dockers2 0.1.2
 

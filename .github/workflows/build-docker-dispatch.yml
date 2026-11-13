@@ -25,11 +25,15 @@ on:
         required: true
 
 permissions:
-  contents: read
-  pull-requests: read
+  contents: write
+  pull-requests: write
 
 jobs:
   build-docker:
+    name: >-
+      ${{ github.event_name == 'repository_dispatch'
+          && format('{0} | {1}', github.event.client_payload.owner_repo, github.event.client_payload.docker_image_name)
+          || format('{0} | {1}', github.event.inputs.owner_repo, github.event.inputs.docker_image_name) }}
     runs-on: ubuntu-latest
     steps:
       - name: process payload
@@ -51,6 +55,22 @@ jobs:
             echo "Unsupported event: ${GITHUB_EVENT_NAME}"
             exit 1
           fi
+
+          # Fail early if any required field is missing
+          missing=()
+          [ -z "$owner_repo" ]      && missing+=("owner_repo")
+          [ -z "$ref" ]             && missing+=("ref")
+          [ -z "$dockerfile_path" ] && missing+=("dockerfile_path")
+          [ -z "$docker_image_name" ] && missing+=("docker_image_name")
+          [ -z "$docker_image_tag" ] && missing+=("docker_image_tag")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "Error: the following required inputs are missing or empty: ${missing[*]}"
+            echo "Event type: ${{ github.event_name }}"
+            echo "  For 'workflow_dispatch', supply these as workflow inputs."
+            echo "  For 'repository_dispatch', supply these in the client_payload."
+            exit 1
+          fi
+
           repo_name=$(echo "$owner_repo" | cut -d'/' -f2)
           context_dir="${repo_name}/${docker_image_name}"
           new_branch="update-${docker_image_name}-${docker_image_tag}"
@@ -111,13 +131,18 @@ jobs:
           # Copy context dir
           mkdir -p "${{ env.CONTEXT_DIR }}"
           rsync -a --exclude=".git/" dispatch-repo/ "${{ env.CONTEXT_DIR }}/"
-          cp "dispatch-repo/${{ env.SRC_DOCKERFILE_PATH }}" "${{ env.NEW_DOCKERFILE_PATH }}"
+          src="dispatch-repo/${{ env.SRC_DOCKERFILE_PATH }}"
+          if [ ! -f "$src" ]; then
+            echo "Error: Dockerfile not found at '$src' (configured dockerfile_path: '${{ env.SRC_DOCKERFILE_PATH }}')"
+            exit 1
+          fi
+          cp "$src" "${{ env.NEW_DOCKERFILE_PATH }}"
           # Only commit new dockerfile, not entire context dir
           git add ${{ env.NEW_DOCKERFILE_PATH }}
 
           if git diff --cached --quiet; then
             echo "nothing to commit"
-            git switch "$original_branch"
+            git push -u origin "${{ steps.process-payload.outputs.new_branch }}"
           else
             git commit -m "feat: add Dockerfile for ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}"
             git push -u origin "${{ steps.process-payload.outputs.new_branch }}"
@@ -131,16 +156,23 @@ jobs:
           dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
           github-token: ${{ steps.generate-token.outputs.token }}
           push: true
-      - name: Open PR w/ new Dockerfile
-        if: steps.build-docker.outputs.push_success == 'true'
+
+      - name: Open or update PR to dev
         env:
+          BRANCH_NAME: ${{ steps.process-payload.outputs.new_branch }}
           DOCKER_IMAGE_NAME: ${{ steps.process-payload.outputs.docker_image_name }}
           DOCKER_IMAGE_TAG: ${{ steps.process-payload.outputs.docker_image_tag }}
-          DOCKERFILE_PATH: ${{ steps.process-payload.outputs.new_dockerfile_path }}
           GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
-          gh pr create \
-            --title "feat: add/update Dockerfile for ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}" \
-            --body "Adds a Dockerfile located at `${{ env.DOCKERFILE_PATH }}`." \
-            --reviewer @CCBR/AdminTeam \
-            || echo "PR unsuccessful"
+          existing_pr="$(gh pr list --head "$BRANCH_NAME" --base dev --json number --jq '.[0].number')"
+
+          if [ -n "$existing_pr" ]; then
+            gh pr edit "$existing_pr" --add-reviewer CCBR/AdminTeam || true
+          else
+            gh pr create \
+              --base dev \
+              --head "$BRANCH_NAME" \
+              --title "feat: add/update Dockerfile for ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" \
+              --body "Adds Dockerfile and generated image metadata updates for ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}." \
+              --reviewer CCBR/AdminTeam
+          fi
