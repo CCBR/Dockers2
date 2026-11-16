@@ -1,9 +1,9 @@
 ## CCBR/Dockers2 nciccbr/minimal:v2-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/4a8498abbfc7f04a49f4741186e9c1a53c24dd93/tests/minimal/Dockerfile.v2
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/a562cad457e766cc9121c4379e76c6f23f7120fb/tests/minimal/Dockerfile.v2
 
 
-Built on: 2026-11-16_17:27:26 
+Built on: 2026-11-16_17:30:44 
 
 Build tag: v2-dev 
 
