@@ -123,7 +123,8 @@ jobs:
           import json
           import sys
 
-          print(json.dumps(sys.stdin.read().splitlines()))
+          files = [path for path in sys.stdin.read().splitlines() if path]
+          print(json.dumps(files))
           ')"
 
           echo "matched_files_json=$matched_files_json" >> "$GITHUB_OUTPUT"

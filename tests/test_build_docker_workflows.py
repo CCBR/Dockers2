@@ -71,14 +71,14 @@ def test_automatic_workflow_handles_forks_and_pushes():
 
 
 @pytest.mark.parametrize(
-    ("event_name", "event_action", "initial_files", "synchronized_files", "event_files", "expected"),
+    ("event_name", "event_action", "initial_files", "api_changed_files", "event_files", "expected"),
     [
-        ("pull_request", "synchronize", "", "[]", '["Dockerfile.v2"]', "[]"),
+        ("pull_request", "synchronize", "", "", '["Dockerfile.v2"]', "[]"),
         (
             "pull_request",
             "synchronize",
             "",
-            '["Dockerfile.v3"]',
+            "Dockerfile.v3",
             '["Dockerfile.v2","Dockerfile.v3"]',
             '["Dockerfile.v2","Dockerfile.v3"]',
         ),
@@ -91,7 +91,7 @@ def test_auto_workflow_selects_pr_synchronize_dockerfiles(
     event_name,
     event_action,
     initial_files,
-    synchronized_files,
+    api_changed_files,
     event_files,
     expected,
 ):
@@ -105,6 +105,47 @@ def test_auto_workflow_selects_pr_synchronize_dockerfiles(
     )
     assert "github.event.before" in synchronize_check["env"]["BEFORE_SHA"]
     assert "github.event.after" in synchronize_check["env"]["AFTER_SHA"]
+
+    synchronized_files = ""
+    if event_name == "pull_request" and event_action == "synchronize":
+        fake_bin = tmp_path / "bin"
+        fake_bin.mkdir()
+        fake_gh = fake_bin / "gh"
+        fake_gh.write_text(
+            "#!/bin/bash\n"
+            '[[ "$1" == "api" ]]\n'
+            'printf "%s\\n" "$MOCK_GH_OUTPUT"\n'
+        )
+        fake_gh.chmod(0o755)
+        synchronize_output = tmp_path / "synchronize_output"
+        env = os.environ.copy()
+        env.update(
+            PATH=f"{fake_bin}:{env['PATH']}",
+            GH_TOKEN="test-token",
+            BEFORE_SHA="before",
+            AFTER_SHA="after",
+            HEAD_REPOSITORY="owner/repo",
+            MOCK_GH_OUTPUT=api_changed_files,
+            GITHUB_OUTPUT=str(synchronize_output),
+        )
+        result = subprocess.run(
+            [
+                "bash",
+                "--noprofile",
+                "--norc",
+                "-e",
+                "-o",
+                "pipefail",
+                "-c",
+                synchronize_check["run"],
+            ],
+            check=False,
+            capture_output=True,
+            env=env,
+            text=True,
+        )
+        assert result.returncode == 0, result.stderr
+        synchronized_files = synchronize_output.read_text().split("=", 1)[1].strip()
 
     select_step = next(step for step in steps if step.get("id") == "select-files")
     output = tmp_path / "github_output"
