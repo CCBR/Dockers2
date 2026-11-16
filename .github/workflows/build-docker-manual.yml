@@ -6,7 +6,7 @@
 # - dockerfile: Path to the Dockerfile in the repository (e.g., common/ccbr_bwa/Dockerfile). This input is required.
 # - dockerhub-namespace: DockerHub namespace or organization name (e.g., nciccbr). This input is required and defaults to 'nciccbr'.
 # - push: Boolean flag to determine whether to push the built image to Docker Hub and GHCR. This input is required and defaults to 'false'.
-# - platforms: Optional comma-separated target platforms (e.g., linux/amd64,linux/arm64). Leave empty to build for the runner's platform.
+# - platforms: Optional override for the Dockerfile declaration. Defaults to linux/amd64 when neither is specified.
 #   Multi-platform images must be pushed and require a Dockerfile that installs architecture-appropriate dependencies.
 #
 # Jobs:
@@ -57,7 +57,8 @@ on:
         type: string
         description: Comma-separated target platforms (e.g.
           linux/amd64,linux/arm64 for Linux and Apple Silicon). Leave empty
-          for the runner's platform; multi-platform builds require push.
+          to use the Dockerfile's build-platforms declaration, or linux/amd64
+          if absent or empty; multi-platform builds require push.
         required: false
         default: ""
       ccbr-actions-version:
@@ -85,6 +86,20 @@ jobs:
         with:
           ref: ${{ github.head_ref || github.ref_name }}
 
+      - name: Determine Docker build platforms
+        id: platforms
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          DOCKERFILE_PATH: ${{ inputs.dockerfile }}
+          PLATFORMS_INPUT: ${{ inputs.platforms }}
+        run: |
+          set -euo pipefail
+          resolver="$RUNNER_TEMP/resolve_docker_platforms.py"
+          gh api "repos/$GITHUB_REPOSITORY/contents/scripts/resolve_docker_platforms.py?ref=$WORKFLOW_SHA" \
+            --header "Accept: application/vnd.github.raw+json" > "$resolver"
+          python3 "$resolver" "$GITHUB_WORKSPACE/$DOCKERFILE_PATH" --platforms "$PLATFORMS_INPUT"
+
       - uses: CCBR/actions/build-docker@v0.9.0
         with:
           dockerfile: ${{ github.event.inputs.dockerfile }}
@@ -94,7 +109,7 @@ jobs:
           registries: dockerhub,ghcr
           suffix: ${{ github.event.inputs.suffix }}
           push: ${{ github.event.inputs.push }}
-          platforms: ${{ github.event.inputs.platforms }}
+          platforms: ${{ steps.platforms.outputs.platforms }}
           ccbr-actions-version: ${{ github.event.inputs.ccbr-actions-version }}
           github-token: ${{ github.token }}
           github-actor: ${{ github.actor }}

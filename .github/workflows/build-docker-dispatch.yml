@@ -156,6 +156,19 @@ jobs:
             git commit -m "feat: add Dockerfile for ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}"
             git push -u origin "${{ steps.process-payload.outputs.new_branch }}"
           fi
+      - name: Determine Docker build platforms
+        id: platforms
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          DOCKERFILE_PATH: ${{ steps.process-payload.outputs.new_dockerfile_path }}
+        run: |
+          set -euo pipefail
+          resolver="$RUNNER_TEMP/resolve_docker_platforms.py"
+          gh api "repos/$GITHUB_REPOSITORY/contents/scripts/resolve_docker_platforms.py?ref=$WORKFLOW_SHA" \
+            --header "Accept: application/vnd.github.raw+json" > "$resolver"
+          python3 "$resolver" "$GITHUB_WORKSPACE/$DOCKERFILE_PATH"
+
       - uses: CCBR/actions/build-docker@v0.9.0
         id: build-docker
         with:
@@ -166,6 +179,7 @@ jobs:
           registries: dockerhub,ghcr
           github-token: ${{ steps.generate-token.outputs.token }}
           push: true
+          platforms: ${{ steps.platforms.outputs.platforms }}
 
       - name: Open or update PR to dev
         env:

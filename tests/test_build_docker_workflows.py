@@ -176,16 +176,22 @@ def test_auto_workflow_selects_pr_synchronize_dockerfiles(
     )
 
 
+@pytest.mark.parametrize("name", WORKFLOW_NAMES)
 @pytest.mark.parametrize(
     ("declaration", "expected", "should_succeed"),
     [
         ("", "linux/amd64", True),
         ("# build-platforms: linux/amd64, linux/arm64\n", "linux/amd64,linux/arm64", True),
         ("# build-platforms: linux/arm64\n", "linux/arm64", True),
-        ("# build-platforms:\n", "", False),
+        ("  # build-platforms: linux/arm64, linux/amd64\n", "linux/arm64,linux/amd64", True),
+        ("# build-platforms: linux/arm64", "linux/arm64", True),
+        ("# build-platforms:\n", "linux/amd64", True),
+        ("# build-platforms:   \n", "linux/amd64", True),
         ("# build-platforms: linux/amd64,linux/amd64\n", "", False),
         ("# build-platforms: linux/amd64,\n", "", False),
-        ("# build-platforms: linux/ppc64le\n", "", False),
+        ("# build-platforms: linux/ppc64le,linux/arm/v7\n", "linux/ppc64le,linux/arm/v7", True),
+        ("# build-platforms: amd64\n", "", False),
+        ("# build-platforms: linux/arm/v7/extra\n", "", False),
         (
             "# build-platforms: linux/amd64\n# build-platforms: linux/arm64\n",
             "",
@@ -193,21 +199,63 @@ def test_auto_workflow_selects_pr_synchronize_dockerfiles(
         ),
     ],
 )
-def test_auto_workflow_resolves_dockerfile_platforms(
-    tmp_path, declaration, expected, should_succeed
+def test_workflow_resolves_dockerfile_platforms(
+    tmp_path, name, declaration, expected, should_succeed
 ):
+    result, output = run_platform_step(tmp_path, name, declaration)
+    assert (result.returncode == 0) is should_succeed, result.stderr
+    if should_succeed:
+        assert output.read_text() == f"platforms={expected}\n"
+    else:
+        assert "::error::" in result.stderr
+        assert not output.exists()
+
+
+def run_platform_step(tmp_path, name, declaration, override=""):
     dockerfile = tmp_path / "Dockerfile.v1"
-    dockerfile.write_text(f"{declaration}FROM ubuntu:26.04\n")
+    dockerfile.write_text(f"FROM ubuntu:26.04\n{declaration}")
     output = tmp_path / "github_output"
+    workflow = load_workflow(name)
     step = next(
         step
-        for step in load_workflow("auto")["jobs"]["build-docker"]["steps"]
+        for step in workflow["jobs"]["build-docker"]["steps"]
         if step.get("id") == "platforms"
     )
+    assert step["env"]["WORKFLOW_SHA"] == "${{ github.workflow_sha }}"
+    expected_path = {
+        "auto": "${{ matrix.file }}",
+        "manual": "${{ inputs.dockerfile }}",
+        "dispatch": "${{ steps.process-payload.outputs.new_dockerfile_path }}",
+    }
+    assert step["env"]["DOCKERFILE_PATH"] == expected_path[name]
+    assert build_step(workflow)["with"]["platforms"] == (
+        "${{ steps.platforms.outputs.platforms }}"
+    )
+    steps = workflow["jobs"]["build-docker"]["steps"]
+    assert steps.index(step) < steps.index(build_step(workflow))
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_gh = fake_bin / "gh"
+    fake_gh.write_text(
+        "#!/bin/bash\n"
+        "set -euo pipefail\n"
+        '[[ "$1" == api ]]\n'
+        '[[ "$2" == "repos/owner/repo/contents/scripts/resolve_docker_platforms.py?ref=workflow-sha" ]]\n'
+        '[[ "$3" == --header && "$4" == "Accept: application/vnd.github.raw+json" ]]\n'
+        'cat "$RESOLVER_SOURCE"\n'
+    )
+    fake_gh.chmod(0o755)
     env = os.environ.copy()
     env.update(
+        PATH=f"{fake_bin}:{env['PATH']}",
+        GH_TOKEN="test-token",
+        WORKFLOW_SHA="workflow-sha",
+        GITHUB_REPOSITORY="owner/repo",
         GITHUB_WORKSPACE=str(tmp_path),
+        RUNNER_TEMP=str(tmp_path),
         DOCKERFILE_PATH="Dockerfile.v1",
+        PLATFORMS_INPUT=override,
+        RESOLVER_SOURCE=str(WORKFLOWS.parents[1] / "scripts" / "resolve_docker_platforms.py"),
         GITHUB_OUTPUT=str(output),
     )
 
@@ -218,10 +266,32 @@ def test_auto_workflow_resolves_dockerfile_platforms(
         env=env,
         text=True,
     )
+    return result, output
 
+
+@pytest.mark.parametrize(
+    ("declaration", "override", "expected", "should_succeed"),
+    [
+        ("", "linux/arm64", "linux/arm64", True),
+        ("# build-platforms: linux/amd64\n", " linux/arm64 ", "linux/arm64", True),
+        ("# build-platforms:\n", "linux/amd64", "linux/amd64", True),
+        ("", "linux/amd64,linux/arm64", "linux/amd64,linux/arm64", True),
+        ("", "linux/ppc64le", "linux/ppc64le", True),
+        ("", "linux amd64", "", False),
+        ("", "linux/amd64,linux/amd64", "", False),
+        ("", "linux/amd64,", "", False),
+        ("", " ", "linux/amd64", True),
+        ("# build-platforms: linux/arm64\n", " ", "linux/arm64", True),
+    ],
+)
+def test_manual_platform_override(tmp_path, declaration, override, expected, should_succeed):
+    result, output = run_platform_step(tmp_path, "manual", declaration, override)
     assert (result.returncode == 0) is should_succeed, result.stderr
     if should_succeed:
         assert output.read_text() == f"platforms={expected}\n"
+    else:
+        assert "::error::" in result.stderr
+        assert not output.exists()
 
 
 def test_manual_workflow_preserves_push_input():
@@ -237,7 +307,13 @@ def test_manual_workflow_forwards_optional_platforms_input():
     assert platforms["required"] is False
     assert platforms["default"] == ""
     step = build_step(workflow)
-    assert step["with"]["platforms"] == "${{ github.event.inputs.platforms }}"
+    assert step["with"]["platforms"] == "${{ steps.platforms.outputs.platforms }}"
+    resolver = next(
+        step
+        for step in workflow["jobs"]["build-docker"]["steps"]
+        if step.get("id") == "platforms"
+    )
+    assert resolver["env"]["PLATFORMS_INPUT"] == "${{ inputs.platforms }}"
 
 
 def test_dispatch_workflow_requests_app_token_permissions():

@@ -189,48 +189,16 @@ jobs:
       - name: Determine Docker build platforms
         id: platforms
         env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
           DOCKERFILE_PATH: ${{ matrix.file }}
         run: |
           set -euo pipefail
-
-          dockerfile="$GITHUB_WORKSPACE/$DOCKERFILE_PATH"
-          declarations="$(grep -E '^[[:space:]]*#[[:space:]]*build-platforms:' "$dockerfile" || true)"
-          if [[ -z "$declarations" ]]; then
-            platforms="linux/amd64"
-          else
-            declaration_count="$(printf '%s\n' "$declarations" | wc -l | tr -d ' ')"
-            if [[ "$declaration_count" != "1" ]]; then
-              echo "::error::$dockerfile must contain at most one build-platforms declaration."
-              exit 1
-            fi
-
-            platforms="${declarations#*:}"
-            platforms="${platforms//[[:space:]]/}"
-            if [[ -z "$platforms" ]]; then
-              echo "::error::The build-platforms declaration in $dockerfile is empty."
-              exit 1
-            fi
-
-            if [[ ! "$platforms" =~ ^linux/(amd64|arm64)(,linux/(amd64|arm64))*$ ]]; then
-              echo "::error::Malformed or unsupported build-platforms declaration in $dockerfile: $platforms. Supported platforms are linux/amd64 and linux/arm64."
-              exit 1
-            fi
-
-            IFS=',' read -r -a platform_list <<< "$platforms"
-            seen_platforms=","
-            for platform in "${platform_list[@]}"; do
-              if [[ "$seen_platforms" == *",$platform,"* ]]; then
-                echo "::error::Duplicate platform '$platform' in $dockerfile."
-                exit 1
-              fi
-              seen_platforms+="$platform,"
-            done
-
-            platforms="$(IFS=,; echo "${platform_list[*]}")"
-          fi
-
-          echo "platforms=$platforms" >> "$GITHUB_OUTPUT"
-          echo "Building $dockerfile for: $platforms"
+          # Use the workflow revision, even when the Dockerfile comes from an older fork.
+          resolver="$RUNNER_TEMP/resolve_docker_platforms.py"
+          gh api "repos/$GITHUB_REPOSITORY/contents/scripts/resolve_docker_platforms.py?ref=$WORKFLOW_SHA" \
+            --header "Accept: application/vnd.github.raw+json" > "$resolver"
+          python3 "$resolver" "$GITHUB_WORKSPACE/$DOCKERFILE_PATH"
 
       - uses: CCBR/actions/build-docker@v0.9.0
         with:
