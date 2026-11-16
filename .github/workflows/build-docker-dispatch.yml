@@ -29,6 +29,11 @@ permissions:
   pull-requests: write
   packages: write
 
+# Serialize runs that update the same image branch and PR. Cancellation could leave a pushed branch without a PR.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.client_payload.docker_image_name || inputs.docker_image_name }}-${{ github.event.client_payload.docker_image_tag || inputs.docker_image_tag }}
+  cancel-in-progress: false
+
 jobs:
   build-docker:
     name: >-

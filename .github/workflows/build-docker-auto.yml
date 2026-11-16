@@ -18,6 +18,7 @@
 #   history instead of calling the compare API with an invalid SHA.
 # - The workflow is fork-safe: both get-files and build-docker steps work on fork pull requests.
 # - Dockerfiles can opt into additional architectures with a `# build-platforms:` comment.
+# - A new commit on a pull request cancels that PR's in-progress run; push runs are never canceled.
 
 name: build-docker-auto
 
@@ -45,8 +46,15 @@ on:
       - synchronize
       - ready_for_review # Ensures the workflow triggers only when a draft is marked "Ready for Review"
 
+# A newer PR run rebuilds the PR's full base...head range, so stale PR runs are canceled.
+# Push runs only build their own before...after range, so each gets a unique group and is never canceled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
-  suffix: ${{ github.base_ref == 'main' && github.event_name == 'pull_request' &&
+  suffix:
+    ${{ github.base_ref == 'main' && github.event_name == 'pull_request' &&
     'main' || github.base_ref == 'dev' && github.event_name == 'pull_request' &&
     'dev' || 'feat' }}
 
@@ -115,12 +123,12 @@ jobs:
           echo "Matched Dockerfiles: $MATCHED_FILES_JSON"
 
   build-docker:
-    needs: [ get-files ]
+    needs: [get-files]
     if: needs.get-files.outputs.json != '[]' # Skip if no Dockerfiles changed in the event range
     strategy:
       matrix:
         file: "${{ fromJson(needs.get-files.outputs.json) }}"
-      max-parallel: 1
+      max-parallel: 8
       fail-fast: false
     continue-on-error: true
     runs-on: ubuntu-latest
