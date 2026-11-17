@@ -1,9 +1,10 @@
 ## Dockers2 development version
 
 - Publish stable images with version tags and `-dev` previews, preserving source context for dispatch builds. (#461, @kelly-sovacool)
-- Support per-Dockerfile architecture declarations for automatic image builds. (#455, @kelly-sovacool)
-- New base container for Ubuntu 26.04.
-- Adds SCOT to the seurat/seurat_5 container #419
+- Push containers to both dockerhub and ghcr. (#455, @kelly-sovacool)
+- Support per-Dockerfile architecture declarations and multi-platform image builds. (#455, @kelly-sovacool)
+- New base container for Ubuntu 26.04. (#368, @kelly-sovacool)
+- Adds SCOT to the seurat/seurat_5 container. (#419, @wong-nw)
 
 ## Dockers2 0.1.2
 

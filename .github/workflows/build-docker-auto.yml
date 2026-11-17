@@ -18,6 +18,8 @@
 #   history instead of calling the compare API with an invalid SHA.
 # - Fork pull requests build images without publishing them.
 # - Dockerfiles can opt into additional architectures with a `# build-platforms:` comment.
+# - PR synchronize events only build when the new commit range changes a Dockerfile or its source metadata.
+# - New PR builds cancel stale builds for the same Dockerfile; other PRs and pushes are unaffected.
 
 name: build-docker-auto
 
@@ -98,10 +100,40 @@ jobs:
           echo "matched_files_json=$matched_files_json" >> "$GITHUB_OUTPUT"
           echo "Matched Dockerfiles: $matched_files_json"
 
+      - id: synchronize-files
+        name: Check Dockerfiles changed in PR update
+        if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.event.after }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$BEFORE_SHA" || -z "$AFTER_SHA" || -z "$HEAD_REPOSITORY" ]]; then
+            echo "::error::Pull request synchronize event is missing its before/after commit or head repository."
+            exit 1
+          fi
+
+          changed_files="$(gh api \
+            "repos/${HEAD_REPOSITORY}/compare/${BEFORE_SHA}...${AFTER_SHA}" \
+            --jq '.files[]?.filename | select(test("(^|/)\\.?Dockerfile\\."))')"
+          matched_files_json="$(printf '%s\n' "$changed_files" | python3 -c '
+          import json
+          import sys
+
+          files = [path for path in sys.stdin.read().splitlines() if path]
+          print(json.dumps(files))
+          ')"
+
+          echo "matched_files_json=$matched_files_json" >> "$GITHUB_OUTPUT"
+          echo "Dockerfiles changed in PR update: $matched_files_json"
+
       - id: changed-files
         name: Check changed files
         if: github.event_name != 'push' || github.event.before != '0000000000000000000000000000000000000000'
-        uses: CCBR/actions/changed-files@v0.9.0
+        uses: CCBR/actions/changed-files@v0.9.1
         with:
           token: ${{ github.token }}
           paths: |
@@ -109,10 +141,30 @@ jobs:
             **/.Dockerfile.*.source.json
           comparison-mode: event
 
+      - name: Select Dockerfiles to build
+        id: select-files
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action }}
+          INITIAL_PUSH_FILES_JSON: ${{ steps.initial-push.outputs.matched_files_json }}
+          SYNCHRONIZE_FILES_JSON: ${{ steps.synchronize-files.outputs.matched_files_json }}
+          EVENT_FILES_JSON: ${{ steps.changed-files.outputs.matched_files_json }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "pull_request" &&
+                "$EVENT_ACTION" == "synchronize" &&
+                "$SYNCHRONIZE_FILES_JSON" == "[]" ]]; then
+            selected_files_json="[]"
+          else
+            selected_files_json="${INITIAL_PUSH_FILES_JSON:-$EVENT_FILES_JSON}"
+          fi
+          echo "json=$selected_files_json" >> "$GITHUB_OUTPUT"
+          echo "Selected Dockerfiles: $selected_files_json"
+
       - name: Exclude deleted Dockerfiles
         id: existing-files
         env:
-          MATCHED_FILES_JSON: ${{ steps.initial-push.outputs.matched_files_json || steps.changed-files.outputs.matched_files_json }}
+          MATCHED_FILES_JSON: ${{ steps.select-files.outputs.json }}
         run: |
           python3 - <<'PY'
           import json
@@ -140,20 +192,16 @@ jobs:
               print(f"matched_files_json={json.dumps(existing)}", file=output)
           PY
 
-      - name: Show changed files
-        id: matrix
-        env:
-          MATCHED_FILES_JSON: ${{ steps.existing-files.outputs.matched_files_json }}
-        run: |
-          echo "Matched Dockerfiles: $MATCHED_FILES_JSON"
-
   build-docker:
-    needs: [ get-files ]
+    needs: [get-files]
     if: needs.get-files.outputs.json != '[]' # Skip if no Dockerfiles changed in the event range
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}-${{ matrix.file }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     strategy:
       matrix:
         file: "${{ fromJson(needs.get-files.outputs.json) }}"
-      max-parallel: 1
+      max-parallel: 8
       fail-fast: false
     runs-on: ubuntu-latest
     permissions:
@@ -251,50 +299,18 @@ jobs:
       - name: Determine Docker build platforms
         id: platforms
         env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
           DOCKERFILE_PATH: ${{ matrix.file }}
         run: |
           set -euo pipefail
+          # Use the workflow revision, even when the Dockerfile comes from an older fork.
+          resolver="$RUNNER_TEMP/resolve_docker_platforms.py"
+          gh api "repos/$GITHUB_REPOSITORY/contents/scripts/resolve_docker_platforms.py?ref=$WORKFLOW_SHA" \
+            --header "Accept: application/vnd.github.raw+json" > "$resolver"
+          python3 "$resolver" "$GITHUB_WORKSPACE/$DOCKERFILE_PATH"
 
-          dockerfile="$GITHUB_WORKSPACE/$DOCKERFILE_PATH"
-          declarations="$(grep -E '^[[:space:]]*#[[:space:]]*build-platforms:' "$dockerfile" || true)"
-          if [[ -z "$declarations" ]]; then
-            platforms="linux/amd64"
-          else
-            declaration_count="$(printf '%s\n' "$declarations" | wc -l | tr -d ' ')"
-            if [[ "$declaration_count" != "1" ]]; then
-              echo "::error::$dockerfile must contain at most one build-platforms declaration."
-              exit 1
-            fi
-
-            platforms="${declarations#*:}"
-            platforms="${platforms//[[:space:]]/}"
-            if [[ -z "$platforms" ]]; then
-              echo "::error::The build-platforms declaration in $dockerfile is empty."
-              exit 1
-            fi
-
-            if [[ ! "$platforms" =~ ^linux/(amd64|arm64)(,linux/(amd64|arm64))*$ ]]; then
-              echo "::error::Malformed or unsupported build-platforms declaration in $dockerfile: $platforms. Supported platforms are linux/amd64 and linux/arm64."
-              exit 1
-            fi
-
-            IFS=',' read -r -a platform_list <<< "$platforms"
-            seen_platforms=","
-            for platform in "${platform_list[@]}"; do
-              if [[ "$seen_platforms" == *",$platform,"* ]]; then
-                echo "::error::Duplicate platform '$platform' in $dockerfile."
-                exit 1
-              fi
-              seen_platforms+="$platform,"
-            done
-
-            platforms="$(IFS=,; echo "${platform_list[*]}")"
-          fi
-
-          echo "platforms=$platforms" >> "$GITHUB_OUTPUT"
-          echo "Building $dockerfile for: $platforms"
-
-      - uses: CCBR/actions/build-docker@v0.9.0
+      - uses: CCBR/actions/build-docker@v0.9.1
         with:
           dockerfile: ${{ matrix.file }}
           dockerhub-namespace: nciccbr

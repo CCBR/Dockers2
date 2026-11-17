@@ -94,7 +94,7 @@ _Sample GH Action check (concept): if AI usage is declared, require an AI-assist
 - If mixed changes are present, split into multiple logical commits; the number of commits does not need to equal the number of files changed.
 - Subject format must be: `<type>(optional-scope): short imperative summary` (<=72 chars), e.g., `fix(profile): update release table parser`.
 - Add a body only when needed to explain **why** and notable impact; never include secrets, tokens, PHI, or large diffs.
-- For AI-assisted commits, add this final italicized footer line in the commit message body: _commit message is ai-generated_
+- For AI-assisted commits, add this final italicized footer line to the end commit message body: `_AI-assisted_: <model>` (fill in <model> with the actual model, e.g. Claude Sonnet 5, if known.
 
 Suggested prompt for AI tools:
 
@@ -176,15 +176,3 @@ meets quality standards.
   }
 }
 ```
-
-# Project instructions
-
-- Before working in this project, read the root `AGENTS.md` file and follow its instructions.
-
-# GitHub conventions
-
-- Use Conventional Commits for all commit messages.
-- Do not use exclamation marks in GitHub issue or pull request titles.
-- When GitHub content is generated using AI, include a Markdown footnote reference and this footnote text: `[^ai]: ⚡Generated using AI⚡`.
-- Do not add `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` or other AI co-author lines.
-- Do not credit an AI model with a label or as a contributor.
