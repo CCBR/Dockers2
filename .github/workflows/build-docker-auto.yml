@@ -4,8 +4,8 @@
 # Short Description: Build Docker images for each modified Dockerfile
 #
 # Triggers:
-# - On push events to branches containing "autobuild" in the name, if any Dockerfile.* is modified.
-# - On pull request events to 'main' and 'dev' branches, if any Dockerfile.* is modified.
+# - On pushes to main or branches containing "autobuild" that change a Dockerfile or its source metadata.
+# - On pull requests to main that change a Dockerfile or its source metadata.
 #
 # Jobs:
 #   1. get-files: Detects changed Dockerfiles across the event range.
@@ -16,9 +16,9 @@
 # Notes:
 # - Initial pushes have an all-zero `before` SHA, so changed Dockerfiles are collected from git
 #   history instead of calling the compare API with an invalid SHA.
-# - The workflow is fork-safe: both get-files and build-docker steps work on fork pull requests.
+# - Fork pull requests build images without publishing them.
 # - Dockerfiles can opt into additional architectures with a `# build-platforms:` comment.
-# - PR synchronize events only build when the new commit range changes a Dockerfile.
+# - PR synchronize events only build when the new commit range changes a Dockerfile or its source metadata.
 # - New PR builds cancel stale builds for the same Dockerfile; other PRs and pushes are unaffected.
 
 name: build-docker-auto
@@ -31,39 +31,37 @@ permissions:
 on:
   push:
     branches:
-      - "**autobuild**" # Only trigger if the branch name contains "autobuild"
+      - main
+      - "**autobuild**"
     paths:
-      - "**/Dockerfile.*" # Only trigger if a Dockerfile.* is modified in any directory
+      - "**/Dockerfile.*"
+      - "**/.Dockerfile.*.source.json"
 
   pull_request:
     branches:
       - main
-      - dev
     paths:
-      - "**/Dockerfile.*" # Only trigger if a Dockerfile.* is modified in any directory
+      - "**/Dockerfile.*"
+      - "**/.Dockerfile.*.source.json"
     types:
       - opened
       - reopened
       - synchronize
       - ready_for_review # Ensures the workflow triggers only when a draft is marked "Ready for Review"
 
-env:
-  suffix:
-    ${{ github.base_ref == 'main' && github.event_name == 'pull_request' &&
-    'main' || github.base_ref == 'dev' && github.event_name == 'pull_request' &&
-    'dev' || 'feat' }}
-
 jobs:
   get-files:
     runs-on: ubuntu-latest
     outputs:
-      json: ${{ steps.select-files.outputs.json }}
+      json: ${{ steps.existing-files.outputs.matched_files_json }}
+      matrix: ${{ steps.image-matrix.outputs.matrix }}
     steps:
-      - name: Checkout initial push history
-        if: github.event_name == 'push' && github.event.before == '0000000000000000000000000000000000000000'
+      - name: Checkout event source
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Find Dockerfiles in initial push
         id: initial-push
@@ -81,7 +79,7 @@ jobs:
           parents="$(git rev-list --parents -n 1 "$FIRST_PUSH_COMMIT")"
           read -r _ base_sha _ <<< "$parents"
           if [[ -n "${base_sha:-}" ]]; then
-            changed_files="$(git diff --name-only --diff-filter=ACMRT "$base_sha" "$GITHUB_SHA")"
+            changed_files="$(git diff --name-only "$base_sha" "$GITHUB_SHA")"
           else
             changed_files="$(git ls-tree --name-only -r "$GITHUB_SHA")"
           fi
@@ -90,10 +88,13 @@ jobs:
           import json
           import sys
 
-          files = [
-              path for path in sys.stdin.read().splitlines()
-              if path.rsplit("/", 1)[-1].startswith("Dockerfile.")
-          ]
+          files = []
+          for path in sys.stdin.read().splitlines():
+              name = path.rsplit("/", 1)[-1]
+              if name.startswith("Dockerfile.") or (
+                  name.startswith(".Dockerfile.") and name.endswith(".source.json")
+              ):
+                  files.append(path)
           print(json.dumps(files))
           ')"
 
@@ -118,7 +119,7 @@ jobs:
 
           changed_files="$(gh api \
             "repos/${HEAD_REPOSITORY}/compare/${BEFORE_SHA}...${AFTER_SHA}" \
-            --jq '.files[]?.filename | select(test("(^|/)Dockerfile\\."))')"
+            --jq '.files[]?.filename | select(test("(^|/)\\.?Dockerfile\\."))')"
           matched_files_json="$(printf '%s\n' "$changed_files" | python3 -c '
           import json
           import sys
@@ -138,6 +139,7 @@ jobs:
           token: ${{ github.token }}
           paths: |
             **/Dockerfile.*
+            **/.Dockerfile.*.source.json
           comparison-mode: event
 
       - name: Select Dockerfiles to build
@@ -160,18 +162,62 @@ jobs:
           echo "json=$selected_files_json" >> "$GITHUB_OUTPUT"
           echo "Selected Dockerfiles: $selected_files_json"
 
+      - name: Exclude deleted Dockerfiles
+        id: existing-files
+        env:
+          MATCHED_FILES_JSON: ${{ steps.select-files.outputs.json }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          files = json.loads(os.environ["MATCHED_FILES_JSON"])
+          existing = []
+          seen = set()
+          for file in files:
+              path = Path(file)
+              if path.name.startswith(".Dockerfile.") and path.name.endswith(".source.json"):
+                  dockerfile = path.with_name(path.name[1:-len(".source.json")])
+                  if not path.is_file() and dockerfile.is_file():
+                      print(f"::warning::Source metadata was removed: {path}")
+              else:
+                  dockerfile = path
+              name = dockerfile.as_posix()
+              if dockerfile.is_file() and name not in seen:
+                  existing.append(name)
+                  seen.add(name)
+              elif not dockerfile.is_file():
+                  print(f"::notice::Skipping deleted Dockerfile: {name}")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              print(f"matched_files_json={json.dumps(existing)}", file=output)
+          PY
+
+      - name: Determine image lock keys
+        id: image-matrix
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          FILES_JSON: ${{ steps.existing-files.outputs.matched_files_json }}
+        run: |
+          set -euo pipefail
+          coordinator="$RUNNER_TEMP/coordinate_docker_build.py"
+          gh api "repos/$GITHUB_REPOSITORY/contents/scripts/coordinate_docker_build.py?ref=$WORKFLOW_SHA" \
+            --header "Accept: application/vnd.github.raw+json" > "$coordinator"
+          python3 "$coordinator" matrix
+
   build-docker:
     needs: [get-files]
     if: needs.get-files.outputs.json != '[]' # Skip if no Dockerfiles changed in the event range
     concurrency:
-      group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}-${{ matrix.file }}
+      group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && format('docker-stable-{0}', matrix.image.key) || format('{0}-{1}-{2}', github.workflow, github.event.pull_request.number || github.run_id, matrix.image.file) }}
       cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+      queue: ${{ github.event_name == 'pull_request' && 'single' || 'max' }}
     strategy:
       matrix:
-        file: "${{ fromJson(needs.get-files.outputs.json) }}"
+        image: "${{ fromJson(needs.get-files.outputs.matrix) }}"
       max-parallel: 8
       fail-fast: false
-    continue-on-error: true
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -184,14 +230,109 @@ jobs:
           fetch-depth: 0
           repository: ${{ github.event.pull_request.head.repo.full_name ||
             github.repository }}
-          ref: ${{ github.head_ref || github.ref_name }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: Determine Docker build platforms
-        id: platforms
+      - name: Prepare checked-out branch
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+        run: git switch --create "$BRANCH_NAME"
+
+      - name: Check stable image revision
+        id: stable-check
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
           WORKFLOW_SHA: ${{ github.workflow_sha }}
-          DOCKERFILE_PATH: ${{ matrix.file }}
+          DOCKERFILE_PATH: ${{ matrix.image.file }}
+        run: |
+          set -euo pipefail
+          coordinator="$RUNNER_TEMP/coordinate_docker_build.py"
+          gh api "repos/$GITHUB_REPOSITORY/contents/scripts/coordinate_docker_build.py?ref=$WORKFLOW_SHA" \
+            --header "Accept: application/vnd.github.raw+json" > "$coordinator"
+          python3 "$coordinator" check "$DOCKERFILE_PATH"
+
+      - name: Determine image publication
+        id: build-policy
+        if: steps.stable-check.outputs.current != 'false'
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          PR_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          case "$EVENT_NAME" in
+            push)
+              push=true
+              if [[ "$EVENT_REF" == "refs/heads/main" ]]; then
+                suffix=main
+              else
+                suffix=dev
+              fi
+              ;;
+            pull_request)
+              if [[ -z "$PR_HEAD_REPOSITORY" ]]; then
+                echo "::error::Pull request head repository is unavailable."
+                exit 1
+              fi
+              suffix=dev
+              if [[ "$PR_HEAD_REPOSITORY" == "$GITHUB_REPOSITORY" ]]; then
+                push=true
+              else
+                push=false
+              fi
+              ;;
+            *)
+              echo "::error::Unsupported event: $EVENT_NAME"
+              exit 1
+              ;;
+          esac
+          echo "suffix=$suffix" >> "$GITHUB_OUTPUT"
+          echo "push=$push" >> "$GITHUB_OUTPUT"
+
+      - name: Check workflow checkout location
+        if: github.event_name == 'pull_request' && steps.stable-check.outputs.current != 'false'
+        run: |
+          workflow_checkout="$GITHUB_WORKSPACE/.ccbr-workflow-source"
+          if [[ -e "$workflow_checkout" || -L "$workflow_checkout" ]]; then
+            echo "::error::Reserved workflow checkout path already exists: $workflow_checkout"
+            exit 1
+          fi
+
+      - name: Checkout workflow action
+        if: github.event_name == 'pull_request' && steps.stable-check.outputs.current != 'false'
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          path: .ccbr-workflow-source
+          sparse-checkout: .github/actions/restore-docker-context
+          persist-credentials: false
+
+      - name: Restore source context for pull requests
+        if: github.event_name == 'pull_request' && steps.stable-check.outputs.current != 'false'
+        uses: ./.ccbr-workflow-source/.github/actions/restore-docker-context
+        with:
+          dockerfile: ${{ matrix.image.file }}
+
+      - name: Restore source context for pushes
+        if: github.event_name == 'push' && steps.stable-check.outputs.current != 'false'
+        uses: ./.github/actions/restore-docker-context
+        with:
+          dockerfile: ${{ matrix.image.file }}
+
+      - name: Move workflow checkout out of the build context
+        if: github.event_name == 'pull_request' && steps.stable-check.outputs.current != 'false'
+        run: |
+          set -euo pipefail
+          helper_dir="$(mktemp -d "$RUNNER_TEMP/ccbr-workflow.XXXXXX")"
+          mv "$GITHUB_WORKSPACE/.ccbr-workflow-source" "$helper_dir/checkout"
+
+      - name: Determine Docker build platforms
+        id: platforms
+        if: steps.stable-check.outputs.current != 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          DOCKERFILE_PATH: ${{ matrix.image.file }}
         run: |
           set -euo pipefail
           # Use the workflow revision, even when the Dockerfile comes from an older fork.
@@ -201,14 +342,15 @@ jobs:
           python3 "$resolver" "$GITHUB_WORKSPACE/$DOCKERFILE_PATH"
 
       - uses: CCBR/actions/build-docker@v0.9.1
+        if: steps.stable-check.outputs.current != 'false'
         with:
-          dockerfile: ${{ matrix.file }}
+          dockerfile: ${{ matrix.image.file }}
           dockerhub-namespace: nciccbr
           dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
           dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
-          # Fork PR tokens cannot write packages.
-          registries: ${{ github.event.pull_request.head.repo.fork && 'dockerhub' || 'dockerhub,ghcr' }}
-          suffix: ${{ env.suffix }}
-          push: true
+          registries: dockerhub,ghcr
+          suffix: ${{ steps.build-policy.outputs.suffix }}
+          push: ${{ steps.build-policy.outputs.push }}
+          force_build: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           platforms: ${{ steps.platforms.outputs.platforms }}
           github-token: ${{ github.token }}

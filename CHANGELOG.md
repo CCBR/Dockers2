@@ -1,5 +1,8 @@
 ## Dockers2 development version
 
+- Publish stable images with version tags and `-dev` previews, preserving source context for dispatch builds. (#461, @kelly-sovacool)
+- Prevent superseded builds from overwriting newer stable images. (#461, @kelly-sovacool)
+- Reject dispatch tags that would exceed Docker's length limit after adding `-dev`. (#461, @kelly-sovacool)
 - Push containers to both dockerhub and ghcr. (#455, @kelly-sovacool)
 - Support per-Dockerfile architecture declarations and multi-platform image builds. (#455, @kelly-sovacool)
 - New base container for Ubuntu 26.04. (#368, @kelly-sovacool)

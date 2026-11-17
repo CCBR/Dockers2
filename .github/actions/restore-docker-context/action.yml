@@ -1,0 +1,123 @@
+name: Restore Docker build context
+description: Restore the recorded source repository for a dispatched Dockerfile.
+
+inputs:
+  dockerfile:
+    description: Path to the Dockerfile in Dockers2.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Read source metadata
+      id: source
+      shell: bash
+      env:
+        DOCKERFILE_INPUT: ${{ inputs.dockerfile }}
+      run: |
+        python3 - <<'PY'
+        import json
+        import os
+        from pathlib import Path
+        import re
+        import sys
+
+        def fail(message):
+            print(f"::error::{message}", file=sys.stderr)
+            raise SystemExit(1)
+
+        workspace = Path(os.environ["GITHUB_WORKSPACE"]).resolve()
+        raw_path = os.environ["DOCKERFILE_INPUT"]
+        path = Path(raw_path)
+        if not raw_path or "\n" in raw_path or "\r" in raw_path:
+            fail("Dockerfile path is empty or contains a newline.")
+        if path.is_absolute() or ".." in path.parts:
+            fail("Dockerfile path must be relative to the workspace.")
+        dockerfile = workspace / path
+        if not dockerfile.is_file() or not dockerfile.resolve().is_relative_to(workspace):
+            fail(f"Dockerfile is not a file inside the workspace: {raw_path}")
+
+        metadata = dockerfile.with_name(f".{dockerfile.name}.source.json")
+        outputs = {"repository": ""}
+        if metadata.exists() or metadata.is_symlink():
+            if not metadata.is_file() or not metadata.resolve().is_relative_to(workspace):
+                fail(f"Source metadata is not a file inside the workspace: {metadata}")
+            try:
+                data = json.loads(metadata.read_text(encoding="utf-8"))
+            except (OSError, UnicodeError, json.JSONDecodeError) as error:
+                fail(f"Cannot read source metadata {metadata}: {error}")
+            if not isinstance(data, dict):
+                fail(f"Source metadata must be a JSON object: {metadata}")
+            repository = data.get("repository")
+            commit = data.get("commit")
+            if not isinstance(repository, str) or not re.fullmatch(
+                r"[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*",
+                repository,
+            ):
+                fail(f"Invalid source repository in {metadata}.")
+            if not isinstance(commit, str) or not re.fullmatch(r"[0-9a-f]{40}", commit):
+                fail(f"Source commit in {metadata} must be a full Git commit SHA.")
+            outputs = {
+                "repository": repository,
+                "commit": commit,
+                "context": path.parent.as_posix(),
+                "dockerfile": path.name,
+                "metadata": metadata.name,
+            }
+
+        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+            for name, value in outputs.items():
+                print(f"{name}={value}", file=output)
+        PY
+
+    - name: Check source checkout location
+      if: ${{ steps.source.outputs.repository != '' }}
+      shell: bash
+      run: |
+        checkout_path="$GITHUB_WORKSPACE/.ccbr-build-source"
+        if [[ -e "$checkout_path" || -L "$checkout_path" ]]; then
+          echo "::error::Reserved source checkout path already exists: $checkout_path"
+          exit 1
+        fi
+        python3 - <<'PY'
+        import os
+        from pathlib import Path
+        import sys
+
+        if Path(os.environ["RUNNER_TEMP"]).resolve().is_relative_to(
+            Path(os.environ["GITHUB_WORKSPACE"]).resolve()
+        ):
+            print("::error::RUNNER_TEMP must be outside the workspace.", file=sys.stderr)
+            raise SystemExit(1)
+        PY
+
+    - name: Checkout source repository
+      if: ${{ steps.source.outputs.repository != '' }}
+      uses: actions/checkout@v6
+      with:
+        repository: ${{ steps.source.outputs.repository }}
+        ref: ${{ steps.source.outputs.commit }}
+        path: .ccbr-build-source
+        persist-credentials: false
+
+    - name: Restore source context
+      if: ${{ steps.source.outputs.repository != '' }}
+      shell: bash
+      env:
+        CONTEXT_DIR: ${{ steps.source.outputs.context }}
+        DOCKERFILE_NAME: ${{ steps.source.outputs.dockerfile }}
+        METADATA_NAME: ${{ steps.source.outputs.metadata }}
+      run: |
+        set -euo pipefail
+        source_dir="$(mktemp -d "$RUNNER_TEMP/ccbr-build-source.XXXXXX")"
+        mv "$GITHUB_WORKSPACE/.ccbr-build-source" "$source_dir/checkout"
+        if [[ "$CONTEXT_DIR" == "." && -e "$GITHUB_WORKSPACE/.ccbr-workflow-source" &&
+              -e "$source_dir/checkout/.ccbr-workflow-source" ]]; then
+          echo "::error::Source context contains the reserved workflow checkout path."
+          exit 1
+        fi
+        rsync -a \
+          --exclude='.git' \
+          --exclude="/$DOCKERFILE_NAME" \
+          --exclude="/$METADATA_NAME" \
+          "$source_dir/checkout/" "$GITHUB_WORKSPACE/$CONTEXT_DIR/"
