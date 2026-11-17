@@ -1,0 +1,7 @@
+# build-platforms: linux/amd64,linux/arm64
+FROM python:3.14
+
+RUN echo 'hello world'
+
+RUN mkdir -p /data2/
+COPY environment.txt /data2/

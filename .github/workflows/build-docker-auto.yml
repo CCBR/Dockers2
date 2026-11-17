@@ -17,12 +17,16 @@
 # - Initial pushes have an all-zero `before` SHA, so changed Dockerfiles are collected from git
 #   history instead of calling the compare API with an invalid SHA.
 # - The workflow is fork-safe: both get-files and build-docker steps work on fork pull requests.
+# - Dockerfiles can opt into additional architectures with a `# build-platforms:` comment.
+# - PR synchronize events only build when the new commit range changes a Dockerfile.
+# - New PR builds cancel stale builds for the same Dockerfile; other PRs and pushes are unaffected.
 
 name: build-docker-auto
 
 permissions:
   contents: write
   pull-requests: write
+  packages: write
 
 on:
   push:
@@ -44,7 +48,8 @@ on:
       - ready_for_review # Ensures the workflow triggers only when a draft is marked "Ready for Review"
 
 env:
-  suffix: ${{ github.base_ref == 'main' && github.event_name == 'pull_request' &&
+  suffix:
+    ${{ github.base_ref == 'main' && github.event_name == 'pull_request' &&
     'main' || github.base_ref == 'dev' && github.event_name == 'pull_request' &&
     'dev' || 'feat' }}
 
@@ -52,7 +57,7 @@ jobs:
   get-files:
     runs-on: ubuntu-latest
     outputs:
-      json: ${{ steps.initial-push.outputs.matched_files_json || steps.changed-files.outputs.matched_files_json }}
+      json: ${{ steps.select-files.outputs.json }}
     steps:
       - name: Checkout initial push history
         if: github.event_name == 'push' && github.event.before == '0000000000000000000000000000000000000000'
@@ -95,36 +100,83 @@ jobs:
           echo "matched_files_json=$matched_files_json" >> "$GITHUB_OUTPUT"
           echo "Matched Dockerfiles: $matched_files_json"
 
+      - id: synchronize-files
+        name: Check Dockerfiles changed in PR update
+        if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.event.after }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$BEFORE_SHA" || -z "$AFTER_SHA" || -z "$HEAD_REPOSITORY" ]]; then
+            echo "::error::Pull request synchronize event is missing its before/after commit or head repository."
+            exit 1
+          fi
+
+          changed_files="$(gh api \
+            "repos/${HEAD_REPOSITORY}/compare/${BEFORE_SHA}...${AFTER_SHA}" \
+            --jq '.files[]?.filename | select(test("(^|/)Dockerfile\\."))')"
+          matched_files_json="$(printf '%s\n' "$changed_files" | python3 -c '
+          import json
+          import sys
+
+          files = [path for path in sys.stdin.read().splitlines() if path]
+          print(json.dumps(files))
+          ')"
+
+          echo "matched_files_json=$matched_files_json" >> "$GITHUB_OUTPUT"
+          echo "Dockerfiles changed in PR update: $matched_files_json"
+
       - id: changed-files
         name: Check changed files
         if: github.event_name != 'push' || github.event.before != '0000000000000000000000000000000000000000'
-        uses: CCBR/actions/changed-files@main
+        uses: CCBR/actions/changed-files@v0.9.1
         with:
           token: ${{ github.token }}
           paths: |
             **/Dockerfile.*
           comparison-mode: event
 
-      - name: Show changed files
-        id: matrix
+      - name: Select Dockerfiles to build
+        id: select-files
         env:
-          MATCHED_FILES_JSON: ${{ steps.initial-push.outputs.matched_files_json || steps.changed-files.outputs.matched_files_json }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action }}
+          INITIAL_PUSH_FILES_JSON: ${{ steps.initial-push.outputs.matched_files_json }}
+          SYNCHRONIZE_FILES_JSON: ${{ steps.synchronize-files.outputs.matched_files_json }}
+          EVENT_FILES_JSON: ${{ steps.changed-files.outputs.matched_files_json }}
         run: |
-          echo "Matched Dockerfiles: $MATCHED_FILES_JSON"
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "pull_request" &&
+                "$EVENT_ACTION" == "synchronize" &&
+                "$SYNCHRONIZE_FILES_JSON" == "[]" ]]; then
+            selected_files_json="[]"
+          else
+            selected_files_json="${INITIAL_PUSH_FILES_JSON:-$EVENT_FILES_JSON}"
+          fi
+          echo "json=$selected_files_json" >> "$GITHUB_OUTPUT"
+          echo "Selected Dockerfiles: $selected_files_json"
 
   build-docker:
-    needs: [ get-files ]
+    needs: [get-files]
     if: needs.get-files.outputs.json != '[]' # Skip if no Dockerfiles changed in the event range
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}-${{ matrix.file }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     strategy:
       matrix:
         file: "${{ fromJson(needs.get-files.outputs.json) }}"
-      max-parallel: 1
+      max-parallel: 8
       fail-fast: false
     continue-on-error: true
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
+      packages: write
     steps:
       - uses: actions/checkout@v6
         name: Checkout repository
@@ -134,12 +186,29 @@ jobs:
             github.repository }}
           ref: ${{ github.head_ref || github.ref_name }}
 
-      - uses: CCBR/actions/build-docker@latest
+      - name: Determine Docker build platforms
+        id: platforms
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          DOCKERFILE_PATH: ${{ matrix.file }}
+        run: |
+          set -euo pipefail
+          # Use the workflow revision, even when the Dockerfile comes from an older fork.
+          resolver="$RUNNER_TEMP/resolve_docker_platforms.py"
+          gh api "repos/$GITHUB_REPOSITORY/contents/scripts/resolve_docker_platforms.py?ref=$WORKFLOW_SHA" \
+            --header "Accept: application/vnd.github.raw+json" > "$resolver"
+          python3 "$resolver" "$GITHUB_WORKSPACE/$DOCKERFILE_PATH"
+
+      - uses: CCBR/actions/build-docker@v0.9.1
         with:
           dockerfile: ${{ matrix.file }}
           dockerhub-namespace: nciccbr
           dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
           dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
+          # Fork PR tokens cannot write packages.
+          registries: ${{ github.event.pull_request.head.repo.fork && 'dockerhub' || 'dockerhub,ghcr' }}
           suffix: ${{ env.suffix }}
           push: true
+          platforms: ${{ steps.platforms.outputs.platforms }}
           github-token: ${{ github.token }}

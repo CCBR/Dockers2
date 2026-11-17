@@ -27,6 +27,12 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  packages: write
+
+# Serialize runs that update the same image branch and PR. Cancellation could leave a pushed branch without a PR.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.client_payload.docker_image_name || inputs.docker_image_name }}-${{ github.event.client_payload.docker_image_tag || inputs.docker_image_tag }}
+  cancel-in-progress: false
 
 jobs:
   build-docker:
@@ -89,12 +95,16 @@ jobs:
         id: generate-token
         uses: actions/create-github-app-token@v3
         with:
-          client-id: ${{ vars.CCBR_BOT_APP_ID }}
+          client-id: ${{ vars.CCBR_BOT_CLIENT_ID }}
           private-key: ${{ secrets.CCBR_BOT_PRIVATE_KEY }}
           owner: CCBR
+          permission-packages: write
+          permission-contents: write
+          permission-pull-requests: write
       - uses: actions/checkout@v6
         name: Checkout Dockers2
         with:
+          fetch-depth: 0
           persist-credentials: true
           token: ${{ steps.generate-token.outputs.token }}
       - uses: actions/checkout@v6
@@ -147,15 +157,30 @@ jobs:
             git commit -m "feat: add Dockerfile for ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}"
             git push -u origin "${{ steps.process-payload.outputs.new_branch }}"
           fi
-      - uses: CCBR/actions/build-docker@main
+      - name: Determine Docker build platforms
+        id: platforms
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          DOCKERFILE_PATH: ${{ steps.process-payload.outputs.new_dockerfile_path }}
+        run: |
+          set -euo pipefail
+          resolver="$RUNNER_TEMP/resolve_docker_platforms.py"
+          gh api "repos/$GITHUB_REPOSITORY/contents/scripts/resolve_docker_platforms.py?ref=$WORKFLOW_SHA" \
+            --header "Accept: application/vnd.github.raw+json" > "$resolver"
+          python3 "$resolver" "$GITHUB_WORKSPACE/$DOCKERFILE_PATH"
+
+      - uses: CCBR/actions/build-docker@v0.9.1
         id: build-docker
         with:
           dockerfile: ${{ steps.process-payload.outputs.new_dockerfile_path }}
           dockerhub-namespace: nciccbr
           dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
           dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
+          registries: dockerhub,ghcr
           github-token: ${{ steps.generate-token.outputs.token }}
           push: true
+          platforms: ${{ steps.platforms.outputs.platforms }}
 
       - name: Open or update PR to dev
         env:

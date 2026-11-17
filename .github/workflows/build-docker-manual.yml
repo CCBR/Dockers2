@@ -1,21 +1,25 @@
-# This GitHub Actions workflow is designed to manually build and optionally push a Docker image to DockerHub.
+# This GitHub Actions workflow is designed to manually build and optionally push a Docker image to Docker Hub and GHCR.
 #
 # Workflow Name: build-docker-manual
 #
 # Inputs:
 # - dockerfile: Path to the Dockerfile in the repository (e.g., common/ccbr_bwa/Dockerfile). This input is required.
 # - dockerhub-namespace: DockerHub namespace or organization name (e.g., nciccbr). This input is required and defaults to 'nciccbr'.
-# - push: Boolean flag to determine whether to push the built image to DockerHub. This input is required and defaults to 'false'.
+# - push: Boolean flag to determine whether to push the built image to Docker Hub and GHCR. This input is required and defaults to 'false'.
+# - platforms: Optional override for the Dockerfile declaration. Defaults to linux/amd64 when neither is specified.
+#   Multi-platform images must be pushed and require a Dockerfile that installs architecture-appropriate dependencies.
 #
 # Jobs:
 # - build-docker: This job runs on an Ubuntu latest runner and performs the following steps:
 #   - Checks out the repository.
-#   - Logs in to DockerHub if the 'push' input is set to 'true'.
+#   - Logs in to Docker Hub and GHCR if the 'push' input is set to 'true'.
 #   - Prepares build-time variables by running a custom script.
 #   - Checks variables and creates a temporary README file with build details.
 #   - Builds and optionally pushes the Docker image using the docker/build-push-action.
 #   - Lists Docker images on the runner.
 #   - Updates the DockerHub description with the contents of the temporary README file if the image was successfully pushed.
+#
+# Concurrency: runs for the same Dockerfile and suffix are queued, not canceled.
 
 name: build-docker-manual
 run-name: build-docker ${{ inputs.dockerfile }}-${{ inputs.suffix }}
@@ -23,6 +27,7 @@ run-name: build-docker ${{ inputs.dockerfile }}-${{ inputs.suffix }}
 permissions:
   contents: write
   pull-requests: write
+  packages: write
 
 on:
   workflow_dispatch:
@@ -44,15 +49,28 @@ on:
         default: feat
       push:
         type: boolean
-        description: Push to DockerHub (leave unchecked to just build the container
-          without pushing)
+        description: Push to Docker Hub and GHCR (leave unchecked to run without
+          publishing; an up-to-date image may skip the build)
         required: true
         default: false
+      platforms:
+        type: string
+        description: Comma-separated target platforms (e.g.
+          linux/amd64,linux/arm64 for Linux and Apple Silicon). Leave empty
+          to use the Dockerfile's build-platforms declaration, or linux/amd64
+          if absent or empty; multi-platform builds require push.
+        required: false
+        default: ""
       ccbr-actions-version:
         description: "The version or branch of ccbr_actions to use (see
           https://github.com/ccbr/actions)"
         required: true
         default: "latest"
+
+# Serialize builds that write the same image tag; other images build independently.
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.dockerfile }}-${{ inputs.suffix }}
+  cancel-in-progress: false
 
 jobs:
   build-docker:
@@ -60,21 +78,39 @@ jobs:
     permissions:
       contents: "write"
       pull-requests: write
+      packages: write
     steps:
       - name: Checkout repository
         id: checkout
         uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           ref: ${{ github.head_ref || github.ref_name }}
 
-      - uses: CCBR/actions/build-docker@latest
+      - name: Determine Docker build platforms
+        id: platforms
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          DOCKERFILE_PATH: ${{ inputs.dockerfile }}
+          PLATFORMS_INPUT: ${{ inputs.platforms }}
+        run: |
+          set -euo pipefail
+          resolver="$RUNNER_TEMP/resolve_docker_platforms.py"
+          gh api "repos/$GITHUB_REPOSITORY/contents/scripts/resolve_docker_platforms.py?ref=$WORKFLOW_SHA" \
+            --header "Accept: application/vnd.github.raw+json" > "$resolver"
+          python3 "$resolver" "$GITHUB_WORKSPACE/$DOCKERFILE_PATH" --platforms "$PLATFORMS_INPUT"
+
+      - uses: CCBR/actions/build-docker@v0.9.1
         with:
           dockerfile: ${{ github.event.inputs.dockerfile }}
           dockerhub-namespace: ${{ github.event.inputs.dockerhub-namespace }}
           dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
           dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
+          registries: dockerhub,ghcr
           suffix: ${{ github.event.inputs.suffix }}
           push: ${{ github.event.inputs.push }}
+          platforms: ${{ steps.platforms.outputs.platforms }}
           ccbr-actions-version: ${{ github.event.inputs.ccbr-actions-version }}
           github-token: ${{ github.token }}
           github-actor: ${{ github.actor }}

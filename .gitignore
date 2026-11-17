@@ -2,5 +2,7 @@
 /logs/
 .koparde*
 **/plans/
+__pycache__/
+
 # >>> quiver managed v1 >>>
 # <<< quiver managed v1 <<<
