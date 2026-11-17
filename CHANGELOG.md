@@ -7,6 +7,7 @@
 - Support per-Dockerfile architecture declarations and multi-platform image builds. (#455, @kelly-sovacool)
 - New base container for Ubuntu 26.04. (#368, @kelly-sovacool)
 - Adds SCOT to the seurat/seurat_5 container. (#419, @wong-nw)
+- New versions of ROSE: [ccbr_rose](rose/ccbr_rose). (#355, @kopardev)
 
 ## Dockers2 0.1.2
 
