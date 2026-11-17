@@ -44,6 +44,11 @@ publishing. To add or update an image from another repository, use the
 publishes a `-dev` preview to both registries and opens a PR to `main`;
 merging the Dockerfile triggers the stable build.
 
+When publishing generates a README update, the workflows use the CCBR-bot
+GitHub App to merge its PR. They use the `CCBR_BOT_CLIENT_ID` variable and
+`CCBR_BOT_PRIVATE_KEY` secret; fork PRs and manual builds without publishing
+do not receive these credentials.
+
 Stable publications always build, rather than relying on registry timestamps
 that do not account for source-context changes. Automatic and manual stable
 builds targeting the same image tag share a queue. After entering the queue,
@@ -57,15 +62,14 @@ platform, or cannot be checked; otherwise, they skip the build. The manual
 workflow still checks both registries when **push** is disabled, so an
 up-to-date image can skip a build-only run.
 
-For dispatched builds, the workflow records the source repository and its
-exact commit in `.Dockerfile.<version>.source.json` next to the Dockerfile.
-Automatic and manual builds restore that source checkout into the image's
-build context. The source repository must remain accessible to the workflow
-token. Source files are overlaid on the Dockerfile directory, preserving the
-selected Dockerfile and metadata; other files already in that directory remain.
-Changes to the metadata also trigger a rebuild; keep it alongside the
-Dockerfile. Older dispatched Dockerfiles do not have this metadata and must be
-dispatched again if they need files from their source repository.
+For dispatched builds, the workflow copies the source repository's build
+context into Dockers2 and records the source repository and exact commit in
+`.Dockerfile.<version>.source.json` next to the Dockerfile. The Dockerfile,
+metadata, and copied context files are committed together, so automatic and
+manual builds use the checked-in snapshot without needing access to the source
+repository. Changes to the metadata also trigger a rebuild; keep it alongside
+the Dockerfile. Older dispatched Dockerfiles that do not include their source
+context must be dispatched again if they need files from the source repository.
 Dispatch image tags may contain at most 124 characters, leaving room for the
 `-dev` suffix within Docker's 128-character tag limit.
 

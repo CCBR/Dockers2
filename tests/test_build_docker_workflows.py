@@ -1,18 +1,15 @@
 """Check the Docker build workflows' registry and action configuration."""
 
-from pathlib import Path
 import json
 import os
 import re
 import subprocess
+from pathlib import Path
 
 import pytest
 import yaml
 
 WORKFLOWS = Path(__file__).resolve().parents[1] / ".github" / "workflows"
-CONTEXT_ACTION = (
-    WORKFLOWS.parents[1] / ".github" / "actions" / "restore-docker-context" / "action.yml"
-)
 WORKFLOW_NAMES = ["auto", "manual", "dispatch"]
 RELEASE_TAG = re.compile(r"v\d+\.\d+\.\d+")
 
@@ -64,8 +61,40 @@ def test_build_workflows_pin_one_ccbr_actions_release():
     assert len(refs) == 1, f"CCBR/actions refs differ across workflows: {refs}"
     ref = refs.pop()
     assert RELEASE_TAG.fullmatch(ref)
-    # Multi-registry and platform freshness checks require v0.9.1 or later.
-    assert tuple(map(int, ref[1:].split("."))) >= (0, 9, 1)
+    # GitHub App authentication for README merges requires v0.9.2 or later.
+    assert tuple(map(int, ref[1:].split("."))) >= (0, 9, 2)
+
+
+@pytest.mark.parametrize(
+    ("name", "github_token", "client_id", "private_key"),
+    [
+        (
+            "auto",
+            "${{ github.token }}",
+            "${{ steps.build-policy.outputs.push == 'true' && vars.CCBR_BOT_CLIENT_ID || '' }}",
+            "${{ steps.build-policy.outputs.push == 'true' && secrets.CCBR_BOT_PRIVATE_KEY || '' }}",
+        ),
+        (
+            "manual",
+            "${{ github.token }}",
+            "${{ inputs.push && vars.CCBR_BOT_CLIENT_ID || '' }}",
+            "${{ inputs.push && secrets.CCBR_BOT_PRIVATE_KEY || '' }}",
+        ),
+        (
+            "dispatch",
+            "${{ steps.generate-token.outputs.token }}",
+            "${{ vars.CCBR_BOT_CLIENT_ID }}",
+            "${{ secrets.CCBR_BOT_PRIVATE_KEY }}",
+        ),
+    ],
+)
+def test_build_workflows_pass_merge_app_credentials(
+    name, github_token, client_id, private_key
+):
+    inputs = build_step(load_workflow(name))["with"]
+    assert inputs["github-token"] == github_token
+    assert inputs["merge-app-client-id"] == client_id
+    assert inputs["merge-app-private-key"] == private_key
 
 
 @pytest.mark.parametrize("name", WORKFLOW_NAMES)
@@ -152,25 +181,14 @@ def test_automatic_workflow_keeps_the_event_commit(tmp_path):
     assert (tmp_path / "Dockerfile.v2").read_text() == "FROM ubuntu:24.04\n"
 
 
-def test_automatic_workflow_restores_context_from_workflow_revision():
+def test_automatic_workflow_uses_checked_in_context_without_directory_moves():
     job = load_workflow("auto")["jobs"]["build-docker"]
-    checkout = next(
-        step for step in job["steps"] if step.get("name") == "Checkout workflow action"
+    assert not any(
+        "restore-docker-context" in step.get("uses", "")
+        or ".ccbr-workflow-source" in step.get("run", "")
+        or "mv " in step.get("run", "")
+        for step in job["steps"]
     )
-    assert checkout["if"] == (
-        "github.event_name == 'pull_request' && steps.stable-check.outputs.current != 'false'"
-    )
-    assert checkout["with"]["repository"] == "${{ github.repository }}"
-    assert checkout["with"]["ref"] == "${{ github.sha }}"
-    assert checkout["with"]["path"] == ".ccbr-workflow-source"
-    for event in ("pull requests", "pushes"):
-        step = next(
-            step
-            for step in job["steps"]
-            if step.get("name") == f"Restore source context for {event}"
-        )
-        assert step["with"]["dockerfile"] == "${{ matrix.image.file }}"
-        assert step["uses"].endswith("/.github/actions/restore-docker-context")
 
 
 @pytest.mark.parametrize(
@@ -569,13 +587,10 @@ def test_manual_workflow_preserves_push_input():
     step = build_step(load_workflow("manual"))
     assert step["with"]["registries"] == "dockerhub,ghcr"
     assert step["with"]["push"] == "${{ github.event.inputs.push }}"
-    restore = next(
-        step
+    assert not any(
+        "restore-docker-context" in step.get("uses", "")
         for step in load_workflow("manual")["jobs"]["build-docker"]["steps"]
-        if step.get("name") == "Restore source context"
     )
-    assert restore["uses"] == "./.github/actions/restore-docker-context"
-    assert restore["with"]["dockerfile"] == "${{ inputs.dockerfile }}"
 
 
 @pytest.mark.parametrize(
@@ -698,154 +713,12 @@ def test_combine_pr_scripts_target_main(path):
     assert "--base dev" not in script
 
 
-def context_action_step(name):
-    """Find a step in the local source-context action."""
-    action = yaml.safe_load(CONTEXT_ACTION.read_text())
-    return next(step for step in action["runs"]["steps"] if step.get("name") == name)
-
-
 def output_values(output):
     """Parse the single-line outputs emitted by the workflow steps."""
     return dict(line.split("=", 1) for line in output.splitlines())
 
 
-@pytest.mark.parametrize("with_metadata", [False, True])
-def test_context_action_reads_optional_source_metadata(tmp_path, with_metadata):
-    workspace = tmp_path / "workspace"
-    context = workspace / "image"
-    context.mkdir(parents=True)
-    (context / "Dockerfile.v2").write_text("FROM ubuntu:26.04\n")
-    if with_metadata:
-        (context / ".Dockerfile.v2.source.json").write_text(
-            json.dumps({"repository": "CCBR/example", "commit": "a" * 40})
-        )
 
-    result, output = run_workflow_script(
-        context_action_step("Read source metadata"),
-        tmp_path,
-        GITHUB_WORKSPACE=str(workspace),
-        DOCKERFILE_INPUT="image/Dockerfile.v2",
-    )
-
-    assert result.returncode == 0, result.stderr
-    values = output_values(output)
-    assert values["repository"] == ("CCBR/example" if with_metadata else "")
-    if with_metadata:
-        assert values["commit"] == "a" * 40
-        assert values["context"] == "image"
-        assert values["dockerfile"] == "Dockerfile.v2"
-        assert values["metadata"] == ".Dockerfile.v2.source.json"
-
-    checkout = context_action_step("Checkout source repository")
-    assert checkout["with"]["repository"] == "${{ steps.source.outputs.repository }}"
-    assert checkout["with"]["ref"] == "${{ steps.source.outputs.commit }}"
-    assert checkout["with"]["persist-credentials"] is False
-
-
-@pytest.mark.parametrize(
-    "metadata",
-    [
-        "{",
-        "[]",
-        json.dumps({"repository": "../example", "commit": "a" * 40}),
-        json.dumps({"repository": "CCBR/example", "commit": "abc123"}),
-        json.dumps({"repository": "CCBR/example\ninjected=value", "commit": "a" * 40}),
-    ],
-)
-def test_context_action_rejects_invalid_source_metadata(tmp_path, metadata):
-    workspace = tmp_path / "workspace"
-    workspace.mkdir()
-    (workspace / "Dockerfile.v2").write_text("FROM ubuntu:26.04\n")
-    (workspace / ".Dockerfile.v2.source.json").write_text(metadata)
-    result, output = run_workflow_script(
-        context_action_step("Read source metadata"),
-        tmp_path,
-        GITHUB_WORKSPACE=str(workspace),
-        DOCKERFILE_INPUT="Dockerfile.v2",
-    )
-
-    assert result.returncode != 0
-    assert "::error::" in result.stderr
-    assert not output
-
-
-def test_context_action_rejects_dockerfile_outside_workspace(tmp_path):
-    workspace = tmp_path / "workspace"
-    workspace.mkdir()
-    outside = tmp_path / "outside"
-    outside.write_text("FROM ubuntu:26.04\n")
-    (workspace / "Dockerfile.v2").symlink_to(outside)
-    result, _ = run_workflow_script(
-        context_action_step("Read source metadata"),
-        tmp_path,
-        GITHUB_WORKSPACE=str(workspace),
-        DOCKERFILE_INPUT="Dockerfile.v2",
-    )
-
-    assert result.returncode != 0
-    assert "::error::" in result.stderr
-
-
-@pytest.mark.parametrize("context_dir", [".", "image"])
-def test_context_action_restores_source_without_overwriting_recipe(
-    tmp_path, context_dir
-):
-    workspace = tmp_path / "workspace"
-    context = workspace / context_dir
-    context.mkdir(parents=True)
-    runner_temp = tmp_path / "runner-temp"
-    runner_temp.mkdir()
-    dockerfile = context / "Dockerfile.v2"
-    metadata = context / ".Dockerfile.v2.source.json"
-    dockerfile.write_text("FROM ubuntu:26.04\n")
-    metadata.write_text('{"repository":"CCBR/example","commit":"' + "a" * 40 + '"}')
-    source = workspace / ".ccbr-build-source"
-    (source / ".git").mkdir(parents=True)
-    (source / ".git" / "config").write_text("not part of the build context")
-    (source / ".github").mkdir()
-    (source / ".github" / ".Rprofile").write_text("source profile")
-    (source / ".dockerignore").write_text("ignored-file\n")
-    (source / "Dockerfile.v2").write_text("wrong dockerfile")
-    (source / metadata.name).write_text("wrong metadata")
-
-    result, _ = run_workflow_script(
-        context_action_step("Restore source context"),
-        tmp_path,
-        GITHUB_WORKSPACE=str(workspace),
-        RUNNER_TEMP=str(runner_temp),
-        CONTEXT_DIR=context_dir,
-        DOCKERFILE_NAME=dockerfile.name,
-        METADATA_NAME=metadata.name,
-    )
-
-    assert result.returncode == 0, result.stderr
-    assert dockerfile.read_text() == "FROM ubuntu:26.04\n"
-    assert json.loads(metadata.read_text())["commit"] == "a" * 40
-    assert (context / ".github" / ".Rprofile").read_text() == "source profile"
-    assert (context / ".dockerignore").read_text() == "ignored-file\n"
-    assert not (context / ".git").exists()
-    assert not source.exists()
-    assert list(runner_temp.glob("ccbr-build-source.*/checkout/.git/config"))
-
-
-def test_context_action_does_not_replace_existing_checkout_path(tmp_path):
-    workspace = tmp_path / "workspace"
-    reserved = workspace / ".ccbr-build-source"
-    reserved.mkdir(parents=True)
-    marker = reserved / "keep"
-    marker.write_text("keep")
-    runner_temp = tmp_path / "runner-temp"
-    runner_temp.mkdir()
-    result, _ = run_workflow_script(
-        context_action_step("Check source checkout location"),
-        tmp_path,
-        GITHUB_WORKSPACE=str(workspace),
-        RUNNER_TEMP=str(runner_temp),
-    )
-
-    assert result.returncode != 0
-    assert "::error::" in result.stdout
-    assert marker.read_text() == "keep"
 
 
 @pytest.mark.parametrize("event", ["repository_dispatch", "workflow_dispatch"])
@@ -958,7 +831,7 @@ def git_command(directory, *arguments):
     ).stdout.strip()
 
 
-def test_dispatch_records_source_commit_without_committing_source_files(tmp_path):
+def test_dispatch_commits_source_context_with_dockerfile(tmp_path):
     origin = tmp_path / "origin.git"
     subprocess.run(["git", "init", "--bare", "-q", str(origin)], check=True)
     workspace = tmp_path / "workspace"
@@ -1021,8 +894,7 @@ def test_dispatch_records_source_commit_without_committing_source_files(tmp_path
         BRANCH_NAME=branch,
         DOCKER_IMAGE_NAME="image",
         DOCKER_IMAGE_TAG="v2",
-        NEW_DOCKERFILE_PATH=dockerfile,
-        SOURCE_METADATA_PATH=metadata,
+        CONTEXT_DIR="example/image",
     )
 
     assert result.returncode == 0, result.stderr
@@ -1031,7 +903,7 @@ def test_dispatch_records_source_commit_without_committing_source_files(tmp_path
     ).splitlines()
     assert dockerfile in tracked
     assert metadata in tracked
-    assert "example/image/.github/.Rprofile" not in tracked
+    assert "example/image/.github/.Rprofile" in tracked
     assert (workspace / "example/image/.github/.Rprofile").is_file()
     assert git_command(workspace, "rev-parse", "HEAD") == git_command(
         workspace, "rev-parse", f"origin/{branch}"
@@ -1059,4 +931,20 @@ def test_dispatch_records_source_commit_without_committing_source_files(tmp_path
     )
     assert result.returncode == 0, result.stderr
     assert json.loads((workspace / metadata).read_text())["commit"] == updated_commit
-    assert git_command(workspace, "diff", "--name-only").splitlines() == [metadata]
+    result, _ = run_workflow_script(
+        commit,
+        workspace,
+        BRANCH_NAME=branch,
+        DOCKER_IMAGE_NAME="image",
+        DOCKER_IMAGE_TAG="v2",
+        CONTEXT_DIR="example/image",
+    )
+    assert result.returncode == 0, result.stderr
+    committed_metadata = json.loads(
+        git_command(workspace, "show", f"{branch}:{metadata}")
+    )
+    assert committed_metadata["commit"] == updated_commit
+    committed_context = git_command(
+        workspace, "show", f"{branch}:example/image/.github/.Rprofile"
+    )
+    assert committed_context == "updated profile"

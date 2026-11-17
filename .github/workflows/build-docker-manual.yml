@@ -140,12 +140,6 @@ jobs:
             --header "Accept: application/vnd.github.raw+json" > "$coordinator"
           python3 "$coordinator" check "$DOCKERFILE_PATH"
 
-      - name: Restore source context
-        if: steps.stable-check.outputs.current != 'false'
-        uses: ./.github/actions/restore-docker-context
-        with:
-          dockerfile: ${{ inputs.dockerfile }}
-
       - name: Determine Docker build platforms
         id: platforms
         if: steps.stable-check.outputs.current != 'false'
@@ -161,7 +155,7 @@ jobs:
             --header "Accept: application/vnd.github.raw+json" > "$resolver"
           python3 "$resolver" "$GITHUB_WORKSPACE/$DOCKERFILE_PATH" --platforms "$PLATFORMS_INPUT"
 
-      - uses: CCBR/actions/build-docker@v0.9.1
+      - uses: CCBR/actions/build-docker@v0.9.2
         if: steps.stable-check.outputs.current != 'false'
         with:
           dockerfile: ${{ github.event.inputs.dockerfile }}
@@ -176,3 +170,5 @@ jobs:
           ccbr-actions-version: ${{ github.event.inputs.ccbr-actions-version }}
           github-token: ${{ github.token }}
           github-actor: ${{ github.actor }}
+          merge-app-client-id: ${{ inputs.push && vars.CCBR_BOT_CLIENT_ID || '' }}
+          merge-app-private-key: ${{ inputs.push && secrets.CCBR_BOT_PRIVATE_KEY || '' }}

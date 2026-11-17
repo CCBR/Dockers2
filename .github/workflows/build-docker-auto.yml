@@ -134,7 +134,7 @@ jobs:
       - id: changed-files
         name: Check changed files
         if: github.event_name != 'push' || github.event.before != '0000000000000000000000000000000000000000'
-        uses: CCBR/actions/changed-files@v0.9.1
+        uses: CCBR/actions/changed-files@v0.9.2
         with:
           token: ${{ github.token }}
           paths: |
@@ -288,44 +288,6 @@ jobs:
           echo "suffix=$suffix" >> "$GITHUB_OUTPUT"
           echo "push=$push" >> "$GITHUB_OUTPUT"
 
-      - name: Check workflow checkout location
-        if: github.event_name == 'pull_request' && steps.stable-check.outputs.current != 'false'
-        run: |
-          workflow_checkout="$GITHUB_WORKSPACE/.ccbr-workflow-source"
-          if [[ -e "$workflow_checkout" || -L "$workflow_checkout" ]]; then
-            echo "::error::Reserved workflow checkout path already exists: $workflow_checkout"
-            exit 1
-          fi
-
-      - name: Checkout workflow action
-        if: github.event_name == 'pull_request' && steps.stable-check.outputs.current != 'false'
-        uses: actions/checkout@v6
-        with:
-          repository: ${{ github.repository }}
-          ref: ${{ github.sha }}
-          path: .ccbr-workflow-source
-          sparse-checkout: .github/actions/restore-docker-context
-          persist-credentials: false
-
-      - name: Restore source context for pull requests
-        if: github.event_name == 'pull_request' && steps.stable-check.outputs.current != 'false'
-        uses: ./.ccbr-workflow-source/.github/actions/restore-docker-context
-        with:
-          dockerfile: ${{ matrix.image.file }}
-
-      - name: Restore source context for pushes
-        if: github.event_name == 'push' && steps.stable-check.outputs.current != 'false'
-        uses: ./.github/actions/restore-docker-context
-        with:
-          dockerfile: ${{ matrix.image.file }}
-
-      - name: Move workflow checkout out of the build context
-        if: github.event_name == 'pull_request' && steps.stable-check.outputs.current != 'false'
-        run: |
-          set -euo pipefail
-          helper_dir="$(mktemp -d "$RUNNER_TEMP/ccbr-workflow.XXXXXX")"
-          mv "$GITHUB_WORKSPACE/.ccbr-workflow-source" "$helper_dir/checkout"
-
       - name: Determine Docker build platforms
         id: platforms
         if: steps.stable-check.outputs.current != 'false'
@@ -341,7 +303,7 @@ jobs:
             --header "Accept: application/vnd.github.raw+json" > "$resolver"
           python3 "$resolver" "$GITHUB_WORKSPACE/$DOCKERFILE_PATH"
 
-      - uses: CCBR/actions/build-docker@v0.9.1
+      - uses: CCBR/actions/build-docker@v0.9.2
         if: steps.stable-check.outputs.current != 'false'
         with:
           dockerfile: ${{ matrix.image.file }}
@@ -354,3 +316,5 @@ jobs:
           force_build: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           platforms: ${{ steps.platforms.outputs.platforms }}
           github-token: ${{ github.token }}
+          merge-app-client-id: ${{ steps.build-policy.outputs.push == 'true' && vars.CCBR_BOT_CLIENT_ID || '' }}
+          merge-app-private-key: ${{ steps.build-policy.outputs.push == 'true' && secrets.CCBR_BOT_PRIVATE_KEY || '' }}

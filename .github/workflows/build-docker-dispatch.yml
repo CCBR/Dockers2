@@ -227,15 +227,14 @@ jobs:
           BRANCH_NAME: ${{ steps.process-payload.outputs.new_branch }}
           DOCKER_IMAGE_NAME: ${{ steps.process-payload.outputs.docker_image_name }}
           DOCKER_IMAGE_TAG: ${{ steps.process-payload.outputs.docker_image_tag }}
-          NEW_DOCKERFILE_PATH: ${{ steps.process-payload.outputs.new_dockerfile_path }}
-          SOURCE_METADATA_PATH: ${{ steps.source-context.outputs.metadata }}
+          CONTEXT_DIR: ${{ steps.process-payload.outputs.context_dir }}
         run: |
           set -euo pipefail
-          git add -- "$NEW_DOCKERFILE_PATH" "$SOURCE_METADATA_PATH"
+          git add -f -- "$CONTEXT_DIR"
           if git diff --cached --quiet; then
             echo "nothing to commit"
           else
-            git commit -m "feat: add Dockerfile for $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG"
+            git commit -m "feat: add Dockerfile and build context for $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG"
           fi
           git push -u origin "$BRANCH_NAME"
 
@@ -252,7 +251,7 @@ jobs:
             --header "Accept: application/vnd.github.raw+json" > "$resolver"
           python3 "$resolver" "$GITHUB_WORKSPACE/$DOCKERFILE_PATH"
 
-      - uses: CCBR/actions/build-docker@v0.9.1
+      - uses: CCBR/actions/build-docker@v0.9.2
         id: build-docker
         with:
           dockerfile: ${{ steps.process-payload.outputs.new_dockerfile_path }}
@@ -261,6 +260,8 @@ jobs:
           dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
           registries: dockerhub,ghcr
           github-token: ${{ steps.generate-token.outputs.token }}
+          merge-app-client-id: ${{ vars.CCBR_BOT_CLIENT_ID }}
+          merge-app-private-key: ${{ secrets.CCBR_BOT_PRIVATE_KEY }}
           suffix: dev
           push: true
           platforms: ${{ steps.platforms.outputs.platforms }}
