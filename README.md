@@ -26,10 +26,16 @@ Hub because their tokens cannot write to GHCR.
 To build an image on demand, run the
 [manual workflow](.github/workflows/build-docker-manual.yml) from the Actions
 tab and select the Dockerfile. Enable **push** to publish to both registries;
-leave it unchecked to build without publishing. To add or update an image from
+leave it unchecked to run without publishing. To add or update an image from
 another repository, use the
 [dispatch workflow](.github/workflows/build-docker-dispatch.yml), which
 publishes to both registries.
+
+Before building, the workflows check the image tag in each target registry.
+They build if a tag is missing, older than the Dockerfile's latest commit,
+missing a requested platform, or cannot be checked; otherwise, they skip the
+build. The manual workflow still checks both registries when **push** is
+disabled, so an up-to-date image can skip a build-only run.
 
 ## Docker build platforms
 

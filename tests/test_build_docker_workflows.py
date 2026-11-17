@@ -42,7 +42,22 @@ def test_build_workflows_pin_one_ccbr_actions_release():
         ref for name in WORKFLOW_NAMES for ref in ccbr_action_refs(load_workflow(name))
     }
     assert len(refs) == 1, f"CCBR/actions refs differ across workflows: {refs}"
-    assert RELEASE_TAG.fullmatch(refs.pop())
+    ref = refs.pop()
+    assert RELEASE_TAG.fullmatch(ref)
+    # Multi-registry and platform freshness checks require v0.9.1 or later.
+    assert tuple(map(int, ref[1:].split("."))) >= (0, 9, 1)
+
+
+@pytest.mark.parametrize("name", WORKFLOW_NAMES)
+def test_build_workflows_fetch_dockerfile_history(name):
+    steps = load_workflow(name)["jobs"]["build-docker"]["steps"]
+    checkout = next(
+        step
+        for step in steps
+        if step.get("uses", "").startswith("actions/checkout@")
+        and not step.get("with", {}).get("path")
+    )
+    assert checkout.get("with", {}).get("fetch-depth") == 0
 
 
 @pytest.mark.parametrize("name", WORKFLOW_NAMES)

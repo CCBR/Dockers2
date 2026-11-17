@@ -49,8 +49,8 @@ on:
         default: feat
       push:
         type: boolean
-        description: Push to Docker Hub and GHCR (leave unchecked to just build the container
-          without pushing)
+        description: Push to Docker Hub and GHCR (leave unchecked to run without
+          publishing; an up-to-date image may skip the build)
         required: true
         default: false
       platforms:
@@ -84,6 +84,7 @@ jobs:
         id: checkout
         uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Determine Docker build platforms
@@ -100,7 +101,7 @@ jobs:
             --header "Accept: application/vnd.github.raw+json" > "$resolver"
           python3 "$resolver" "$GITHUB_WORKSPACE/$DOCKERFILE_PATH" --platforms "$PLATFORMS_INPUT"
 
-      - uses: CCBR/actions/build-docker@v0.9.0
+      - uses: CCBR/actions/build-docker@v0.9.1
         with:
           dockerfile: ${{ github.event.inputs.dockerfile }}
           dockerhub-namespace: ${{ github.event.inputs.dockerhub-namespace }}
