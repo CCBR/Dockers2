@@ -135,7 +135,7 @@ jobs:
           permission-packages: write
           permission-contents: write
           permission-pull-requests: write
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         name: Checkout Dockers2
         with:
           ref: main
@@ -149,7 +149,7 @@ jobs:
             echo "::error::Reserved source checkout path already exists: $source_checkout"
             exit 1
           fi
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         name: Checkout source repository
         with:
           fetch-depth: 0
@@ -251,7 +251,7 @@ jobs:
             --header "Accept: application/vnd.github.raw+json" > "$resolver"
           python3 "$resolver" "$GITHUB_WORKSPACE/$DOCKERFILE_PATH"
 
-      - uses: CCBR/actions/build-docker@v0.9.2
+      - uses: CCBR/actions/build-docker@v0.7
         id: build-docker
         with:
           dockerfile: ${{ steps.process-payload.outputs.new_dockerfile_path }}
