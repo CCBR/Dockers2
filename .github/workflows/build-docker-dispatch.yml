@@ -94,8 +94,8 @@ jobs:
             echo "::error::docker_image_name must be a lowercase image repository name."
             exit 1
           fi
-          if [[ ! "$docker_image_tag" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]*$ || ${#docker_image_tag} -gt 128 ]]; then
-            echo "::error::docker_image_tag is not a valid Docker tag."
+          if [[ ! "$docker_image_tag" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]*$ || ${#docker_image_tag} -gt 124 ]]; then
+            echo "::error::docker_image_tag must be a valid Docker tag of at most 124 characters (to allow the -dev suffix)."
             exit 1
           fi
           if [[ "$ref" == *$'\n'* || "$ref" == *$'\r'* ||

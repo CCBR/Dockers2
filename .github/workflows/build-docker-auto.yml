@@ -54,6 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       json: ${{ steps.existing-files.outputs.matched_files_json }}
+      matrix: ${{ steps.image-matrix.outputs.matrix }}
     steps:
       - name: Checkout event source
         uses: actions/checkout@v6
@@ -192,15 +193,29 @@ jobs:
               print(f"matched_files_json={json.dumps(existing)}", file=output)
           PY
 
+      - name: Determine image lock keys
+        id: image-matrix
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          FILES_JSON: ${{ steps.existing-files.outputs.matched_files_json }}
+        run: |
+          set -euo pipefail
+          coordinator="$RUNNER_TEMP/coordinate_docker_build.py"
+          gh api "repos/$GITHUB_REPOSITORY/contents/scripts/coordinate_docker_build.py?ref=$WORKFLOW_SHA" \
+            --header "Accept: application/vnd.github.raw+json" > "$coordinator"
+          python3 "$coordinator" matrix
+
   build-docker:
     needs: [get-files]
     if: needs.get-files.outputs.json != '[]' # Skip if no Dockerfiles changed in the event range
     concurrency:
-      group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}-${{ matrix.file }}
+      group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && format('docker-stable-{0}', matrix.image.key) || format('{0}-{1}-{2}', github.workflow, github.event.pull_request.number || github.run_id, matrix.image.file) }}
       cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+      queue: ${{ github.event_name == 'pull_request' && 'single' || 'max' }}
     strategy:
       matrix:
-        file: "${{ fromJson(needs.get-files.outputs.json) }}"
+        image: "${{ fromJson(needs.get-files.outputs.matrix) }}"
       max-parallel: 8
       fail-fast: false
     runs-on: ubuntu-latest
@@ -222,8 +237,23 @@ jobs:
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
         run: git switch --create "$BRANCH_NAME"
 
+      - name: Check stable image revision
+        id: stable-check
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          DOCKERFILE_PATH: ${{ matrix.image.file }}
+        run: |
+          set -euo pipefail
+          coordinator="$RUNNER_TEMP/coordinate_docker_build.py"
+          gh api "repos/$GITHUB_REPOSITORY/contents/scripts/coordinate_docker_build.py?ref=$WORKFLOW_SHA" \
+            --header "Accept: application/vnd.github.raw+json" > "$coordinator"
+          python3 "$coordinator" check "$DOCKERFILE_PATH"
+
       - name: Determine image publication
         id: build-policy
+        if: steps.stable-check.outputs.current != 'false'
         env:
           EVENT_NAME: ${{ github.event_name }}
           EVENT_REF: ${{ github.ref }}
@@ -259,7 +289,7 @@ jobs:
           echo "push=$push" >> "$GITHUB_OUTPUT"
 
       - name: Check workflow checkout location
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.stable-check.outputs.current != 'false'
         run: |
           workflow_checkout="$GITHUB_WORKSPACE/.ccbr-workflow-source"
           if [[ -e "$workflow_checkout" || -L "$workflow_checkout" ]]; then
@@ -268,7 +298,7 @@ jobs:
           fi
 
       - name: Checkout workflow action
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.stable-check.outputs.current != 'false'
         uses: actions/checkout@v6
         with:
           repository: ${{ github.repository }}
@@ -278,19 +308,19 @@ jobs:
           persist-credentials: false
 
       - name: Restore source context for pull requests
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.stable-check.outputs.current != 'false'
         uses: ./.ccbr-workflow-source/.github/actions/restore-docker-context
         with:
-          dockerfile: ${{ matrix.file }}
+          dockerfile: ${{ matrix.image.file }}
 
       - name: Restore source context for pushes
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && steps.stable-check.outputs.current != 'false'
         uses: ./.github/actions/restore-docker-context
         with:
-          dockerfile: ${{ matrix.file }}
+          dockerfile: ${{ matrix.image.file }}
 
       - name: Move workflow checkout out of the build context
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.stable-check.outputs.current != 'false'
         run: |
           set -euo pipefail
           helper_dir="$(mktemp -d "$RUNNER_TEMP/ccbr-workflow.XXXXXX")"
@@ -298,10 +328,11 @@ jobs:
 
       - name: Determine Docker build platforms
         id: platforms
+        if: steps.stable-check.outputs.current != 'false'
         env:
           GH_TOKEN: ${{ github.token }}
           WORKFLOW_SHA: ${{ github.workflow_sha }}
-          DOCKERFILE_PATH: ${{ matrix.file }}
+          DOCKERFILE_PATH: ${{ matrix.image.file }}
         run: |
           set -euo pipefail
           # Use the workflow revision, even when the Dockerfile comes from an older fork.
@@ -311,13 +342,15 @@ jobs:
           python3 "$resolver" "$GITHUB_WORKSPACE/$DOCKERFILE_PATH"
 
       - uses: CCBR/actions/build-docker@v0.9.1
+        if: steps.stable-check.outputs.current != 'false'
         with:
-          dockerfile: ${{ matrix.file }}
+          dockerfile: ${{ matrix.image.file }}
           dockerhub-namespace: nciccbr
           dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
           dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
           registries: dockerhub,ghcr
           suffix: ${{ steps.build-policy.outputs.suffix }}
           push: ${{ steps.build-policy.outputs.push }}
+          force_build: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           platforms: ${{ steps.platforms.outputs.platforms }}
           github-token: ${{ github.token }}

@@ -20,7 +20,7 @@
 #   - Lists Docker images on the runner.
 #   - Updates the DockerHub description with the contents of the temporary README file if the image was successfully pushed.
 #
-# Concurrency: runs for the same Dockerfile and suffix are queued, not canceled.
+# Stable publications share an image lock with automatic builds.
 
 name: build-docker-manual
 run-name: build-docker ${{ inputs.dockerfile }} (${{ inputs.suffix }})
@@ -71,13 +71,31 @@ on:
         required: true
         default: "latest"
 
-# Serialize builds that write the same image tag; other images build independently.
-concurrency:
-  group: ${{ github.workflow }}-${{ inputs.dockerfile }}-${{ inputs.suffix }}
-  cancel-in-progress: false
-
 jobs:
+  image-key:
+    runs-on: ubuntu-latest
+    outputs:
+      key: ${{ steps.image-key.outputs.key }}
+    steps:
+      - name: Determine image lock key
+        id: image-key
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          DOCKERFILE_PATH: ${{ inputs.dockerfile }}
+        run: |
+          set -euo pipefail
+          coordinator="$RUNNER_TEMP/coordinate_docker_build.py"
+          gh api "repos/$GITHUB_REPOSITORY/contents/scripts/coordinate_docker_build.py?ref=$WORKFLOW_SHA" \
+            --header "Accept: application/vnd.github.raw+json" > "$coordinator"
+          python3 "$coordinator" key "$DOCKERFILE_PATH"
+
   build-docker:
+    needs: [image-key]
+    concurrency:
+      group: ${{ inputs.suffix == 'main' && format('docker-stable-{0}', needs.image-key.outputs.key) || format('docker-manual-dev-{0}', needs.image-key.outputs.key) }}
+      cancel-in-progress: false
+      queue: max
     runs-on: ubuntu-latest
     permissions:
       contents: "write"
@@ -108,13 +126,29 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.head_ref || github.ref_name }}
 
+      - name: Check stable image revision
+        id: stable-check
+        if: inputs.suffix == 'main' && inputs.push
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          DOCKERFILE_PATH: ${{ inputs.dockerfile }}
+        run: |
+          set -euo pipefail
+          coordinator="$RUNNER_TEMP/coordinate_docker_build.py"
+          gh api "repos/$GITHUB_REPOSITORY/contents/scripts/coordinate_docker_build.py?ref=$WORKFLOW_SHA" \
+            --header "Accept: application/vnd.github.raw+json" > "$coordinator"
+          python3 "$coordinator" check "$DOCKERFILE_PATH"
+
       - name: Restore source context
+        if: steps.stable-check.outputs.current != 'false'
         uses: ./.github/actions/restore-docker-context
         with:
           dockerfile: ${{ inputs.dockerfile }}
 
       - name: Determine Docker build platforms
         id: platforms
+        if: steps.stable-check.outputs.current != 'false'
         env:
           GH_TOKEN: ${{ github.token }}
           WORKFLOW_SHA: ${{ github.workflow_sha }}
@@ -128,6 +162,7 @@ jobs:
           python3 "$resolver" "$GITHUB_WORKSPACE/$DOCKERFILE_PATH" --platforms "$PLATFORMS_INPUT"
 
       - uses: CCBR/actions/build-docker@v0.9.1
+        if: steps.stable-check.outputs.current != 'false'
         with:
           dockerfile: ${{ github.event.inputs.dockerfile }}
           dockerhub-namespace: ${{ github.event.inputs.dockerhub-namespace }}
@@ -136,6 +171,7 @@ jobs:
           registries: dockerhub,ghcr
           suffix: ${{ github.event.inputs.suffix }}
           push: ${{ github.event.inputs.push }}
+          force_build: ${{ inputs.suffix == 'main' && inputs.push }}
           platforms: ${{ steps.platforms.outputs.platforms }}
           ccbr-actions-version: ${{ github.event.inputs.ccbr-actions-version }}
           github-token: ${{ github.token }}

@@ -157,7 +157,9 @@ def test_automatic_workflow_restores_context_from_workflow_revision():
     checkout = next(
         step for step in job["steps"] if step.get("name") == "Checkout workflow action"
     )
-    assert checkout["if"] == "github.event_name == 'pull_request'"
+    assert checkout["if"] == (
+        "github.event_name == 'pull_request' && steps.stable-check.outputs.current != 'false'"
+    )
     assert checkout["with"]["repository"] == "${{ github.repository }}"
     assert checkout["with"]["ref"] == "${{ github.sha }}"
     assert checkout["with"]["path"] == ".ccbr-workflow-source"
@@ -167,7 +169,7 @@ def test_automatic_workflow_restores_context_from_workflow_revision():
             for step in job["steps"]
             if step.get("name") == f"Restore source context for {event}"
         )
-        assert step["with"]["dockerfile"] == "${{ matrix.file }}"
+        assert step["with"]["dockerfile"] == "${{ matrix.image.file }}"
         assert step["uses"].endswith("/.github/actions/restore-docker-context")
 
 
@@ -373,7 +375,7 @@ def test_auto_workflow_selects_pr_synchronize_dockerfiles(
     assert output.read_text() == f"json={expected}\n"
 
     build_job = workflow["jobs"]["build-docker"]
-    assert "matrix.file" in build_job["concurrency"]["group"]
+    assert "matrix.image.file" in build_job["concurrency"]["group"]
     assert build_job["concurrency"]["cancel-in-progress"] == (
         "${{ github.event_name == 'pull_request' }}"
     )
@@ -492,7 +494,7 @@ def run_platform_step(tmp_path, name, declaration, override=""):
     )
     assert step["env"]["WORKFLOW_SHA"] == "${{ github.workflow_sha }}"
     expected_path = {
-        "auto": "${{ matrix.file }}",
+        "auto": "${{ matrix.image.file }}",
         "manual": "${{ inputs.dockerfile }}",
         "dispatch": "${{ steps.process-payload.outputs.new_dockerfile_path }}",
     }
@@ -913,6 +915,37 @@ def test_dispatch_payload_rejects_invalid_values(tmp_path, field, value):
     assert result.returncode != 0
     assert "::error::" in result.stdout
     assert not output
+
+
+@pytest.mark.parametrize("event", ["repository_dispatch", "workflow_dispatch"])
+@pytest.mark.parametrize("length", [123, 124, 125, 128, 129])
+def test_dispatch_preview_tag_length(tmp_path, event, length):
+    step = next(
+        step
+        for step in load_workflow("dispatch")["jobs"]["build-docker"]["steps"]
+        if step.get("id") == "process-payload"
+    )
+    variables = {
+        f"{prefix}_{name}": ""
+        for prefix in ("PAYLOAD", "INPUT")
+        for name in ("OWNER_REPO", "REF", "DOCKERFILE_PATH", "IMAGE_NAME", "IMAGE_TAG")
+    }
+    prefix = "PAYLOAD" if event == "repository_dispatch" else "INPUT"
+    variables.update({
+        f"{prefix}_OWNER_REPO": "CCBR/example",
+        f"{prefix}_REF": "main",
+        f"{prefix}_DOCKERFILE_PATH": "Dockerfile",
+        f"{prefix}_IMAGE_NAME": "example",
+        f"{prefix}_IMAGE_TAG": "v" * length,
+    })
+    result, output = run_workflow_script(step, tmp_path, EVENT_NAME=event, **variables)
+    if length <= 124:
+        assert result.returncode == 0, result.stderr
+        assert len(output_values(output)["docker_image_tag"] + "-dev") <= 128
+    else:
+        assert result.returncode != 0
+        assert "at most 124 characters" in result.stdout
+        assert not output
 
 
 def git_command(directory, *arguments):

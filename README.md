@@ -44,11 +44,18 @@ publishing. To add or update an image from another repository, use the
 publishes a `-dev` preview to both registries and opens a PR to `main`;
 merging the Dockerfile triggers the stable build.
 
-Before building, the workflows check the image tag in each target registry.
-They build if a tag is missing, older than the Dockerfile's latest commit,
-missing a requested platform, or cannot be checked; otherwise, they skip the
-build. The manual workflow still checks both registries when **push** is
-disabled, so an up-to-date image can skip a build-only run.
+Stable publications always build, rather than relying on registry timestamps
+that do not account for source-context changes. Automatic and manual stable
+builds targeting the same image tag share a queue. After entering the queue,
+they skip an outdated checkout if a matching image's build context has changed
+on `main`; run the manual workflow again from `main` if needed. The queue holds
+up to 100 pending jobs per image tag.
+
+Other builds check the image tag in each target registry. They build if a tag
+is missing, older than the Dockerfile's latest commit, missing a requested
+platform, or cannot be checked; otherwise, they skip the build. The manual
+workflow still checks both registries when **push** is disabled, so an
+up-to-date image can skip a build-only run.
 
 For dispatched builds, the workflow records the source repository and its
 exact commit in `.Dockerfile.<version>.source.json` next to the Dockerfile.
@@ -59,6 +66,8 @@ selected Dockerfile and metadata; other files already in that directory remain.
 Changes to the metadata also trigger a rebuild; keep it alongside the
 Dockerfile. Older dispatched Dockerfiles do not have this metadata and must be
 dispatched again if they need files from their source repository.
+Dispatch image tags may contain at most 124 characters, leaving room for the
+`-dev` suffix within Docker's 128-character tag limit.
 
 ## Docker build platforms
 
