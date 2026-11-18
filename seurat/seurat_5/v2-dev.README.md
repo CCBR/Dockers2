@@ -1,13 +1,15 @@
 ## CCBR/Dockers2 nciccbr/seurat_5:v2-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/c236dc11d330f67baf2f2b4e3e20fcdf80a24c72/seurat/seurat_5/Dockerfile.v2
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/5e72de0749ece7dc74958d236424cc7d4906c8be/seurat/seurat_5/Dockerfile.v2
 
 
-Built on: 2026-07-27_20:05:22 
+Built on: 2026-11-17_19:54:20 
 
 Build tag: v2-dev 
 
 Base image: nciccbr/ccbr_ubuntu_24.04:v1 
+
+Platforms: linux/amd64 
 
 Dockerfile path in repo: seurat/seurat_5/Dockerfile.v2 
 
