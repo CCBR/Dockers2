@@ -5,6 +5,15 @@ Docker container recipes for CCBR
 [![Docker Hub](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fhub.docker.com%2Fv2%2Fnamespaces%2Fnciccbr%2Frepositories%3Fpage_size%3D1&query=%24.count&label=Docker%20Hub&suffix=%20repositories&logo=docker&logoColor=white&color=2496ED)](https://hub.docker.com/u/nciccbr)
 [![GHCR](https://img.shields.io/badge/GHCR-View%20containers-24292f?logo=github&logoColor=white)](https://github.com/orgs/CCBR/packages?ecosystem=container)
 
+The [container catalog](https://ccbr.github.io/Dockers2/) lists each container's
+highest numeric Dockerfile version, available registries, published platforms,
+and source links once GitHub Pages is enabled for the `gh-pages` branch.
+To rebuild it locally, run `quarto render docs` from the repository root.
+Rendering requires network access to Docker Hub and GHCR; unexpected registry
+errors stop the render rather than hiding images. Container titles link to
+version READMEs when those files exist. The docs workflow also refreshes the
+catalog after successful container-build workflows on `main`.
+
 ## Publishing images
 
 Images are published to Docker Hub under

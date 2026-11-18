@@ -1,0 +1,169 @@
+---
+title: Contribute a container
+---
+
+A Dockerfile is a recipe for a container image. Check the
+[container catalog](../index.qmd) for an existing image before adding one.
+
+You need Git and a GitHub account. These examples use a fictional
+`exampletool` at version `1.2.3`; replace the names and versions with your own.
+
+## 1. Create a branch
+
+If you cannot push to Dockers2, fork it on GitHub. Use **Code** on your fork
+to copy its clone URL and replace the URL below.
+
+```sh
+git clone https://github.com/CCBR/Dockers2.git
+cd Dockers2
+git switch -c add-exampletool
+```
+
+Run the remaining commands from the repository root.
+
+## 2. Add a versioned Dockerfile
+
+For a new image, create a directory and copy the template:
+
+```sh
+mkdir -p exampletool/ccbr_exampletool_1.2.3
+cp template.Dockerfile exampletool/ccbr_exampletool_1.2.3/Dockerfile.v1
+```
+
+The Dockerfile's directory becomes the image name; the part after
+`Dockerfile.` becomes its tag. This example produces the stable images
+`nciccbr/ccbr_exampletool_1.2.3:v1` and
+`ghcr.io/ccbr/ccbr_exampletool_1.2.3:v1`. Use a unique image name made of
+lowercase letters and numbers separated by `.`, `_`, or `-`, and a numbered
+tag such as `v1` or `v1.2.3`. A plain `Dockerfile` does not trigger an
+automatic build.
+
+Edit the copied Dockerfile:
+
+- Choose a versioned base image and update the maintainer labels.
+- Add installation commands and pin tool and dependency versions where
+  possible. The template does not install your tool.
+- Keep local `COPY` or `ADD` files in this directory or its subdirectories;
+  this is the build context. Commit the required files.
+- Do not commit credentials, private data, or unnecessary large files.
+
+For an update, prefer a new version such as `Dockerfile.v2`: rebuilding an
+existing tag can overwrite it. Keep older recipes' supporting files unchanged,
+or version them too. If the image name includes the tool version, use a new
+directory for a new tool version.
+
+Images are built for `linux/amd64` by default. To support more architectures,
+add a single declaration near the top of the Dockerfile, for example:
+
+```dockerfile
+# build-platforms: linux/amd64,linux/arm64
+```
+
+Only list platforms supported by the base image, packages, and downloaded
+binaries. See the
+[platform instructions](https://github.com/CCBR/Dockers2#docker-build-platforms).
+
+## 3. Build and test locally (optional)
+
+Local testing catches errors before CI runs, but you can skip it and test the
+preview image instead (step 4). Docker is not available on GFE laptops; use
+[Podman](https://podman.io/docs/installation). On macOS or Windows, start the
+Podman virtual machine first:
+
+```sh
+podman machine init   # first time only
+podman machine start
+```
+
+Build the example for `linux/amd64`:
+
+```sh
+podman build --platform linux/amd64 \
+  --file exampletool/ccbr_exampletool_1.2.3/Dockerfile.v1 \
+  --build-arg DOCKERFILE=Dockerfile.v1 \
+  --build-arg BUILD_DATE="$(date -u +%Y-%m-%d_%H:%M:%S)" \
+  --build-arg BUILD_TAG=v1 \
+  --build-arg REPONAME=ccbr_exampletool_1.2.3 \
+  --build-arg IMAGENAME=nciccbr/ccbr_exampletool_1.2.3:v1 \
+  --build-arg BASEIMAGENAME=nciccbr/ccbr_ubuntu_22.04:v4 \
+  --tag ccbr_exampletool_1.2.3:v1 \
+  exampletool/ccbr_exampletool_1.2.3
+```
+
+If you change the template's `FROM` image, update `BASEIMAGENAME`. On Apple
+silicon Macs, `linux/amd64` builds use emulation and can be slow.
+
+Check that the tool runs and reports the expected version:
+
+```sh
+podman run --rm --platform linux/amd64 \
+  localhost/ccbr_exampletool_1.2.3:v1 exampletool --version
+```
+
+Use your tool's version command; adjust it for the image's `ENTRYPOINT` if
+needed. Also test a small, non-sensitive input and check the output. Save the
+commands and results for your pull request.
+
+## 4. Open a pull request
+
+Commit and push your changes:
+
+```sh
+git add exampletool/ccbr_exampletool_1.2.3/
+git commit -m "feat: add exampletool container"
+git push -u origin add-exampletool
+```
+
+Open a pull request (PR) against `CCBR/Dockers2`'s `main` branch. Include the
+tool and image versions, why the image is needed, and your test commands and
+results. Check `build-docker-auto` in the PR checks or Actions tab; a successful
+build does not replace testing the tool.
+
+| Change | Automatic build |
+|---|---|
+| PR from a branch in Dockers2 | Builds and may publish `v1-dev` to Docker Hub and GHCR. |
+| PR from a fork | Builds without publishing a preview. |
+| Merge to `main` | Builds and publishes the stable `v1` tag. |
+
+Preview builds can be skipped if registry tags are up to date. The `v1-dev`
+tag is shared and can be overwritten; do not use it for production. After
+merging, check that the stable build succeeded and the tag is available in
+both registries.
+
+Only changes to a versioned Dockerfile or its source metadata trigger the
+workflow. When updating supporting files in a PR, also change the relevant
+Dockerfile in that push.
+
+To test a published preview on Biowulf, start an interactive session and run:
+
+```sh
+module load singularity
+singularity exec docker://nciccbr/ccbr_exampletool_1.2.3:v1-dev \
+  exampletool --version
+```
+
+See the [Biowulf container guide](https://ccbr.github.io/HowTos/docs/containers/singularity-biowulf.html)
+for setup and cache guidance. A fork PR does not publish a preview; ask a
+maintainer for help.
+
+## Import a Dockerfile from another repository
+
+For a Dockerfile maintained elsewhere, use **Actions > build-docker-dispatch >
+[Run workflow](https://github.com/CCBR/Dockers2/actions/workflows/build-docker-dispatch.yml)**
+in Dockers2. You need permission to run the workflow, and it must be able to
+access the source repository. Enter the source `OWNER/REPO`, ref, Dockerfile
+path, lowercase image name, and a tag such as `v1`. Use a source tag or
+commit; the image tag can be at most 124 characters.
+
+The source repository root must be the Dockerfile's intended build context.
+Before running, check for credentials, private data, and unnecessary large
+files: the workflow copies and commits the entire checkout.
+
+The workflow copies the source repository except `.git`, records its exact
+commit in `.Dockerfile.<tag>.source.json`, and builds a `-dev` preview. After a
+successful build, it opens or updates a PR to `main`. Review the copied files
+and metadata, and test the preview. Rerun the dispatch when the source changes.
+
+For on-demand builds of recipes already in Dockers2, see the
+[manual build instructions](https://github.com/CCBR/Dockers2#publishing-images).
+A build-only run can still be skipped if the registry tags are up to date.
