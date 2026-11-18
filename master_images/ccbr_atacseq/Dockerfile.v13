@@ -1,0 +1,200 @@
+FROM nciccbr/ccbr_ubuntu_20.04:v8
+
+LABEL maintainer="Vishal Koparde *(kopardev on GitHub)*"
+LABEL github_handle="kopardev"
+
+# Build time variables — re-declared so build-docker action can pass --build-arg
+ARG DOCKERFILE="Dockerfile"
+ARG BUILD_DATE="000000"
+ARG BUILD_TAG="000000"
+ARG REPONAME="000000"
+ARG IMAGENAME="000000"
+ARG BASEIMAGENAME="000000"
+ENV DOCKERFILE=${DOCKERFILE} \
+    BUILD_DATE=${BUILD_DATE} \
+    BUILD_TAG=${BUILD_TAG} \
+    REPONAME=${REPONAME} \
+    IMAGENAME=${IMAGENAME} \
+    BASEIMAGENAME=${BASEIMAGENAME}
+
+# ── v8 base already provides (NOT re-installed here) ─────────────────────────
+# bwa, bowtie2, bedtools, bedops, samtools, cmake, build-essential, g++, gcc,
+# openjdk-8-jdk, python3 + numpy/scipy/pandas/pysam/argparse, parallel, pigz,
+# wget, curl, libssl-dev, libncurses-dev, libbz2-dev, liblzma-dev,
+# libcurl4-openssl-dev, libxml2-dev, libxslt-dev, cpanminus, perl,
+# /opt2, /data2, argparse.bash, PATH=/opt2
+
+# ── Layer 0: Harden apt against flaky mirror connectivity ────────────────────
+# GitHub-hosted runners intermittently fail to reach archive.ubuntu.com during
+# `apt-get update` (well-documented: actions/runner-images#675). Configure apt
+# to retry failed fetches with generous timeouts so transient network blips
+# during this multi-hour multi-tool build don't fail the whole layer.
+RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries && \
+    echo 'Acquire::http::Timeout "30";' >> /etc/apt/apt.conf.d/80-retries && \
+    echo 'Acquire::https::Timeout "30";' >> /etc/apt/apt.conf.d/80-retries
+
+# ── Layer 1: R 4.x + additional system packages ──────────────────────────────
+# Ubuntu 20.04 (focal) default apt gives R 3.6.3; ChIPseeker/GenomicFeatures
+# and the other Bioconductor packages installed below (Layer 4) require
+# R >= 4.4.
+# Strategy:
+#   1. apt-get update (retried in a loop, see Layer 0 note) + install gnupg2
+#      from the default Ubuntu repo (no key needed).
+#   2. curl | gpg --dearmor → write binary key to /etc/apt/trusted.gpg.d/.
+#   3. Add CRAN "cran40" repo with signed-by= (modern apt 2.0 style, no apt-key).
+#      NOTE: "cran40" is CRAN's fixed suffix marking the R>=4.0 ABI/binary repo —
+#      it is NOT tied to a specific R minor version. It always resolves to
+#      whatever the current R release is (R 4.4+ as of this writing).
+#      "cran44" does NOT exist as a repo path (404) — this was the actual
+#      cause of the previous build failure, not network flakiness.
+#   4. Second apt-get update picks up CRAN; install r-base/r-base-dev.
+# This avoids apt-key add (which fails on empty/piped input) and keyserver ports.
+RUN for i in 1 2 3 4 5; do apt-get update && break || sleep 15; done && \
+    apt-get install -y --no-install-recommends \
+        gnupg2 bc pandoc \
+        libfontconfig1-dev \
+        libfreetype6-dev libpng-dev \
+        libharfbuzz-dev libfribidi-dev \
+        libtiff5-dev libjpeg-dev \
+        libwebp-dev \
+        libuv1-dev libcairo2-dev && \
+    curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc \
+        | gpg --dearmor -o /etc/apt/trusted.gpg.d/cran_ubuntu.gpg && \
+    echo "deb [signed-by=/etc/apt/trusted.gpg.d/cran_ubuntu.gpg] https://cloud.r-project.org/bin/linux/ubuntu focal-cran40/" \
+        > /etc/apt/sources.list.d/cran_r40.list && \
+    for i in 1 2 3 4 5; do apt-get update && break || sleep 15; done && \
+    apt-get install -y --no-install-recommends r-base r-base-dev && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# ── Layer 2: Python packages ──────────────────────────────────────────────────
+RUN pip install --no-cache-dir \
+        cutadapt==1.18 \
+        MACS2==2.2.5 \
+        multiqc==1.10.1 \
+        matplotlib \
+        deeptools \
+        idr
+
+# ── Layer 3: Compiled/downloaded bioinformatics tools (all in ONE RUN) ────────
+# Tools added across v1.1–v12: htslib, preseq, FastQC, Genrich, MEME Suite,
+# HOMER, bedToGenePred, genePredToGtf.
+# bedSort and bedGraphToBigWig come from COPY (resources/) below.
+# Source trees removed and MEME binaries stripped at the end to reduce size.
+WORKDIR /opt2
+RUN \
+    # ── htslib 1.12 (required by preseq) ─────────────────────────────────── \
+    wget -q https://github.com/samtools/htslib/releases/download/1.12/htslib-1.12.tar.bz2 && \
+    tar -xjf htslib-1.12.tar.bz2 && \
+    cd htslib-1.12 && ./configure && make && make install && \
+    cd /opt2 && rm -rf htslib-1.12 htslib-1.12.tar.bz2 && \
+    \
+    # ── preseq 3.1.2 ─────────────────────────────────────────────────────── \
+    wget -q https://github.com/smithlabcode/preseq/releases/download/v3.1.2/preseq-3.1.2.tar.gz && \
+    tar -xzf preseq-3.1.2.tar.gz && \
+    cd preseq-3.1.2 && ./configure --enable-hts && make && make install && \
+    cd /opt2 && rm -rf preseq-3.1.2 preseq-3.1.2.tar.gz && \
+    \
+    # ── FastQC 0.11.9 ────────────────────────────────────────────────────── \
+    wget -q https://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.9.zip && \
+    unzip -q fastqc_v0.11.9.zip && rm fastqc_v0.11.9.zip && \
+    chmod 755 /opt2/FastQC/fastqc && \
+    ln -s /opt2/FastQC/fastqc /usr/local/bin/fastqc && \
+    \
+    # ── Genrich 0.6.1 ────────────────────────────────────────────────────── \
+    wget -q https://github.com/jsh58/Genrich/archive/refs/tags/v0.6.1.tar.gz && \
+    tar -xzf v0.6.1.tar.gz && rm v0.6.1.tar.gz && \
+    cd Genrich-0.6.1 && make && \
+    cd /opt2 && \
+    \
+    # ── MEME Suite 5.3.3 (compile, strip binaries, remove source) ─────────── \
+    wget -q https://meme-suite.org/meme/meme-software/5.3.3/meme-5.3.3.tar.gz && \
+    tar -xzf meme-5.3.3.tar.gz && rm meme-5.3.3.tar.gz && \
+    cd meme-5.3.3 && \
+    ./configure --prefix=/opt2/meme \
+        --with-url=http://meme-suite.org/ \
+        --enable-build-libxml2 \
+        --enable-build-libxslt && \
+    make && make install && \
+    cd /opt2 && rm -rf meme-5.3.3 && \
+    strip /opt2/meme/bin/* 2>/dev/null || true && \
+    \
+    # ── HOMER (binary only; no -install <genome> — ASPEN passes raw FASTA) ─ \
+    mkdir -p /opt2/homer && \
+    cd /opt2/homer && \
+    wget -q http://homer.ucsd.edu/homer/configureHomer.pl && \
+    perl configureHomer.pl -install && \
+    rm -f configureHomer.pl && \
+    \
+    # ── UCSC tools: bedToGenePred + genePredToGtf (v385) ─────────────────── \
+    cd /opt2 && \
+    wget -q -O bedToGenePred http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/bedToGenePred && \
+    chmod a+x bedToGenePred && \
+    wget -q -O genePredToGtf http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/genePredToGtf && \
+    chmod a+x genePredToGtf
+
+# ── Layer 4: R packages (CRAN + Bioconductor, all in one RUN) ────────────────
+# NOTE on T2T-CHM13v2.0 support (issue #422): the originally-requested
+# "BiocT2T" package does not exist — https://github.com/bioc/BiocT2T is a
+# 404, and it is absent from the full Bioconductor 3.23 package list. There
+# is also no ready-made "TxDb.Hsapiens.NCBI.CHM13v2" package. Instead, a TxDb
+# was pre-built (outside this Dockerfile, on Biowulf) from NCBI's official
+# T2T-CHM13v2.0 RefSeq annotation (GCF_009914755.1) via
+# txdbmaker::makeTxDbFromGRanges(), with seqlevels renamed to UCSC style
+# (chr1, chr2, ... instead of NCBI's NC_060925.1, ...) and seqlengths set,
+# per NCBI's assembly report, before the TxDb was built (renaming/setting
+# seqlengths on a TxDb *after* creation does not persist through saveDb()).
+# The 25-feature chrR annotation (rDNA repeat unit: IGS/ETS/18S/ITS/5.8S/28S/
+# TTF1 sites) used by ASPEN's hs1_chrR genome build is also merged in as its
+# own seqlevel (chrR, length 44838) so a single TxDb serves both hs1 (no
+# chrR) and hs1_chrR (with chrR) callers. The resulting portable .sqlite
+# (~283MB, gzipped to ~80MB to stay under GitHub's 100MB per-file push
+# limit) is committed at
+# resources/annotation/TxDb.Hsapiens.NCBI.T2T.CHM13v2.0.sqlite.gz, copied into
+# the image and gunzipped below (Layer 5) rather than rebuilt at
+# container-build time -- this avoids a large (~1.7GB uncompressed) GFF3
+# download/parse plus the GenomeInfoDbData runtime dependency during every
+# image build. It's loaded directly by ASPEN's R scripts via
+# AnnotationDbi::loadDb().
+# NOTE: install.packages()/BiocManager::install() only *warn* on individual
+# package failures, never stop() -- so a plain Rscript call here would exit 0
+# (and Docker would report a "successful" build) even if e.g. ChIPseeker
+# itself silently failed to install. Each call below re-checks with
+# requireNamespace() and stop()s (non-zero exit -> failed RUN -> failed build)
+# if anything requested didn't actually make it in.
+RUN Rscript -e ' \
+        options(repos=c(CRAN="https://cloud.r-project.org")); \
+        pkgs <- c("argparse","dplyr","tidyverse","shiny","plotly","rmarkdown","DT","pander","ggfortify"); \
+        install.packages(pkgs); \
+        missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly=TRUE)]; \
+        if (length(missing)) stop("Failed to install CRAN package(s): ", paste(missing, collapse=", ")) \
+    ' && \
+    Rscript -e ' \
+        options(repos=c(CRAN="https://cloud.r-project.org")); \
+        if (!requireNamespace("BiocManager",quietly=TRUE)) install.packages("BiocManager"); \
+        pkgs <- c("ChIPseeker","TxDb.Hsapiens.UCSC.hg19.knownGene","TxDb.Hsapiens.UCSC.hg38.knownGene","TxDb.Mmusculus.UCSC.mm9.knownGene","TxDb.Mmusculus.UCSC.mm10.knownGene","org.Hs.eg.db","org.Mm.eg.db","limma","edgeR","DESeq2","TxDb.Btaurus.UCSC.bosTau9.refGene","org.Bt.eg.db","TxDb.Mmulatta.UCSC.rheMac10.refGene","org.Mmu.eg.db","EnhancedVolcano","ComplexHeatmap"); \
+        BiocManager::install(pkgs, ask=FALSE); \
+        missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly=TRUE)]; \
+        if (length(missing)) stop("Failed to install Bioconductor package(s): ", paste(missing, collapse=", ")) \
+    '
+
+# ── Update PATH for MEME, HOMER, Genrich ─────────────────────────────────────
+ENV PATH="/opt2/meme/bin:/opt2/meme/libexec/meme-5.3.3:/opt2/homer/bin:/opt2/Genrich-0.6.1:${PATH}"
+
+# ── Layer 5: Resource files from build context ────────────────────────────────
+# TruSeq_and_nextera_adapters.consolidated.fa — hardcoded adapter path in ASPEN
+# picardcloud.jar — hardcoded at /opt2 by ASPEN MarkDuplicates rules
+# bedSort, bedGraphToBigWig — pre-built UCSC binaries
+# transpose.sh — utility script
+# annotation/TxDb.Hsapiens.NCBI.T2T.CHM13v2.0.sqlite.gz — pre-built T2T-CHM13v2.0
+# TxDb (see Layer 4 note above), gunzipped below to /opt2/annotation/TxDb.Hsapiens.NCBI.T2T.CHM13v2.0.sqlite
+COPY resources/ /opt2/
+RUN gunzip /opt2/annotation/TxDb.Hsapiens.NCBI.T2T.CHM13v2.0.sqlite.gz
+
+# ── Layer 6: Permissions ──────────────────────────────────────────────────────
+RUN chmod -R a+rx /opt2
+
+# ── Copy Dockerfile into image for provenance ─────────────────────────────────
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+RUN chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+
+WORKDIR /data2

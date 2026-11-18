@@ -1,4 +1,4 @@
-FROM nciccbr/ccbr_ubuntu_base_20.04:v7
+FROM nciccbr/ccbr_ubuntu_24.04:v1
 
 # build time variables
 ARG BUILD_DATE="000000"
@@ -19,8 +19,14 @@ RUN conda update -n base -c conda-forge conda && \
     echo "conda activate ${CONDA_ENV}" > ~/.bashrc && \
     chmod -R a+rx /opt2
 ENV PATH="/opt2/conda/envs/${CONDA_ENV}/bin:$PATH"
+ENV R_LIBS_USER="/opt2/conda/envs/${CONDA_ENV}/lib/R/library/"
 COPY install.R /data2/
-RUN Rscript /data2/install.R
+RUN Rscript /data2/install.R && \
+    R -s -e "readr::write_csv(tibble::as_tibble(installed.packages()), '/data2/r-packages.csv')"
+
+# fontconfig for pandoc / RMarkdown
+RUN chmod -R a+w /opt2/conda/envs/seurat5/var/cache/fontconfig \
+    && fc-cache --really-force --verbose
 
 # Copy Dockerfile to container
 COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}

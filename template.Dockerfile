@@ -1,0 +1,32 @@
+FROM nciccbr/ccbr_ubuntu_22.04:v4
+
+LABEL maintainer="Vishal Koparde *(kopardev on GitHub)*"
+LABEL github_handle="kopardev"
+
+# Build time variables
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG IMAGENAME="000000"
+ENV IMAGENAME=${IMAGENAME}
+ARG BASEIMAGENAME="000000"
+ENV BASEIMAGENAME=${BASEIMAGENAME}
+
+# install using apt-get
+#RUN mkdir -p /opt2/ucsc && \
+#    apt-get update && apt-get upgrade -y && \
+#    apt-get install -y --no-install-recommends axel && \
+#    rm -rf /var/lib/{apt,dpkg,cache,log}/
+
+# Copy Dockerfile and other files in a single layer
+#COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+#RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+
+# Set PATH and working directory
+#ENV PATH="/opt2/ucsc/:$PATH"
+#WORKDIR /data2
