@@ -13,8 +13,8 @@ import subprocess
 import sys
 
 
-def image_key(dockerfile: str, repository: str) -> str:
-    """Derive a lock key from the image repository and tag used by build-docker."""
+def image_identity(dockerfile: str, repository: str) -> tuple[str, str]:
+    """Derive the image repository and tag used by build-docker."""
     path = PurePosixPath(dockerfile)
     if (
         not dockerfile
@@ -34,6 +34,12 @@ def image_key(dockerfile: str, repository: str) -> str:
             raise ValueError("GITHUB_REPOSITORY must contain an owner and repository.")
     else:
         image = path.parent.name
+    return image, tag
+
+
+def image_key(dockerfile: str, repository: str) -> str:
+    """Derive a lock key from the image repository and tag used by build-docker."""
+    image, tag = image_identity(dockerfile, repository)
     identity = json.dumps([image.lower(), tag.lower()], separators=(",", ":"))
     return hashlib.sha256(identity.encode("utf-8")).hexdigest()
 

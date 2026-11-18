@@ -1,0 +1,4 @@
+/.quarto/
+/_site/
+/containers.yml
+**/*.quarto_ipynb

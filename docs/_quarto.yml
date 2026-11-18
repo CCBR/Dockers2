@@ -1,0 +1,34 @@
+project:
+  type: website
+  output-dir: _site
+  pre-render: python3 ../scripts/generate_container_listing.py
+
+website:
+  title: "CCBR Docker Containers"
+  site-url: https://ccbr.github.io/Dockers2/
+  repo-url: https://github.com/CCBR/Dockers2
+  repo-subdir: docs
+  repo-actions: [edit, issue]
+  search: true
+  navbar:
+    left:
+      - text: Home
+        href: index.qmd
+      - text: Docs
+        menu:
+          - text: Contribute a container
+            href: contribute.qmd
+          - text: Use containers on Biowulf {{< fa arrow-up-right-from-square >}}
+            href: https://ccbr.github.io/HowTos/docs/containers/singularity-biowulf.html
+    right:
+      - icon: github
+        href: https://github.com/CCBR/Dockers2
+  page-footer:
+    left: |
+      Created by the
+      [CCR Collaborative Bioinformatics Resource](https://github.com/CCBR)
+
+format:
+  fnl-html:
+    toc: true
+    css: styles.css

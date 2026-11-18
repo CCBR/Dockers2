@@ -1,0 +1,28 @@
+---
+title: Container catalog
+date-modified: today
+page-layout: full
+listing:
+  contents: containers.yml
+  template: _containers.ejs.md
+  fields: [title, registries, platforms, source]
+  field-display-names:
+    title: Container
+    tag: Tag
+    registries: Registries
+    platforms: Platforms
+    source: Dockerfile
+  sort: [title]
+  filter-ui: true
+  sort-ui: [title]
+  table-striped: true
+  page-size: 100
+---
+
+Browse the latest stable version defined by each container's Dockerfiles.
+If that version has not been published yet, the most recently pushed Docker Hub
+tag is shown instead.
+Container titles link to their version README on `main` when it exists;
+the Dockerfile link opens the corresponding source.
+Registry badges and platforms reflect the selected tag's published images at
+the time this site was rendered.
