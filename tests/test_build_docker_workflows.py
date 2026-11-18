@@ -292,7 +292,7 @@ def test_automatic_workflow_excludes_deleted_dockerfiles(tmp_path, include_exist
             "",
             "Dockerfile.v3",
             '["Dockerfile.v2","Dockerfile.v3"]',
-            '["Dockerfile.v2","Dockerfile.v3"]',
+            '["Dockerfile.v3"]',
         ),
         (
             "pull_request",

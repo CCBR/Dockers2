@@ -153,11 +153,13 @@ jobs:
         run: |
           set -euo pipefail
           if [[ "$EVENT_NAME" == "pull_request" &&
-                "$EVENT_ACTION" == "synchronize" &&
-                "$SYNCHRONIZE_FILES_JSON" == "[]" ]]; then
-            selected_files_json="[]"
+                "$EVENT_ACTION" == "synchronize" ]]; then
+            selected_files_json="${SYNCHRONIZE_FILES_JSON:-[]}"
+          elif [[ "$EVENT_NAME" == "push" &&
+                  -n "$INITIAL_PUSH_FILES_JSON" ]]; then
+            selected_files_json="$INITIAL_PUSH_FILES_JSON"
           else
-            selected_files_json="${INITIAL_PUSH_FILES_JSON:-$EVENT_FILES_JSON}"
+            selected_files_json="$EVENT_FILES_JSON"
           fi
           echo "json=$selected_files_json" >> "$GITHUB_OUTPUT"
           echo "Selected Dockerfiles: $selected_files_json"
