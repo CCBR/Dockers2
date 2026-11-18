@@ -1,1 +1,0 @@
-greet <- function() message("Hello World!")
