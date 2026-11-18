@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.31">
+<meta name="generator" content="quarto-1.11.9">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -12,10 +12,13 @@
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -61,29 +64,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </style>
 
 
-<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="../site_libs/quarto-nav/headroom.min.js"></script>
-<script src="../site_libs/clipboard/clipboard.min.js"></script>
-<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="../site_libs/quarto-search/fuse.min.js"></script>
-<script src="../site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="../">
-<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="../site_libs/quarto-html/popper.min.js"></script>
-<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="../site_libs/quarto-html/anchor.min.js"></script>
-<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-a1e9b70a0eaf1a64cba162db44e3fb1b.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-fa35d069e1f21f13dc948bfe3a27bdc8.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-a1e9b70a0eaf1a64cba162db44e3fb1b.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
-<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-776f0c52c842aee411fd54e577f30c9a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../site_libs/bootstrap/bootstrap-dark-5fb7d2eb5f91a3e344a70f4e5456d380.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../site_libs/bootstrap/bootstrap-776f0c52c842aee411fd54e577f30c9a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
-<link href="../site_libs/quarto-contrib/fontawesome6-6.7.2/all.min.css" rel="stylesheet">
-<link href="../site_libs/quarto-contrib/fontawesome6-6.7.2/latex-fontsize.css" rel="stylesheet">
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/scrollable-regions/scrollable-regions.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-57848762e20a3451db10beb870f05df8.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-0f2d48003d4795890a244ce7500b71cc.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-57848762e20a3451db10beb870f05df8.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-b0baacdb2c30dd56e95bc0df8d524528.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark-d30b6bfe67ad235df22443d04e63467a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="site_libs/bootstrap/bootstrap-b0baacdb2c30dd56e95bc0df8d524528.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/quarto-contrib/fontawesome6-6.7.2/all.min.css" rel="stylesheet">
+<link href="site_libs/quarto-contrib/fontawesome6-6.7.2/latex-fontsize.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -113,10 +117,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 }</script>
 
 
-<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="styles.css">
 </head>
 
-<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+<body class="nav-fixed quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a><script id="quarto-html-before-body" type="application/javascript">
     const toggleBodyColorMode = (bsSheetEl) => {
       const mode = bsSheetEl.getAttribute("data-mode");
       const bodyEl = window.document.querySelector("body");
@@ -139,6 +143,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       for (let i=0; i < toggles.length; i++) {
         const toggle = toggles[i];
         if (toggle) {
+          toggle.setAttribute("aria-checked", alternate ? "true" : "false");
           if (alternate) {
             toggle.classList.add("alternate");
           } else {
@@ -168,13 +173,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       manageTransitions('#quarto-margin-sidebar .nav-link', true);
       // Switch the toggles
       setColorSchemeToggle(alternate)
-      // Hack to workaround the fact that safari doesn't
-      // properly recolor the scrollbar when toggling (#1455)
+    }
+    // Hack to workaround the fact that safari doesn't
+    // properly recolor the scrollbar when toggling (#1455).
+    // Not run on load: stylesheets are set before first paint there, and
+    // scrolling would undo the scroll to a URL fragment (#14973).
+    // The one pixel nudge keeps the reader where they were.
+    const refreshSafariScrollbar = () => {
       if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
         manageTransitions("body", false);
-        window.scrollTo(0, 1);
+        const scrollY = window.scrollY;
+        window.scrollTo(0, scrollY > 0 ? scrollY - 1 : 1);
         setTimeout(() => {
-          window.scrollTo(0, 0);
+          window.scrollTo(0, scrollY);
           manageTransitions("body", true);
         }, 40);
       }
@@ -268,6 +279,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       // Read the current dark / light value
       let toAlternate = !hasAlternateSentinel();
       toggleColorMode(toAlternate);
+      refreshSafariScrollbar();
       setStyleSentinel(toAlternate);
       toggleGiscusIfUsed(toAlternate, darkModeDefault);
       window.dispatchEvent(new Event('resize'));
@@ -282,21 +294,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
-    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark" aria-label="Site">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../index.html">
+    <a class="navbar-brand" href="./index.html">
     <span class="navbar-title">CCBR Docker Containers</span>
     </a>
   </div>
-            <div id="quarto-search" class="" title="Search"></div>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="../index.html"> 
+    <a class="nav-link" href="./index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item dropdown ">
@@ -305,7 +316,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     </a>
     <ul class="dropdown-menu" aria-labelledby="nav-menu-docs">    
         <li>
-    <a class="dropdown-item" href="../docs/contribute.html">
+    <a class="dropdown-item" href="./contribute.html">
  <span class="dropdown-text">Contribute a container</span></a>
   </li>  
         <li>
@@ -324,8 +335,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
           </div> <!-- /navcollapse -->
             <div class="quarto-navbar-tools">
-  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+  <button type="button" role="switch" aria-checked="false" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode" aria-label="Toggle dark mode"><i class="bi"></i></button>
 </div>
+            <div id="quarto-search" class="" title="Search"></div>
       </div> <!-- /container-fluid -->
     </nav>
 </header>
@@ -334,20 +346,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- sidebar -->
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" class="toc-active">
+        <nav id="TOC" role="doc-toc" aria-labelledby="toc-title" class="toc-active">
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#create-a-branch" id="toc-create-a-branch" class="nav-link active" data-scroll-target="#create-a-branch">1. Create a branch</a></li>
+  <li><a href="#add-or-update-a-container" id="toc-add-or-update-a-container" class="nav-link active" data-scroll-target="#add-or-update-a-container">Add or update a container</a>
+  <ul class="collapse">
+  <li><a href="#create-a-branch" id="toc-create-a-branch" class="nav-link" data-scroll-target="#create-a-branch">1. Create a branch</a></li>
   <li><a href="#add-a-versioned-dockerfile" id="toc-add-a-versioned-dockerfile" class="nav-link" data-scroll-target="#add-a-versioned-dockerfile">2. Add a versioned Dockerfile</a></li>
   <li><a href="#build-and-test-locally-optional" id="toc-build-and-test-locally-optional" class="nav-link" data-scroll-target="#build-and-test-locally-optional">3. Build and test locally (optional)</a></li>
   <li><a href="#open-a-pull-request" id="toc-open-a-pull-request" class="nav-link" data-scroll-target="#open-a-pull-request">4. Open a pull request</a></li>
+  <li><a href="#wait-for-review-and-merge" id="toc-wait-for-review-and-merge" class="nav-link" data-scroll-target="#wait-for-review-and-merge">5. Wait for review and merge</a></li>
+  </ul></li>
+  <li><a href="#publishing-images" id="toc-publishing-images" class="nav-link" data-scroll-target="#publishing-images">Publishing images</a></li>
+  <li><a href="#docker-build-platforms" id="toc-docker-build-platforms" class="nav-link" data-scroll-target="#docker-build-platforms">Docker build platforms</a></li>
   <li><a href="#import-a-dockerfile-from-another-repository" id="toc-import-a-dockerfile-from-another-repository" class="nav-link" data-scroll-target="#import-a-dockerfile-from-another-repository">Import a Dockerfile from another repository</a></li>
   </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/CCBR/Dockers2/edit/main/docs/docs/contribute.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/CCBR/Dockers2/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+<div class="toc-actions"><ul><li><a href="https://github.com/CCBR/Dockers2/edit/main/docs/contribute.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/CCBR/Dockers2/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
 <!-- main -->
-<main class="content" id="quarto-document-content">
+<main class="content" id="quarto-document-content" tabindex="-1">
 
 
 <header id="title-block-header" class="quarto-title-block default">
@@ -369,18 +387,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>A Dockerfile is a recipe for a container image. Check the <a href="../index.html">container catalog</a> for an existing image before adding one.</p>
+<p>A Dockerfile is a recipe for a container image. Check the <a href="./index.html">container catalog</a> for an existing image before adding one.</p>
 <p>You need Git and a GitHub account. These examples use a fictional <code>exampletool</code> at version <code>1.2.3</code>; replace the names and versions with your own.</p>
-<section id="create-a-branch" class="level2">
-<h2 class="anchored" data-anchor-id="create-a-branch">1. Create a branch</h2>
+<section id="add-or-update-a-container" class="level2">
+<h2 class="anchored" data-anchor-id="add-or-update-a-container">Add or update a container</h2>
+<section id="create-a-branch" class="level3">
+<h3 class="anchored" data-anchor-id="create-a-branch">1. Create a branch</h3>
 <p>If you cannot push to Dockers2, fork it on GitHub. Use <strong>Code</strong> on your fork to copy its clone URL and replace the URL below.</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/CCBR/Dockers2.git</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> Dockers2</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> switch <span class="at">-c</span> add-exampletool</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Run the remaining commands from the repository root.</p>
 </section>
-<section id="add-a-versioned-dockerfile" class="level2">
-<h2 class="anchored" data-anchor-id="add-a-versioned-dockerfile">2. Add a versioned Dockerfile</h2>
+<section id="add-a-versioned-dockerfile" class="level3">
+<h3 class="anchored" data-anchor-id="add-a-versioned-dockerfile">2. Add a versioned Dockerfile</h3>
 <p>For a new image, create a directory and copy the template:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> exampletool/ccbr_exampletool_1.2.3</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> template.Dockerfile exampletool/ccbr_exampletool_1.2.3/Dockerfile.v1</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -395,10 +415,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>For an update, prefer a new version such as <code>Dockerfile.v2</code>: rebuilding an existing tag can overwrite it. Keep older recipes’ supporting files unchanged, or version them too. If the image name includes the tool version, use a new directory for a new tool version.</p>
 <p>Images are built for <code>linux/amd64</code> by default. To support more architectures, add a single declaration near the top of the Dockerfile, for example:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode dockerfile code-with-copy"><code class="sourceCode dockerfile"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># build-platforms: linux/amd64,linux/arm64</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Only list platforms supported by the base image, packages, and downloaded binaries. See the <a href="https://github.com/CCBR/Dockers2#docker-build-platforms">platform instructions</a>.</p>
+<p>Only list platforms supported by the base image, packages, and downloaded binaries. See the <a href="#docker-build-platforms">platform instructions</a>.</p>
 </section>
-<section id="build-and-test-locally-optional" class="level2">
-<h2 class="anchored" data-anchor-id="build-and-test-locally-optional">3. Build and test locally (optional)</h2>
+<section id="build-and-test-locally-optional" class="level3">
+<h3 class="anchored" data-anchor-id="build-and-test-locally-optional">3. Build and test locally (optional)</h3>
 <p>Local testing catches errors before CI runs, but you can skip it and test the preview image instead (step 4). Docker is not available on GFE laptops; use <a href="https://podman.io/docs/installation">Podman</a>. On macOS or Windows, start the Podman virtual machine first:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> machine init   <span class="co"># first time only</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> machine start</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -419,8 +439,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  localhost/ccbr_exampletool_1.2.3:v1 exampletool <span class="at">--version</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Use your tool’s version command; adjust it for the image’s <code>ENTRYPOINT</code> if needed. Also test a small, non-sensitive input and check the output. Save the commands and results for your pull request.</p>
 </section>
-<section id="open-a-pull-request" class="level2">
-<h2 class="anchored" data-anchor-id="open-a-pull-request">4. Open a pull request</h2>
+<section id="open-a-pull-request" class="level3">
+<h3 class="anchored" data-anchor-id="open-a-pull-request">4. Open a pull request</h3>
 <p>Commit and push your changes:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add exampletool/ccbr_exampletool_1.2.3/</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit <span class="at">-m</span> <span class="st">"feat: add exampletool container"</span></span>
@@ -452,7 +472,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
-<p>Preview builds can be skipped if registry tags are up to date. The <code>v1-dev</code> tag is shared and can be overwritten; do not use it for production. After merging, check that the stable build succeeded and the tag is available in both registries.</p>
+<p>Preview builds can be skipped if registry tags are up to date. The <code>v1-dev</code> tag is shared and can be overwritten; do not use it for production.</p>
 <p>Only changes to a versioned Dockerfile or its source metadata trigger the workflow. When updating supporting files in a PR, also change the relevant Dockerfile in that push.</p>
 <p>To test a published preview on Biowulf, start an interactive session and run:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">module</span> load singularity</span>
@@ -460,12 +480,66 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  exampletool <span class="at">--version</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>See the <a href="https://ccbr.github.io/HowTos/docs/containers/singularity-biowulf.html">Biowulf container guide</a> for setup and cache guidance. A fork PR does not publish a preview; ask a maintainer for help.</p>
 </section>
+<section id="wait-for-review-and-merge" class="level3">
+<h3 class="anchored" data-anchor-id="wait-for-review-and-merge">5. Wait for review and merge</h3>
+<p>A maintainer will review your PR. Address any feedback and wait for a maintainer to approve and merge it into <code>main</code>. After the merge, check that the stable build succeeded and the tag is available in both registries.</p>
+</section>
+</section>
+<section id="publishing-images" class="level2">
+<h2 class="anchored" data-anchor-id="publishing-images">Publishing images</h2>
+<p>The <a href="https://github.com/CCBR/Dockers2/blob/main/.github/workflows/build-docker-auto.yml">automatic build workflow</a> publishes images to Docker Hub under <a href="https://hub.docker.com/u/nciccbr"><code>nciccbr</code></a> and to GHCR under <a href="https://github.com/orgs/CCBR/packages?ecosystem=container"><code>ghcr.io/ccbr</code></a>. For a Dockerfile named <code>Dockerfile.v2</code>, it uses these tags:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Trigger</th>
+<th>Tag</th>
+<th>Publishing</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Pull request to <code>main</code></td>
+<td><code>v2-dev</code></td>
+<td>Docker Hub and GHCR for same-repository PRs; fork PRs build without publishing</td>
+</tr>
+<tr class="even">
+<td>Push to an <code>autobuild</code> branch</td>
+<td><code>v2-dev</code></td>
+<td>Docker Hub and GHCR</td>
+</tr>
+<tr class="odd">
+<td>Push to <code>main</code></td>
+<td><code>v2</code></td>
+<td>Docker Hub and GHCR</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>-dev</code> tag is shared by previews of the same image and version. A later successful push can overwrite another PR’s preview, so use the unsuffixed tag for stable images. Existing registry tags are not renamed or deleted.</p>
+<p>To build an image on demand, run the <a href="https://github.com/CCBR/Dockers2/blob/main/.github/workflows/build-docker-manual.yml">manual workflow</a> from the Actions tab and select the Dockerfile. Choose <code>dev</code> for a preview or <code>main</code> for the unsuffixed version tag; stable tags can only be published from <code>main</code>. Enable <strong>push</strong> to publish to both registries; leave it unchecked to run without publishing. To add or update an image from another repository, use the <a href="https://github.com/CCBR/Dockers2/blob/main/.github/workflows/build-docker-dispatch.yml">dispatch workflow</a>, which publishes a <code>-dev</code> preview to both registries and opens a PR to <code>main</code>; merging the Dockerfile triggers the stable build.</p>
+<p>When publishing generates a README update, the workflows use the CCBR-bot GitHub App to merge its PR. They use the <code>CCBR_BOT_CLIENT_ID</code> variable and <code>CCBR_BOT_PRIVATE_KEY</code> secret; fork PRs and manual builds without publishing do not receive these credentials.</p>
+<p>Stable publications always build rather than relying on registry timestamps, which do not account for source-context changes. Automatic and manual stable builds targeting the same image tag share a queue. After entering the queue, they skip an outdated checkout if a matching image’s build context has changed on <code>main</code>; run the manual workflow again from <code>main</code> if needed. The queue holds up to 100 pending jobs per image tag.</p>
+<p>Other builds check the image tag in each target registry. They build if a tag is missing, older than the Dockerfile’s latest commit, missing a requested platform, or cannot be checked; otherwise, they skip the build. The manual workflow still checks both registries when <strong>push</strong> is disabled, so an up-to-date image can skip a build-only run.</p>
+<p>For dispatched builds, the workflow copies the source repository’s build context into Dockers2 and records the source repository and exact commit in <code>.Dockerfile.&lt;version&gt;.source.json</code> next to the Dockerfile. The Dockerfile, metadata, and copied context files are committed together, so automatic and manual builds use the checked-in snapshot without needing access to the source repository. Changes to the metadata also trigger a rebuild; keep it alongside the Dockerfile. Older dispatched Dockerfiles that do not include their source context must be dispatched again if they need files from the source repository. Dispatch image tags may contain at most 124 characters, leaving room for the <code>-dev</code> suffix within Docker’s 128-character tag limit.</p>
+</section>
+<section id="docker-build-platforms" class="level2">
+<h2 class="anchored" data-anchor-id="docker-build-platforms">Docker build platforms</h2>
+<p>The CI workflows read the selected Dockerfile’s <code>build-platforms</code> declaration. When the declaration is absent or empty, the image is built for <code>linux/amd64</code>. To opt a Dockerfile into additional architectures, add a comment at the top of the file:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode dockerfile code-with-copy"><code class="sourceCode dockerfile"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># build-platforms: linux/amd64,linux/arm64</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> ubuntu:26.04</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>List platforms as comma-separated <code>os/arch[/variant]</code> values, using any platform supported by <code>docker buildx</code> (for example, <code>linux/arm/v7</code> or <code>linux/ppc64le</code>). Duplicates, malformed values, multiple declarations, and platforms the base image does not provide fail the build rather than silently publishing an incomplete image. For manual builds, a nonempty <code>platforms</code> input overrides the declaration and uses the same validation; leave it blank to use the Dockerfile’s selection. Enable <strong>push</strong> when manually building multiple platforms.</p>
+<p>Only declare a platform after confirming the base image, packages, downloaded binaries, and other dependencies support it. Multi-platform builds use emulation on GitHub’s x86 runners and can take significantly longer. Published images include the requested platforms; your local container engine (Docker, Podman, Apptainer) selects the matching one automatically.</p>
+</section>
 <section id="import-a-dockerfile-from-another-repository" class="level2">
 <h2 class="anchored" data-anchor-id="import-a-dockerfile-from-another-repository">Import a Dockerfile from another repository</h2>
 <p>For a Dockerfile maintained elsewhere, use <strong>Actions &gt; build-docker-dispatch &gt; <a href="https://github.com/CCBR/Dockers2/actions/workflows/build-docker-dispatch.yml">Run workflow</a></strong> in Dockers2. You need permission to run the workflow, and it must be able to access the source repository. Enter the source <code>OWNER/REPO</code>, ref, Dockerfile path, lowercase image name, and a tag such as <code>v1</code>. Use a source tag or commit; the image tag can be at most 124 characters.</p>
 <p>The source repository root must be the Dockerfile’s intended build context. Before running, check for credentials, private data, and unnecessary large files: the workflow copies and commits the entire checkout.</p>
 <p>The workflow copies the source repository except <code>.git</code>, records its exact commit in <code>.Dockerfile.&lt;tag&gt;.source.json</code>, and builds a <code>-dev</code> preview. After a successful build, it opens or updates a PR to <code>main</code>. Review the copied files and metadata, and test the preview. Rerun the dispatch when the source changes.</p>
-<p>For on-demand builds of recipes already in Dockers2, see the <a href="https://github.com/CCBR/Dockers2#publishing-images">manual build instructions</a>. A build-only run can still be skipped if the registry tags are up to date.</p>
+<p>For on-demand builds of recipes already in Dockers2, see the <a href="#publishing-images">manual build instructions</a>. A build-only run can still be skipped if the registry tags are up to date.</p>
 
 
 </section>
@@ -475,15 +549,50 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right
     if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
-      const a = window.document.createElement('a');
-      a.classList.add('top-right');
-      a.classList.add('quarto-color-scheme-toggle');
-      a.href = "";
-      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const toggle = window.document.createElement('button');
+      toggle.type = "button";
+      toggle.setAttribute("role", "switch");
+      toggle.setAttribute("aria-checked", "false");
+      toggle.classList.add('top-right');
+      toggle.classList.add('quarto-color-scheme-toggle');
+      toggle.setAttribute("aria-label", "Toggle dark mode");
+      toggle.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
       const i = window.document.createElement("i");
       i.classList.add('bi');
-      a.appendChild(i);
-      window.document.body.appendChild(a);
+      toggle.appendChild(i);
+      // Put the toggle in a landmark of its own, so that landmark navigation
+      // can reach it.
+      //
+      // The container is always a fresh direct child of body, and the toggle is
+      // never moved into page furniture that the theme or the author controls.
+      // The toggle is positioned against the page, so any ancestor that
+      // establishes a containing block captures it: a positioned element or a
+      // grid for position: absolute, and transform, filter, will-change or
+      // contain for position: fixed. A direct child of body has none of these
+      // to inherit, and the shift when one appears is silent and visual.
+      //
+      // ARIA says a document should have at most one banner, and axe reports a
+      // duplicate whether or not the banners carry distinct labels. So use a
+      // header when the page has no banner yet, and a named region otherwise.
+      //
+      // A header is a banner wherever it sits, unless it is inside sectioning
+      // content, so this cannot just look at the children of body: a custom
+      // page layout wraps the title block header in a plain div. An explicit
+      // role="banner" always counts.
+      const sectioning = 'article, aside, main, nav, section, [role="article"], [role="complementary"], [role="main"], [role="navigation"], [role="region"]';
+      const hasBanner = Array.from(
+        window.document.querySelectorAll('header:not([role]), [role="banner"]')
+      ).some(function(el) {
+        return el.hasAttribute("role") || el.closest(sectioning) === null;
+      });
+      const container = window.document.createElement(hasBanner ? "div" : "header");
+      if (hasBanner) {
+        container.setAttribute("role", "region");
+        container.setAttribute("aria-label", "Toggle dark mode");
+      }
+      container.classList.add('quarto-color-scheme-toggle-container');
+      container.appendChild(toggle);
+      window.document.body.appendChild(container);
     }
     setColorSchemeToggle(hasAlternateSentinel())
     const icon = "";
@@ -562,7 +671,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
       // Inspect non-navigation links and adorn them if external
-     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      window.quartoDecorateExternalLinks = function (root) {
+     var links = (root || window.document).querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
       for (var i=0; i<links.length; i++) {
         const link = links[i];
         if (!isInternal(link.href)) {
@@ -571,8 +681,69 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           if (link.dataset.originalHref !== undefined) {
             link.href = link.dataset.originalHref;
           }
+          if (!link.classList.contains('no-external-icon')) {
+          }
         }
       }
+      };
+      window.quartoDecorateExternalLinks(window.document);
+    // Esc closes the popup (WCAG 1.4.13) and focus leaving both trigger and
+    // popup closes it (WCAG 2.4.11); tippy handles neither for interactive popups.
+    const hideOnEscAndFocusOut = {
+      name: 'hideOnEscAndFocusOut',
+      defaultValue: true,
+      fn(instance) {
+        const dismiss = () => {
+          // A show scheduled by the trigger delay would otherwise reopen it
+          instance.clearDelayTimeouts();
+          instance.hide();
+        };
+        const onKeyDown = (event) => {
+          if (event.key !== 'Escape') {
+            return;
+          }
+          // Keep Esc from also reaching page handlers (e.g. reveal.js overview),
+          // except an open reveal.js slide menu, which Esc should close too.
+          // The menu handles keys only when its keyboard option is on.
+          const menuHandlesEsc = window.Reveal?.getPlugin?.('menu')?.isOpen() &&
+            window.Reveal.getConfig().menu?.keyboard !== false;
+          if (!menuHandlesEsc) {
+            event.stopPropagation();
+          }
+          if (instance.popper.contains(window.document.activeElement)) {
+            // Disabled while refocusing so the focus trigger does not reopen it
+            instance.disable();
+            instance.reference.focus();
+            instance.enable();
+          }
+          dismiss();
+        };
+        const onFocusOut = (event) => {
+          const target = event.relatedTarget;
+          if (target && !instance.reference.contains(target) &&
+              !instance.popper.contains(target)) {
+            dismiss();
+          }
+        };
+        // On the trigger too: a click trigger (code-annotations: select) has no
+        // blur handling. Attached for the instance's lifetime so leaving the
+        // trigger also cancels a show still pending on the trigger delay.
+        instance.reference.addEventListener('focusout', onFocusOut);
+        return {
+          onShow() {
+            window.document.addEventListener('keydown', onKeyDown, true);
+            instance.popper.addEventListener('focusout', onFocusOut);
+          },
+          onHide() {
+            window.document.removeEventListener('keydown', onKeyDown, true);
+            instance.popper.removeEventListener('focusout', onFocusOut);
+          },
+          onDestroy() {
+            instance.reference.removeEventListener('focusout', onFocusOut);
+          },
+        };
+      },
+    };
     function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
       const config = {
         allowHTML: true,
@@ -586,6 +757,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         interactiveBorder: 10,
         theme: 'quarto',
         placement: 'bottom-start',
+        plugins: [hideOnEscAndFocusOut],
       };
       if (contentFn) {
         config.content = contentFn;
@@ -748,44 +920,54 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           const lineIds = lines.map((line) => {
             return targetCell + "-" + line;
           })
-          let top = null;
-          let height = null;
-          let parent = null;
+          // Each band is positioned against its own containing block, which is
+          // not the offsetParent of the lines, so place it from client rects.
+          const placeBand = (band, firstEl, lastEl, codeBlock) => {
+            const container = band.offsetParent;
+            if (container === null) {
+              return;
+            }
+            const containerRect = container.getBoundingClientRect();
+            // Reveal.js scales slides with a transform, so convert client
+            // pixels back to the CSS pixels of the container.
+            const scale = containerRect.height / container.offsetHeight || 1;
+            const firstRect = firstEl.getBoundingClientRect();
+            const lastRect = lastEl.getBoundingClientRect();
+            const top = (firstRect.top - containerRect.top) / scale - container.clientTop + container.scrollTop;
+            const height = (lastRect.bottom - firstRect.top) / scale;
+            band.style.top = top - 2 + "px";
+            band.style.height = height + 4 + "px";
+            if (codeBlock) {
+              // Without the copy button wrapper, the containing block is wider
+              // than the code block, so span the code block explicitly.
+              const blockRect = codeBlock.getBoundingClientRect();
+              band.style.left = (blockRect.left - containerRect.left) / scale - container.clientLeft + container.scrollLeft + "px";
+              band.style.width = blockRect.width / scale + "px";
+            }
+          };
           if (lineIds.length > 0) {
-              //compute the position of the single el (top and bottom and make a div)
-              const el = window.document.getElementById(lineIds[0]);
-              top = el.offsetTop;
-              height = el.offsetHeight;
-              parent = el.parentElement.parentElement;
-            if (lineIds.length > 1) {
-              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
-              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
-              height = bottom - top;
+            const el = window.document.getElementById(lineIds[0]);
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const parent = el.parentElement.parentElement;
+            // cook up a div (if necessary) and position it
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
             }
-            if (top !== null && height !== null && parent !== null) {
-              // cook up a div (if necessary) and position it 
-              let div = window.document.getElementById("code-annotation-line-highlight");
-              if (div === null) {
-                div = window.document.createElement("div");
-                div.setAttribute("id", "code-annotation-line-highlight");
-                div.style.position = 'absolute';
-                parent.appendChild(div);
-              }
-              div.style.top = top - 2 + "px";
-              div.style.height = height + 4 + "px";
-              div.style.left = 0;
-              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
-              if (gutterDiv === null) {
-                gutterDiv = window.document.createElement("div");
-                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
-                gutterDiv.style.position = 'absolute';
-                const codeCell = window.document.getElementById(targetCell);
-                const gutter = codeCell.querySelector('.code-annotation-gutter');
-                gutter.appendChild(gutterDiv);
-              }
-              gutterDiv.style.top = top - 2 + "px";
-              gutterDiv.style.height = height + 4 + "px";
+            placeBand(div, el, lastEl, parent.closest("div.sourceCode") || parent);
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
             }
+            placeBand(gutterDiv, el, lastEl);
             selectedAnnoteEl = annoteEl;
           }
         };
@@ -884,6 +1066,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
   });
   </script>
+  <script type="application/javascript">
+  window.quartoScrollableRegionsLabels = {"code":"Scrollable code","output":"Scrollable output"};
+  </script>
 </div> <!-- /content -->
 <footer class="footer">
   <div class="nav-footer">
@@ -892,7 +1077,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>   
     <div class="nav-footer-center">
       &nbsp;
-    <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/CCBR/Dockers2/edit/main/docs/docs/contribute.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/CCBR/Dockers2/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
+    <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/CCBR/Dockers2/edit/main/docs/contribute.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/CCBR/Dockers2/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
     <div class="nav-footer-right">
       &nbsp;
     </div>
