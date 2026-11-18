@@ -18,7 +18,7 @@ website:
         menu:
           - text: Contribute a container
             href: docs/contribute.qmd
-          - text: Use containers on Biowulf
+          - text: Use containers on Biowulf {{< fa arrow-up-right-from-square >}}
             href: https://ccbr.github.io/HowTos/docs/containers/singularity-biowulf.html
     right:
       - icon: github
