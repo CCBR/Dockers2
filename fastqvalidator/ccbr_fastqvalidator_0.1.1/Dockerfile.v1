@@ -1,0 +1,28 @@
+FROM nciccbr/ccbr_ubuntu_22.04:v4
+
+# Build time variables
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG IMAGENAME="000000"
+ENV IMAGENAME=${IMAGENAME}
+ARG BASEIMAGENAME="000000"
+ENV BASEIMAGENAME=${BASEIMAGENAME}
+
+WORKDIR /opt2
+RUN git clone https://github.com/statgen/fastQValidator.git --branch v0.1.1 --single-branch && \
+    git clone https://github.com/statgen/libStatGen.git /opt2/fastQValidator/../libStatGen && \
+    cd fastQValidator && \
+    make && \
+	echo "v0.1.1" > /opt2/fastQValidator/version.txt
+ENV	PATH="/opt2/fastQValidator/bin":$PATH
+
+# Copy Dockerfile and other files in a single layer
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+

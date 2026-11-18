@@ -1,0 +1,46 @@
+FROM nciccbr/ccbr_ubuntu_22.04:v4
+
+# build time variables
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+
+# Install conda and give write permissions to conda folder
+RUN echo 'export PATH=/opt2/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
+    wget --quiet "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" -O ~/miniforge3.sh && \
+    /bin/bash ~/miniforge3.sh -b -p /opt2/conda && \
+    rm ~/miniforge3.sh && chmod 777 -R /opt2/conda/
+ENV PATH="/opt2/conda/bin:$PATH"
+
+# install packages from conda
+COPY environment.txt /data2/
+ENV CONDA_ENV=quarto
+RUN mamba create -n ${CONDA_ENV} -c conda-forge -c bioconda --file /data2/environment.txt
+ENV R_LIBS_USER="/opt2/conda/envs/${CONDA_ENV}/lib/R/library/"
+ENV PATH="/opt2/conda/envs/${CONDA_ENV}/bin:$PATH"
+ENV PYTHONPATH="/opt2/conda/envs/${CONDA_ENV}/lib/${CONDA_ENV}/site-packages/"
+
+# install quarto
+# can't use conda to install quarto inside docker because docker use /bin/sh
+# https://github.com/conda-forge/quarto-feedstock/issues/30
+ENV QUARTO_VERSION=1.6.42
+ADD https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.tar.gz  /opt2
+WORKDIR /opt2
+RUN tar -xzvf quarto-${QUARTO_VERSION}-linux-amd64.tar.gz
+ENV PATH="/opt2/quarto-${QUARTO_VERSION}/bin/:${PATH}"
+# check quarto installation
+RUN quarto check
+
+# Copy Dockerfile and other files in a single layer
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+
+# cleanup
+WORKDIR /data2
+RUN apt-get clean && apt-get purge \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

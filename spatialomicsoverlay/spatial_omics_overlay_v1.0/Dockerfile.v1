@@ -1,0 +1,96 @@
+# Dockerfile for RBioFormats + rJava + SpatialOmicsOverlay, built against
+# Azul Zulu JDK 8 (mirrors the known-working local macOS setup).
+#
+# DESIGN NOTE: renv.lock is used only as a version manifest at BUILD time.
+# All packages are installed into R's normal system library
+# (/usr/local/lib/R/site-library), NOT a renv-managed project library.
+# renv itself is never installed into the image and never runs at
+# container runtime -- there is no .Rprofile/activate.R autoloading,
+# no project activation, no cache-consistency checks. This avoids the
+# whole class of problems that comes from renv's project-isolation
+# machinery fighting a sealed, read-only container filesystem.
+#
+# The container is a single, frozen "project" by construction --
+# renv's reason for existing (isolating multiple projects on one
+# machine) doesn't apply once you're already inside a container built
+# for exactly one purpose.
+
+FROM rocker/r-ver:4.5.2
+
+# --- System dependencies ---
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    wget \
+    gnupg \
+    apt-transport-https \
+    libxml2-dev \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    ca-certificates \
+    libtiff5-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libfftw3-dev \
+    libmagick++-dev \
+    libgl1-mesa-dev \
+    libglu1-mesa-dev \
+    cmake \
+    libuv1-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# --- Install Azul Zulu JDK 8 ---
+RUN wget -q -O - https://repos.azul.com/azul-repo.key | gpg --dearmor -o /usr/share/keyrings/azul.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/azul.gpg] https://repos.azul.com/zulu/deb stable main" \
+    > /etc/apt/sources.list.d/zulu.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends zulu8-jdk && \
+    rm -rf /var/lib/apt/lists/*
+
+# --- Set JAVA_HOME and LD_LIBRARY_PATH explicitly, as true image ENV vars ---
+ENV JAVA_HOME=/usr/lib/jvm/zulu8
+ENV LD_LIBRARY_PATH=${JAVA_HOME}/jre/lib/amd64/server
+ENV PATH=${JAVA_HOME}/bin:${PATH}
+ENV R_DEFAULT_INTERNET_TIMEOUT=300
+
+# --- Reconfigure R for this Java install ---
+RUN R CMD javareconf
+
+WORKDIR /project
+
+# --- Copy ONLY the lockfile first, for layer caching ---
+# We read renv.lock purely as a version manifest -- nothing here
+# activates renv as a project.
+COPY renv.lock renv.lock
+
+# --- Install renv temporarily, JUST to parse the lockfile and drive
+#     installation into the system library -- then remove it, so
+#     nothing renv-related lingers in the final image or ever gets
+#     auto-loaded at runtime. ---
+RUN R -e "\
+    install.packages('renv', repos = 'https://cloud.r-project.org'); \
+    Sys.setenv(JAVA_HOME='/usr/lib/jvm/zulu8'); \
+    renv::restore(\
+        project = '.', \
+        library = .libPaths()[1], \
+        prompt  = FALSE \
+    ); \
+    remove.packages('renv')"
+
+# --- Copy the rest of the project (scripts, etc.) ---
+# Deliberately NOT copying .Rprofile / renv/activate.R / renv/settings.json --
+# there is no renv project to activate inside this image.
+COPY . .
+RUN rm -rf /project/renv /project/.Rprofile
+
+# --- Sanity check at build time: confirm the full chain loads cleanly ---
+RUN R -e "\
+    library(rJava); \
+    .jinit(); \
+    cat('Java version:', .jcall('java/lang/System','S','getProperty','java.version'), '\n'); \
+    cat('Java vendor:', .jcall('java/lang/System','S','getProperty','java.vendor'), '\n'); \
+    library(RBioFormats); \
+    cat('RBioFormats loaded successfully.\n'); \
+    library(SpatialOmicsOverlay); \
+    cat('SpatialOmicsOverlay loaded successfully.\n')"
+
+CMD ["R"]

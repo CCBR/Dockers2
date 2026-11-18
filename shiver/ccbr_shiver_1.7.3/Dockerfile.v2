@@ -1,0 +1,65 @@
+FROM nciccbr/ccbr_ubuntu_22.04:v4
+
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install Miniforge/conda/mamba into /opt2/conda
+RUN wget --quiet "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" -O /tmp/miniforge.sh && \
+    /bin/bash /tmp/miniforge.sh -b -p /opt2/conda && \
+    rm -f /tmp/miniforge.sh && \
+    chmod -R a+rx /opt2/conda
+
+ENV PATH="/opt2/conda/bin:$PATH"
+
+RUN conda config --add channels bioconda && \
+    conda config --add channels conda-forge && \
+    conda config --add channels defaults && \
+    conda config --set channel_priority strict && \
+    conda install -n base -y mamba && \
+    conda clean -afy
+
+COPY environment.yml /data2/
+
+RUN mamba env create -n shiver -f /data2/environment.yml && \
+    mamba clean -a -y
+
+ENV PATH="/opt2/conda/envs/shiver/bin:/opt2/conda/bin:$PATH"
+
+RUN cd /data2 && \
+    git clone https://github.com/ChrisHIV/shiver.git && \
+    cp -r shiver/data/example_input test_data && \
+    rm -rf shiver
+
+RUN cd /data2 && \
+    wget -O hxb2_ref.fasta "https://www.ncbi.nlm.nih.gov/sviewer/viewer.fcgi?id=K03455&db=nuccore&report=fasta"
+
+RUN cd /data2 && \
+    echo "Running shiver test..." && \
+    shiver_init.sh my_init_dir /opt2/conda/envs/shiver/bin/config.sh \
+        hxb2_ref.fasta \
+        test_data/adapters_Illumina.fasta \
+        test_data/primers_GallEtAl2012.fasta && \
+    shiver_align_contigs.sh my_init_dir /opt2/conda/envs/shiver/bin/config.sh \
+        test_data/MysteryHIV_contigs.fasta my_output_id && \
+    shiver_map_reads.sh my_init_dir /opt2/conda/envs/shiver/bin/config.sh \
+        test_data/MysteryHIV_contigs.fasta my_output_id \
+        my_output_id.blast my_output_id_cut_wRefs.fasta \
+        test_data/MysteryHIV_1.fastq \
+        test_data/MysteryHIV_2.fastq && \
+    echo "Shiver test completed successfully!" && \
+    ls -la my_output_id*
+
+COPY test_shiver.sh /data2/
+RUN chmod +x /data2/test_shiver.sh
+
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+
+WORKDIR /data2

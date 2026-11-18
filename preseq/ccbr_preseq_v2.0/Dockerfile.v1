@@ -1,0 +1,27 @@
+FROM nciccbr/ccbr_ubuntu_22.04:v4
+
+# Build time variables
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG IMAGENAME="000000"
+ENV IMAGENAME=${IMAGENAME}
+ARG BASEIMAGENAME="000000"
+ENV BASEIMAGENAME=${BASEIMAGENAME}
+
+# add preseq executable
+# fix path to libgsl.so
+RUN ln -s /usr/lib/x86_64-linux-gnu/libgsl.so /usr/lib/x86_64-linux-gnu/libgsl.so.0
+ADD http://smithlabresearch.org/downloads/preseq_linux_v2.0.tar.bz2 /opt2
+WORKDIR /opt2
+RUN tar xjvf preseq_linux_v2.0.tar.bz2 && rm -f preseq_linux_v2.0.tar.bz2
+ENV PATH="${PATH}:/opt2/preseq_v2.0"
+
+# Copy Dockerfile and other files in a single layer
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}

@@ -1,0 +1,31 @@
+FROM nciccbr/ccbr_atacseq:v1.10
+
+LABEL maintainer="Vishal Koparde *(kopardev on GitHub)*"
+LABEL github_handle="kopardev"
+
+# Build time variables
+ARG DOCKERFILE="Dockerfile"
+ENV DOCKERFILE=${DOCKERFILE}
+ARG BUILD_DATE="000000"
+ENV BUILD_DATE=${BUILD_DATE}
+ARG BUILD_TAG="000000"
+ENV BUILD_TAG=${BUILD_TAG}
+ARG REPONAME="000000"
+ENV REPONAME=${REPONAME}
+ARG IMAGENAME="000000"
+ENV IMAGENAME=${IMAGENAME}
+ARG BASEIMAGENAME="000000"
+ENV BASEIMAGENAME=${BASEIMAGENAME}
+
+# Download and add bedToGenePred
+WORKDIR /opt2
+RUN wget -q -O bedToGenePred http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/bedToGenePred && chmod a+x bedToGenePred
+
+# Download and add genePredToGtf
+RUN wget -q -O genePredToGtf http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/genePredToGtf && chmod a+x /opt2/genePredToGtf
+
+# Copy Dockerfile and other files in a single layer
+COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
+
+WORKDIR /data2

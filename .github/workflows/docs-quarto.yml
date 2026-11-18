@@ -1,0 +1,43 @@
+name: docs
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [build-docker-auto, build-docker-manual, build-docker-dispatch]
+    branches: [main]
+    types: [completed]
+  push:
+    branches: main
+    paths:
+      - "docs/**"
+      - "**/Dockerfile.*"
+      - "scripts/generate_container_listing.py"
+      - "scripts/coordinate_docker_build.py"
+      - ".github/workflows/docs-quarto.yml"
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Publish to GitHub Pages (and render)
+        uses: quarto-dev/quarto-actions/publish@v2
+        with:
+          target: gh-pages
+          path: docs/ # where the qmd documents are
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

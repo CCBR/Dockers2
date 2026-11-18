@@ -1,0 +1,174 @@
+# This GitHub Actions workflow is designed to manually build and optionally push a Docker image to Docker Hub and GHCR.
+#
+# Workflow Name: build-docker-manual
+#
+# Inputs:
+# - dockerfile: Path to the Dockerfile in the repository (e.g., common/ccbr_bwa/Dockerfile). This input is required.
+# - dockerhub-namespace: DockerHub namespace or organization name (e.g., nciccbr). This input is required and defaults to 'nciccbr'.
+# - push: Boolean flag to determine whether to push the built image to Docker Hub and GHCR. This input is required and defaults to 'false'.
+# - suffix: "main" for the stable version tag, or "dev" for a preview tag.
+# - platforms: Optional override for the Dockerfile declaration. Defaults to linux/amd64 when neither is specified.
+#   Multi-platform images must be pushed and require a Dockerfile that installs architecture-appropriate dependencies.
+#
+# Jobs:
+# - build-docker: This job runs on an Ubuntu latest runner and performs the following steps:
+#   - Checks out the repository.
+#   - Logs in to Docker Hub and GHCR if the 'push' input is set to 'true'.
+#   - Prepares build-time variables by running a custom script.
+#   - Checks variables and creates a temporary README file with build details.
+#   - Builds and optionally pushes the Docker image using the docker/build-push-action.
+#   - Lists Docker images on the runner.
+#   - Updates the DockerHub description with the contents of the temporary README file if the image was successfully pushed.
+#
+# Stable publications share an image lock with automatic builds.
+
+name: build-docker-manual
+run-name: build-docker ${{ inputs.dockerfile }} (${{ inputs.suffix }})
+
+permissions:
+  contents: write
+  pull-requests: write
+  packages: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      dockerfile:
+        type: string
+        description: path to the Dockerfile in the repo (e.g.
+          base_images/ccbr_ubuntu_22.04/Dockerfile.v4)
+        required: true
+      dockerhub-namespace:
+        type: string
+        description: dockerhub namespace or org name (e.g. nciccbr)
+        required: true
+        default: nciccbr
+      suffix:
+        type: choice
+        description: "Tag type: main for the version tag, dev for a -dev preview"
+        required: true
+        default: dev
+        options:
+          - dev
+          - main
+      push:
+        type: boolean
+        description: Push to Docker Hub and GHCR (leave unchecked to run without
+          publishing; an up-to-date image may skip the build)
+        required: true
+        default: false
+      platforms:
+        type: string
+        description: Comma-separated target platforms (e.g.
+          linux/amd64,linux/arm64 for Linux and Apple Silicon). Leave empty
+          to use the Dockerfile's build-platforms declaration, or linux/amd64
+          if absent or empty; multi-platform builds require push.
+        required: false
+        default: ""
+      ccbr-actions-version:
+        description: "The version or branch of ccbr_actions to use (see
+          https://github.com/ccbr/actions)"
+        required: true
+        default: "latest"
+
+jobs:
+  image-key:
+    runs-on: ubuntu-latest
+    outputs:
+      key: ${{ steps.image-key.outputs.key }}
+    steps:
+      - name: Determine image lock key
+        id: image-key
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          DOCKERFILE_PATH: ${{ inputs.dockerfile }}
+        run: |
+          set -euo pipefail
+          coordinator="$RUNNER_TEMP/coordinate_docker_build.py"
+          gh api "repos/$GITHUB_REPOSITORY/contents/scripts/coordinate_docker_build.py?ref=$WORKFLOW_SHA" \
+            --header "Accept: application/vnd.github.raw+json" > "$coordinator"
+          python3 "$coordinator" key "$DOCKERFILE_PATH"
+
+  build-docker:
+    needs: [image-key]
+    concurrency:
+      group: ${{ inputs.suffix == 'main' && format('docker-stable-{0}', needs.image-key.outputs.key) || format('docker-manual-dev-{0}', needs.image-key.outputs.key) }}
+      cancel-in-progress: false
+      queue: max
+    runs-on: ubuntu-latest
+    permissions:
+      contents: "write"
+      pull-requests: write
+      packages: write
+    steps:
+      - name: Validate tag selection
+        env:
+          SUFFIX: ${{ inputs.suffix }}
+          PUSH: ${{ inputs.push }}
+        run: |
+          case "$SUFFIX" in
+            main|dev) ;;
+            *)
+              echo "::error::Choose main for a stable tag or dev for a preview tag."
+              exit 1
+              ;;
+          esac
+          if [[ "$PUSH" == "true" && "$SUFFIX" == "main" && "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Stable tags can only be published from main."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        id: checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Check stable image revision
+        id: stable-check
+        if: inputs.suffix == 'main' && inputs.push
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          DOCKERFILE_PATH: ${{ inputs.dockerfile }}
+        run: |
+          set -euo pipefail
+          coordinator="$RUNNER_TEMP/coordinate_docker_build.py"
+          gh api "repos/$GITHUB_REPOSITORY/contents/scripts/coordinate_docker_build.py?ref=$WORKFLOW_SHA" \
+            --header "Accept: application/vnd.github.raw+json" > "$coordinator"
+          python3 "$coordinator" check "$DOCKERFILE_PATH"
+
+      - name: Determine Docker build platforms
+        id: platforms
+        if: steps.stable-check.outputs.current != 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          DOCKERFILE_PATH: ${{ inputs.dockerfile }}
+          PLATFORMS_INPUT: ${{ inputs.platforms }}
+        run: |
+          set -euo pipefail
+          resolver="$RUNNER_TEMP/resolve_docker_platforms.py"
+          gh api "repos/$GITHUB_REPOSITORY/contents/scripts/resolve_docker_platforms.py?ref=$WORKFLOW_SHA" \
+            --header "Accept: application/vnd.github.raw+json" > "$resolver"
+          python3 "$resolver" "$GITHUB_WORKSPACE/$DOCKERFILE_PATH" --platforms "$PLATFORMS_INPUT"
+
+      - uses: CCBR/actions/build-docker@v0.9.2
+        if: steps.stable-check.outputs.current != 'false'
+        with:
+          dockerfile: ${{ github.event.inputs.dockerfile }}
+          dockerhub-namespace: ${{ github.event.inputs.dockerhub-namespace }}
+          dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME_VK }}
+          dockerhub-token: ${{ secrets.DOCKERHUBRW_TOKEN_VK }}
+          registries: dockerhub,ghcr
+          suffix: ${{ github.event.inputs.suffix }}
+          push: ${{ github.event.inputs.push }}
+          force_build: ${{ inputs.suffix == 'main' && inputs.push }}
+          platforms: ${{ steps.platforms.outputs.platforms }}
+          ccbr-actions-version: ${{ github.event.inputs.ccbr-actions-version }}
+          github-token: ${{ github.token }}
+          github-actor: ${{ github.actor }}
+          merge-app-client-id: ${{ inputs.push && vars.CCBR_BOT_CLIENT_ID || '' }}
+          merge-app-private-key: ${{ inputs.push && secrets.CCBR_BOT_PRIVATE_KEY || '' }}
