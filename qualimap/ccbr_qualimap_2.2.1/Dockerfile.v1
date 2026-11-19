@@ -36,6 +36,8 @@ RUN wget -O qualimap_v2.2.1.zip https://mirror.spack.io/_source-cache/archive/08
 # Add QualiMap to PATH
 ENV PATH="/opt2/qualimap_v2.2.1":$PATH
 
+RUN qualimap --help
+
 # Copy Dockerfile and other files in a single layer
 COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
 RUN chmod -R a+rx /opt2 && chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
