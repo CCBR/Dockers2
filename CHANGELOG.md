@@ -1,5 +1,6 @@
 ## Dockers2 development version
 
+- Restore builds of six existing container images for publication to both registries. (#520, @kelly-sovacool)
 - Create a documentation website with a searchable container catalog: https://ccbr.github.io/Dockers2. (#490, @kelly-sovacool)
 - Publish stable images with version tags and `-dev` previews, preserving source context for dispatch builds. (#461, @kelly-sovacool)
 - Prevent superseded builds from overwriting newer stable images. (#461, @kelly-sovacool)

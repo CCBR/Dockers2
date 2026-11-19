@@ -20,14 +20,17 @@ ENV BASEIMAGENAME=${BASEIMAGENAME}
 # Set environment variables to reduce interactive prompts during installation
 RUN mkdir -p /opt2/ucsc && \
     apt-get update && apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends axel && \
     rm -rf /var/lib/{apt,dpkg,cache,log}/
 
 ENV URL="https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/"
-RUN curl -s $URL | grep -oP '(?<=href=")[^"]*' | awk '/^[^/]+$/ {print $0}' | grep -i "bed\|fa\|wig\|maf" > /opt2/ucsc/ucsc_tools_subset.txt
-#COPY ucsc_tools_subset.txt /opt2/ucsc/
+RUN curl -fsSL "$URL" -o /tmp/ucsc-index.html && \
+    grep -oP '(?<=href=")[^"]*' /tmp/ucsc-index.html | \
+    grep -v '/' | grep -i 'bed\|fa\|wig\|maf' > /opt2/ucsc/ucsc_tools_subset.txt && \
+    rm /tmp/ucsc-index.html
 WORKDIR /opt2/ucsc
-RUN while read tool;do axel -n 16 https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64.v385/${tool};done < ucsc_tools_subset.txt && \
+RUN while read -r tool; do \
+        curl -fLO --retry 5 --retry-all-errors --connect-timeout 30 --max-time 300 "${URL}${tool}" || exit 1; \
+    done < ucsc_tools_subset.txt && \
     echo "v385" > /opt2/ucsc/version.txt
 
 # Copy Dockerfile and other files in a single layer
