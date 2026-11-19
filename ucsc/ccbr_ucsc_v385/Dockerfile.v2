@@ -29,7 +29,7 @@ RUN curl -fsSL "$URL" -o /tmp/ucsc-index.html && \
     rm /tmp/ucsc-index.html
 WORKDIR /opt2/ucsc
 RUN while read -r tool; do \
-        curl -fLO --retry 5 --connect-timeout 30 "${URL}${tool}" || exit 1; \
+        curl -fLO --retry 5 --retry-all-errors --connect-timeout 30 --max-time 300 "${URL}${tool}" || exit 1; \
     done < ucsc_tools_subset.txt && \
     echo "v385" > /opt2/ucsc/version.txt
 
