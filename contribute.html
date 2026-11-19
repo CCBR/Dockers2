@@ -358,7 +358,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#open-a-pull-request" id="toc-open-a-pull-request" class="nav-link" data-scroll-target="#open-a-pull-request">4. Open a pull request</a></li>
   <li><a href="#wait-for-review-and-merge" id="toc-wait-for-review-and-merge" class="nav-link" data-scroll-target="#wait-for-review-and-merge">5. Wait for review and merge</a></li>
   </ul></li>
-  <li><a href="#publishing-images" id="toc-publishing-images" class="nav-link" data-scroll-target="#publishing-images">Publishing images</a></li>
+  <li><a href="#publishing-images" id="toc-publishing-images" class="nav-link" data-scroll-target="#publishing-images">Publishing images</a>
+  <ul class="collapse">
+  <li><a href="#automatic-build" id="toc-automatic-build" class="nav-link" data-scroll-target="#automatic-build">Automatic build</a></li>
+  <li><a href="#manual-build" id="toc-manual-build" class="nav-link" data-scroll-target="#manual-build">Manual build</a></li>
+  <li><a href="#dispatch-from-another-repository" id="toc-dispatch-from-another-repository" class="nav-link" data-scroll-target="#dispatch-from-another-repository">Dispatch from another repository</a></li>
+  <li><a href="#shared-workflow-behavior" id="toc-shared-workflow-behavior" class="nav-link" data-scroll-target="#shared-workflow-behavior">Shared workflow behavior</a></li>
+  </ul></li>
   <li><a href="#docker-build-platforms" id="toc-docker-build-platforms" class="nav-link" data-scroll-target="#docker-build-platforms">Docker build platforms</a></li>
   <li><a href="#import-a-dockerfile-from-another-repository" id="toc-import-a-dockerfile-from-another-repository" class="nav-link" data-scroll-target="#import-a-dockerfile-from-another-repository">Import a Dockerfile from another repository</a></li>
   </ul>
@@ -487,6 +493,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="publishing-images" class="level2">
 <h2 class="anchored" data-anchor-id="publishing-images">Publishing images</h2>
+<section id="automatic-build" class="level3">
+<h3 class="anchored" data-anchor-id="automatic-build">Automatic build</h3>
 <p>The <a href="https://github.com/CCBR/Dockers2/blob/main/.github/workflows/build-docker-auto.yml">automatic build workflow</a> publishes images to Docker Hub under <a href="https://hub.docker.com/u/nciccbr"><code>nciccbr</code></a> and to GHCR under <a href="https://github.com/orgs/CCBR/packages?ecosystem=container"><code>ghcr.io/ccbr</code></a>. For a Dockerfile named <code>Dockerfile.v2</code>, it uses these tags:</p>
 <table class="caption-top table">
 <colgroup>
@@ -520,11 +528,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 <p>The <code>-dev</code> tag is shared by previews of the same image and version. A later successful push can overwrite another PR’s preview, so use the unsuffixed tag for stable images. Existing registry tags are not renamed or deleted.</p>
-<p>To build an image on demand, run the <a href="https://github.com/CCBR/Dockers2/blob/main/.github/workflows/build-docker-manual.yml">manual workflow</a> from the Actions tab and select the Dockerfile. Choose <code>dev</code> for a preview or <code>main</code> for the unsuffixed version tag; stable tags can only be published from <code>main</code>. Enable <strong>push</strong> to publish to both registries; leave it unchecked to run without publishing. To add or update an image from another repository, use the <a href="https://github.com/CCBR/Dockers2/blob/main/.github/workflows/build-docker-dispatch.yml">dispatch workflow</a>, which publishes a <code>-dev</code> preview to both registries and opens a PR to <code>main</code>; merging the Dockerfile triggers the stable build.</p>
+</section>
+<section id="manual-build" class="level3">
+<h3 class="anchored" data-anchor-id="manual-build">Manual build</h3>
+<p>To build an image on demand, run the <a href="https://github.com/CCBR/Dockers2/blob/main/.github/workflows/build-docker-manual.yml">manual workflow</a> from the Actions tab and select the Dockerfile. Choose <code>dev</code> for a preview or <code>main</code> for the unsuffixed version tag; stable tags can only be published from <code>main</code>. Enable <strong>push</strong> to publish to both registries; leave it unchecked to run without publishing.</p>
+</section>
+<section id="dispatch-from-another-repository" class="level3">
+<h3 class="anchored" data-anchor-id="dispatch-from-another-repository">Dispatch from another repository</h3>
+<p>To add or update an image from another repository, use the <a href="https://github.com/CCBR/Dockers2/blob/main/.github/workflows/build-docker-dispatch.yml">dispatch workflow</a>. See <a href="#import-a-dockerfile-from-another-repository">Import a Dockerfile from another repository</a> for instructions.</p>
+</section>
+<section id="shared-workflow-behavior" class="level3">
+<h3 class="anchored" data-anchor-id="shared-workflow-behavior">Shared workflow behavior</h3>
 <p>When publishing generates a README update, the workflows use the CCBR-bot GitHub App to merge its PR. They use the <code>CCBR_BOT_CLIENT_ID</code> variable and <code>CCBR_BOT_PRIVATE_KEY</code> secret; fork PRs and manual builds without publishing do not receive these credentials.</p>
 <p>Stable publications always build rather than relying on registry timestamps, which do not account for source-context changes. Automatic and manual stable builds targeting the same image tag share a queue. After entering the queue, they skip an outdated checkout if a matching image’s build context has changed on <code>main</code>; run the manual workflow again from <code>main</code> if needed. The queue holds up to 100 pending jobs per image tag.</p>
 <p>Other builds check the image tag in each target registry. They build if a tag is missing, older than the Dockerfile’s latest commit, missing a requested platform, or cannot be checked; otherwise, they skip the build. The manual workflow still checks both registries when <strong>push</strong> is disabled, so an up-to-date image can skip a build-only run.</p>
-<p>For dispatched builds, the workflow copies the source repository’s build context into Dockers2 and records the source repository and exact commit in <code>.Dockerfile.&lt;version&gt;.source.json</code> next to the Dockerfile. The Dockerfile, metadata, and copied context files are committed together, so automatic and manual builds use the checked-in snapshot without needing access to the source repository. Changes to the metadata also trigger a rebuild; keep it alongside the Dockerfile. Older dispatched Dockerfiles that do not include their source context must be dispatched again if they need files from the source repository. Dispatch image tags may contain at most 124 characters, leaving room for the <code>-dev</code> suffix within Docker’s 128-character tag limit.</p>
+</section>
 </section>
 <section id="docker-build-platforms" class="level2">
 <h2 class="anchored" data-anchor-id="docker-build-platforms">Docker build platforms</h2>
@@ -536,10 +554,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="import-a-dockerfile-from-another-repository" class="level2">
 <h2 class="anchored" data-anchor-id="import-a-dockerfile-from-another-repository">Import a Dockerfile from another repository</h2>
-<p>For a Dockerfile maintained elsewhere, use <strong>Actions &gt; build-docker-dispatch &gt; <a href="https://github.com/CCBR/Dockers2/actions/workflows/build-docker-dispatch.yml">Run workflow</a></strong> in Dockers2. You need permission to run the workflow, and it must be able to access the source repository. Enter the source <code>OWNER/REPO</code>, ref, Dockerfile path, lowercase image name, and a tag such as <code>v1</code>. Use a source tag or commit; the image tag can be at most 124 characters.</p>
-<p>The source repository root must be the Dockerfile’s intended build context. Before running, check for credentials, private data, and unnecessary large files: the workflow copies and commits the entire checkout.</p>
-<p>The workflow copies the source repository except <code>.git</code>, records its exact commit in <code>.Dockerfile.&lt;tag&gt;.source.json</code>, and builds a <code>-dev</code> preview. After a successful build, it opens or updates a PR to <code>main</code>. Review the copied files and metadata, and test the preview. Rerun the dispatch when the source changes.</p>
-<p>For on-demand builds of recipes already in Dockers2, see the <a href="#publishing-images">manual build instructions</a>. A build-only run can still be skipped if the registry tags are up to date.</p>
+<p>For a Dockerfile maintained elsewhere, use <strong>Actions &gt; build-docker-dispatch &gt; <a href="https://github.com/CCBR/Dockers2/actions/workflows/build-docker-dispatch.yml">Run workflow</a></strong> in Dockers2. You need permission to run the workflow, and it must be able to access the source repository. Enter the source <code>OWNER/REPO</code>, ref, Dockerfile path, lowercase image name, and a tag such as <code>v1</code>. Use a source tag or commit; the image tag can be at most 124 characters, leaving room for the <code>-dev</code> suffix within Docker’s 128-character tag limit.</p>
+<p>The source repository root must be the Dockerfile’s intended build context. Before running, check for credentials, private data, and unnecessary large files: the workflow copies and commits the entire checkout except <code>.git</code>.</p>
+<p>The workflow records the exact source commit in <code>.Dockerfile.&lt;tag&gt;.source.json</code> next to the Dockerfile and publishes a <code>-dev</code> preview to Docker Hub and GHCR. After a successful build, it opens or updates a PR to <code>main</code> containing the Dockerfile, metadata, and copied context. Review the copied files and metadata, and test the preview; merging the PR triggers the stable build.</p>
+<p>Automatic and manual builds use the checked-in snapshot without needing access to the source repository. Changes to the metadata also trigger a rebuild; keep it alongside the Dockerfile. Older dispatched Dockerfiles that do not include their source context must be dispatched again if they need files from the source repository. Rerun the dispatch when the source changes.</p>
+<p>For on-demand builds of recipes already in Dockers2, see the <a href="#manual-build">manual build instructions</a>. A build-only run can still be skipped if the registry tags are up to date.</p>
 
 
 </section>
