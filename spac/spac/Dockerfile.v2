@@ -12,7 +12,8 @@ LABEL version="0.9.0"
 LABEL github.branch="${GITHUB_BRANCH}"
 
 # Install system dependencies including Chromium for Kaleido (ARM64 compatible)
-RUN apt-get update && \
+RUN sed -i 's|http://deb.debian.org/debian-security|http://archive.debian.org/debian-security|' /etc/apt/sources.list && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
     git \
     ca-certificates \
