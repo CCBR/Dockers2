@@ -20,10 +20,12 @@ RUN apt-get update && apt-get upgrade -y && \
     Rscript -e 'install.packages(c("optparse", "XML", "truncnorm", "BiocManager"), repos="https://cloud.r-project.org")' && \
     wget -q https://cran.r-project.org/src/contrib/Archive/gsmoothr/gsmoothr_0.1.7.tar.gz -O /tmp/gsmoothr.tar.gz && \
     wget -q https://cran.r-project.org/src/contrib/Archive/Rsolnp/Rsolnp_1.16.tar.gz -O /tmp/Rsolnp.tar.gz && \
+    wget -q https://cran.r-project.org/src/contrib/Archive/S7/S7_0.2.2.tar.gz -O /tmp/S7.tar.gz && \
     echo "b75ffd2a4a0f357762e02e46e355b45cc90ea637830f0a1b01f216bb4541e903  /tmp/gsmoothr.tar.gz" | sha256sum -c - && \
     echo "3142776062beb8e2b45cdbc4fe6e5446b6d33505253d79f2890fe4178d9cf670  /tmp/Rsolnp.tar.gz" | sha256sum -c - && \
-    R CMD INSTALL /tmp/gsmoothr.tar.gz /tmp/Rsolnp.tar.gz && \
-    rm /tmp/gsmoothr.tar.gz /tmp/Rsolnp.tar.gz && \
+    echo "6f33245dde05b74265b1c4d379e034bc3a8923d41e7b52e6e75a75ce97d42af7  /tmp/S7.tar.gz" | sha256sum -c - && \
+    R CMD INSTALL /tmp/gsmoothr.tar.gz /tmp/Rsolnp.tar.gz /tmp/S7.tar.gz && \
+    rm /tmp/gsmoothr.tar.gz /tmp/Rsolnp.tar.gz /tmp/S7.tar.gz && \
     Rscript -e 'BiocManager::install(c("Repitools", "GenomicFeatures", "NOISeq", "Rsamtools", "rtracklayer"), update=FALSE, ask=FALSE)' && \
     Rscript -e 'p <- c("optparse", "XML", "Repitools", "GenomicFeatures", "NOISeq", "Rsamtools", "rtracklayer"); missing <- p[!vapply(p, requireNamespace, logical(1), quietly=TRUE)]; if (length(missing)) stop("Missing R packages: ", paste(missing, collapse=", "))'
 
