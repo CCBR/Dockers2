@@ -22,7 +22,7 @@ ENV PATH="/opt2/conda/envs/${CONDA_ENV}/bin:/opt2/conda/bin:$PATH"
 RUN cd /data2 && \
     git clone https://github.com/shahcompbio/hmmcopy_utils.git && \
     cd hmmcopy_utils && \
-    cmake . && \
+    cmake -DCMAKE_C_STANDARD=17 -DCMAKE_C_STANDARD_REQUIRED=ON . && \
     make && \
     cp bin/* /opt2/conda/envs/${CONDA_ENV}/bin/
 
