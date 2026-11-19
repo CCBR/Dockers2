@@ -26,7 +26,8 @@ RUN conda config --add channels conda-forge
 RUN conda config --add channels r
 RUN conda upgrade conda
 
-RUN mamba install -c bioconda \
+RUN mamba create -y -n rnaseq -c bioconda \
+    'python=3.11' \
     'ucsc-bedsort>=469' \
 	'bio>=0.4.1' \
 	'biopython>=1.78' \
@@ -39,6 +40,8 @@ RUN mamba install -c bioconda \
 	'requests>=2.25.1' \
 	'scipy>=1.5.4' \
 	'urllib3==1.26.4'
+
+ENV PATH="/opt2/conda/envs/rnaseq/bin:$PATH"
 
 # Copy Dockerfile and other files in a single layer
 COPY ${DOCKERFILE} /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
