@@ -1,45 +1,34 @@
 ## CCBR/Dockers2 nciccbr/ccbr_ichorcna_0.3.2:v1-dev
 
-Dockerfile source: https://github.com/CCBR/Dockers2/blob/a0ac517d963fbeddfb01c810fbd06d9365c02f22/ichorCNA/ccbr_ichorcna_0.3.2/Dockerfile.v1
+Dockerfile source: https://github.com/CCBR/Dockers2/blob/385e207b94a710e3d406bfe91d309566c69f7ed8/ichorCNA/ccbr_ichorcna_0.3.2/Dockerfile.v1
 
 
-Built on: 2025-11-11_19:09:31 
+Built on: 2026-11-19_16:57:57 
 
 Build tag: v1-dev 
 
 Base image: nciccbr/ccbr_ubuntu_base_20.04:v7 
+
+Platforms: linux/amd64 
 
 Dockerfile path in repo: ichorCNA/ccbr_ichorcna_0.3.2/Dockerfile.v1 
 
 
 | Tool | Version |
 |---------|---------|
-| bbtools | NOTINDOCKER |
-| bcftools | 1.10.2 using htslib 1.10.2-3ubuntu0.1 |
+| bcftools | NOTINDOCKER |
 | bedops | 2.4.37 typical |
 | bedtools | v2.27.1 |
 | bowtie | 1.2.3 |
 | bowtie2 | 2.3.5.1 |
-| bwa | 0.7.17-r1188 |
+| bwa | NOTINDOCKER |
 | cutadapt | NOTINDOCKER |
-| fastqc | NOTINDOCKER |
-| fastQValidator | NOTINDOCKER |
-| fastqscreen | NOTINDOCKER |
 | git | 2.25.1 |
 | java | 1.8.0_422 |
-| kraken2 | NOTINDOCKER |
-| kronatools | NOTINDOCKER |
 | multiqc | NOTINDOCKER |
 | parallel | 20161222 |
-| picard | NOTINDOCKER |
 | pigz | 2.4 |
-| preseq | NOTINDOCKER |
 | python2 | 2.7.18 |
-| python3 | 3.9.23 |
-| qualimap | NOTINDOCKER |
-| rsem | NOTINDOCKER |
-| rseqc | NOTINDOCKER |
+| python3 | 3.12.7 |
 | samtools | 1.10 |
-| ucsc_tools | NOTINDOCKER |
 | vcftools | 0.1.16 |
-
